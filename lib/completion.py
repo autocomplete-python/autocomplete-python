@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+import traceback
 sys.path.append(os.path.dirname(__file__))
 import jedi
 
@@ -39,15 +40,16 @@ class JediCompletion(object):
     if completion.type in self.basic_types:
       return self.basic_types.get(completion.type)
 
-  def _description(self, completion):
-    """Provide a description of the completion object."""
+  def _additional_info(self, completion):
+    """Provide additional information about the completion object."""
     if completion._definition is None:
       return ''
     t = completion.type
     if t == 'statement':
+      nodes_to_display = ['InstanceElement', 'String', 'Node', 'Lambda']
       desc = ''.join(
         c.get_code() for c in completion._definition.children
-        if type(c).__name__ in ['InstanceElement', 'String']).replace('\n', '')
+        if type(c).__name__ in nodes_to_display).replace('\n', '')
     elif t == 'keyword':
       desc = ''
     elif t == 'function' and hasattr(completion, 'params'):
@@ -62,6 +64,10 @@ class JediCompletion(object):
   @classmethod
   def _get_top_level_module(cls, path):
     """Recursively walk through directories looking for top level module.
+
+    Jedi will use current filepath to look for another modules at same path,
+    but it will not be able to see modules **above**, so our goal
+    is to find the higher python module available from filepath.
     """
     _path, _ = os.path.split(path)
     if os.path.isfile(os.path.join(_path, '__init__.py')):
@@ -69,7 +75,7 @@ class JediCompletion(object):
     return path
 
   def _generate_snippet(self, completion):
-    """
+    """Generate Atom snippet with function arguments.
     """
     if not self.use_snippets or not hasattr(completion, 'params'):
       return
@@ -95,11 +101,10 @@ class JediCompletion(object):
                           completion.complete),
         'snippet': self._generate_snippet(completion),
         'displayText': completion.name,
-        # 'replacementPrefix': completion.name[:completion._like_name_length],
         'type': self._get_completion_type(completion),
         # TODO: try to understand return value
         # 'leftLabel': '',
-        'rightLabel': self._description(completion),
+        'rightLabel': self._additional_info(completion),
         'description': completion.docstring(),
         # 'descriptionMoreURL': completion.module_name
       })
@@ -117,19 +122,20 @@ class JediCompletion(object):
     return json.loads(request)
 
   def _process_request(self, request):
-    """
-    Jedi will use filepath to look for another modules at same path,
-    but it will not be able to see modules **above**, so our goal
-    is to find the higher python module available from filepath.
+    """Accept serialized request from Atom and write response.
     """
     request = self._deserialize(request)
     path = self._get_top_level_module(request.get('path', ''))
     if path not in sys.path:
       sys.path.insert(0, path)
-    script = jedi.api.Script(
-      source=request['source'], line=request['line'] + 1,
-      column=request['column'], path=request.get('path', ''))
-    completions = script.completions()
+    try:
+      script = jedi.api.Script(
+        source=request['source'], line=request['line'] + 1,
+        column=request['column'], path=request.get('path', ''))
+      completions = script.completions()
+    except Exception:
+      traceback.print_exc(file=sys.stderr)
+      completions = []
     self._write_response(self._serialize(completions, request['id']))
 
   def _write_response(self, response):

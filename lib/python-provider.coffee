@@ -1,7 +1,7 @@
 module.exports =
 class PythonProvider
   selector: '.source.python'
-  disableForSelector: '.source.python.comment, .source.python.string'
+  disableForSelector: '.source.python .comment, .source.python .string'
   inclusionPriority: 1
   excludeLowerPriority: true
 
@@ -27,11 +27,11 @@ class PythonProvider
       console.log "Python Provider error: #{err}"
     @provider.on 'exit', (code, signal) =>
       console.log "Python Provider exit with code #{code}, signal #{signal}"
+    @provider.stderr.on 'data', (err) ->
+      console.log "Python Provider error: #{err}"
 
-    @readline = require('readline').createInterface({
-      input: @provider.stdout
-      })
-    @readline.on('line', (response) => @_deserialize(response))
+    @readline = require('readline').createInterface(input: @provider.stdout)
+    @readline.on 'line', (response) => @_deserialize(response)
 
   _serialize: (request) ->
     return JSON.stringify(request)

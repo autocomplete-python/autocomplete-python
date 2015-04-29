@@ -14,6 +14,7 @@ This is powered by [Jedi](https://github.com/davidhalter/jedi).
 * Highlights UPPERCASE_VARIABLES as constants according to PEP8.
 * Highlights builtin functions and variables with special style.
 * Prints first 50 characters of statement value while completing variables.
+* Prints function arguments while completing functions.
 * Additional caching so the same request will not be handled twice.
 
 
