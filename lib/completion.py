@@ -6,6 +6,9 @@ sys.path.append(os.path.dirname(__file__))
 import jedi
 
 
+MAX_LENGTH = 70
+
+
 class JediCompletion(object):
   basic_types = {
     'module': 'import',
@@ -46,7 +49,8 @@ class JediCompletion(object):
       return ''
     t = completion.type
     if t == 'statement':
-      nodes_to_display = ['InstanceElement', 'String', 'Node', 'Lambda']
+      nodes_to_display = ['InstanceElement', 'String', 'Node', 'Lambda',
+                          'Number']
       desc = ''.join(
         c.get_code() for c in completion._definition.children
         if type(c).__name__ in nodes_to_display).replace('\n', '')
@@ -59,7 +63,7 @@ class JediCompletion(object):
     else:
       desc = '.'.join(unicode(p) for p in completion._path())
     line = '' if completion.in_builtin_module else '@%s' % completion.line
-    return ('%s: %s%s' % (t, desc, line))[:50]
+    return ('%s: %s%s' % (t, desc, line))[:MAX_LENGTH - len(completion.name)]
 
   @classmethod
   def _get_top_level_module(cls, path):

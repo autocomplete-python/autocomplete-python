@@ -6,8 +6,7 @@ installing this package.
 
 This is powered by [Jedi](https://github.com/davidhalter/jedi).
 
-![Demo](https://cloud.githubusercontent.com/assets/193864/7388957/36019954-ee9c-11e4-8373-7bf551ed613f.gif)
-
+![Demo](https://cloud.githubusercontent.com/assets/193864/7394244/e6906980-eec4-11e4-9ee2-8749d16ff468.gif)
 
 # Features
 
