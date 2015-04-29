@@ -10,9 +10,11 @@ This is powered by [Jedi](https://github.com/davidhalter/jedi).
 
 # Features
 
+* Watches whole package of the file you're currently editing
+* Configurable additional PATHs to include for completions (global for now)
 * Highlights UPPERCASE_VARIABLES as constants according to PEP8.
 * Highlights builtin functions and variables with special style.
-* Prints first 50 characters of statement value while completing variables.
+* Prints first N characters of statement value while completing variables.
 * Prints function arguments while completing functions.
 * Additional caching so the same request will not be handled twice.
 
