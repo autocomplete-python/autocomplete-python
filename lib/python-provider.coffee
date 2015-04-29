@@ -8,7 +8,7 @@ class PythonProvider
   constructor: ->
     @requests = {}
 
-    args = {
+    args =
       'extraPaths': atom.config.get(
         'autocomplete-python.extraPaths'),
       'useSnippets': atom.config.get(
@@ -19,7 +19,6 @@ class PythonProvider
         'autocomplete-python.addDotAfterModule'),
       'addBracketAfterFunction': atom.config.get(
         'autocomplete-python.addBracketAfterFunction'),
-    }
 
     @provider = require('child_process').spawn(
       'python', [__dirname + '/completion.py', @_serialize(args)])

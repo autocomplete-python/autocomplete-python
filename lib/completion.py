@@ -50,8 +50,10 @@ class JediCompletion(object):
         if type(c).__name__ in ['InstanceElement', 'String']).replace('\n', '')
     elif t == 'keyword':
       desc = ''
+    elif t == 'function' and hasattr(completion, 'params'):
+      desc = ', '.join([p.description for p in completion.params])
     elif t == 'import':
-      desc = completion._definition.get_code()
+      desc = ''
     else:
       desc = '.'.join(unicode(p) for p in completion._path())
     line = '' if completion.in_builtin_module else '@%s' % completion.line
