@@ -1,7 +1,7 @@
 import os
 import sys
 import json
-sys.path.append(os.path.join(os.path.dirname(__file__), 'jedi'))
+sys.path.append(os.path.dirname(__file__))
 import jedi
 
 
