@@ -1,10 +1,10 @@
 module.exports =
   config:
-    completeArguments:
+    useSnippets:
       type: 'boolean'
-      default: true
-      title: "Complete Arguments for Functions"
-      description: "This will cause the suggestions for functions to include their arguments."
+      default: false
+      title: 'Complete with snippets'
+      description: 'Allows to complete functions with their arguments. Use completion key to jump between arguments.'
     extraPaths:
       type: 'string'
       default: ''

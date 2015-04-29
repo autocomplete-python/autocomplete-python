@@ -16,8 +16,10 @@ class JediCompletion(object):
   }
 
   def __init__(self):
-    for path in sys.argv[1:]:
-      if path not in sys.path:
+    kwargs = self._deserialize(sys.argv[1])
+    self.use_snippets = kwargs.get('useSnippets', False)
+    for path in kwargs.get('extraPaths').split(','):
+      if path and path not in sys.path:
         sys.path.insert(0, path)
 
   def _get_completion_type(self, completion):
@@ -59,14 +61,14 @@ class JediCompletion(object):
   def _generate_snippet(self, completion):
     """
     """
-    if not hasattr(completion, 'params'):
+    if not self.use_snippets or not hasattr(completion, 'params'):
       return
     arguments = []
     for i, param in enumerate(completion.params, start=1):
       arguments.append('${%s:%s}' % (i, param.description))
     return '%s(%s)$0' % (completion.name, ', '.join(arguments))
 
-  def _serialize(self, completions, identifier):
+  def _serialize(self, completions, identifier=None):
     """Serialize response to be read from Atom.
 
     Args:

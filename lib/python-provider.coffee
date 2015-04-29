@@ -7,27 +7,29 @@ class PythonProvider
 
   constructor: ->
     @requests = {}
-    paths = atom.config.get('autocomplete-plus-python-jedi.extraPaths')
-    paths = (p for p in paths.split(',') when p)
+
+    args = {
+      'extraPaths': atom.config.get('autocomplete-python.extraPaths'),
+      'useSnippets': atom.config.get('autocomplete-python.useSnippets'),
+    }
 
     @provider = require('child_process').spawn(
-      'python', [__dirname + '/completion.py'].concat(paths))
+      'python', [__dirname + '/completion.py', @_serialize(args)])
 
     @provider.on 'error', (err) =>
       console.log "Python Provider error: #{err}"
     @provider.on 'exit', (code, signal) =>
       console.log "Python Provider exit with code #{code}, signal #{signal}"
 
-    @provider.stderr.on('data', (data) ->
-      console.log('Jedi.py Error: ' + data);
-    )
-
     @readline = require('readline').createInterface({
       input: @provider.stdout
       })
-    @readline.on('line', (response) => @deserialize(response))
+    @readline.on('line', (response) => @_deserialize(response))
 
-  deserialize: (response) ->
+  _serialize: (request) ->
+    return JSON.stringify(request)
+
+  _deserialize: (response) ->
     response = JSON.parse(response)
     [resolve, reject] = @requests[response['id']]
     resolve(response['completions'])
@@ -45,7 +47,7 @@ class PythonProvider
       line: bufferPosition.row
       column: bufferPosition.column
 
-    @provider.stdin.write(JSON.stringify(payload) + '\n')
+    @provider.stdin.write(@_serialize(payload) + '\n')
 
     return new Promise (resolve, reject) =>
       @requests[payload.id] = [resolve, reject]
