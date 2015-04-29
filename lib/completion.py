@@ -6,7 +6,7 @@ import jedi
 
 
 class JediCompletion(object):
-  types = {
+  basic_types = {
     'module': 'import',
     'class': 'class',
     'instance': 'variable',
@@ -19,6 +19,33 @@ class JediCompletion(object):
     for path in sys.argv[1:]:
       if path not in sys.path:
         sys.path.insert(0, path)
+
+  def _get_completion_type(self, completion):
+    is_built_in = completion.in_builtin_module
+    if completion.type not in ['import', 'keyword'] and is_built_in():
+      return 'builtin'
+    if completion.type in ['statement'] and completion.name.isupper():
+      return 'constant'
+    if completion.type in self.basic_types:
+      return self.basic_types.get(completion.type)
+
+  def _description(self, completion):
+    """Provide a description of the completion object."""
+    if completion._definition is None:
+      return ''
+    t = completion.type
+    if t == 'statement':
+      desc = ''.join(
+        c.get_code() for c in completion._definition.children
+        if type(c).__name__ in ['InstanceElement', 'String']).replace('\n', '')
+    elif t == 'keyword':
+      desc = ''
+    elif t == 'import':
+      desc = completion._definition.get_code()
+    else:
+      desc = '.'.join(unicode(p) for p in completion._path())
+    line = '' if completion.in_builtin_module else '@%s' % completion.line
+    return ('%s: %s%s' % (t, desc, line))[:50]
 
   @classmethod
   def _get_top_level_module(cls, path):
@@ -57,10 +84,10 @@ class JediCompletion(object):
         'snippet': self._generate_snippet(completion),
         'displayText': completion.name,
         # 'replacementPrefix': completion.name[:completion._like_name_length],
-        'type': self.types.get(completion.type),
+        'type': self._get_completion_type(completion),
         # TODO: try to understand return value
         # 'leftLabel': '',
-        'rightLabel': completion.description,
+        'rightLabel': self._description(completion),
         'description': completion.docstring(),
         # 'descriptionMoreURL': completion.module_name
       })

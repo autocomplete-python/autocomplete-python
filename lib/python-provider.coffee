@@ -1,7 +1,7 @@
 module.exports =
 class PythonProvider
   selector: '.source.python'
-  disableForSelector: '.source.python .comment, .source.python .string'
+  disableForSelector: '.source.python.comment, .source.python.string'
   inclusionPriority: 1
   excludeLowerPriority: true
 

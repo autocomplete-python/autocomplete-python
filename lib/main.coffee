@@ -20,7 +20,7 @@ module.exports =
 
   getProvider: ->
     return @provider if @provider?
-    PythonProvider = require('./pythonprovider')
+    PythonProvider = require('./python-provider')
     @provider = new PythonProvider()
     return @provider
 
