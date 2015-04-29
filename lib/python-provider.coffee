@@ -9,8 +9,16 @@ class PythonProvider
     @requests = {}
 
     args = {
-      'extraPaths': atom.config.get('autocomplete-python.extraPaths'),
-      'useSnippets': atom.config.get('autocomplete-python.useSnippets'),
+      'extraPaths': atom.config.get(
+        'autocomplete-python.extraPaths'),
+      'useSnippets': atom.config.get(
+        'autocomplete-python.useSnippets'),
+      'caseInsensitiveCompletion': atom.config.get(
+        'autocomplete-python.caseInsensitiveCompletion'),
+      'addDotAfterModule': atom.config.get(
+        'autocomplete-python.addDotAfterModule'),
+      'addBracketAfterFunction': atom.config.get(
+        'autocomplete-python.addBracketAfterFunction'),
     }
 
     @provider = require('child_process').spawn(

@@ -18,6 +18,14 @@ class JediCompletion(object):
   def __init__(self):
     kwargs = self._deserialize(sys.argv[1])
     self.use_snippets = kwargs.get('useSnippets', False)
+
+    jedi.settings.case_insensitive_completion = kwargs.get(
+      'caseInsensitiveCompletion', True)
+    jedi.settings.add_dot_after_module = kwargs.get(
+      'addDotAfterModule', False)
+    jedi.settings.add_bracket_after_function = kwargs.get(
+      'addBracketAfterFunction', False)
+
     for path in kwargs.get('extraPaths').split(','):
       if path and path not in sys.path:
         sys.path.insert(0, path)
