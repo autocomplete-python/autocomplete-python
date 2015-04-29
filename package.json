@@ -1,0 +1,34 @@
+{
+  "name": "autocomplete-python",
+  "main": "./lib/main",
+  "version": "0.0.0",
+  "description": "Python variables, methods, functions and modules autocompletions",
+  "activationCommands": {},
+  "repository": "https://github.com/sadovnychyi/autocomplete-python",
+  "license": "GPL",
+  "engines": {
+    "atom": ">=0.194.0 <2.0.0"
+  },
+  "dependencies": {},
+  "package-dependencies": {},
+  "providedServices": {
+    "autocomplete.provider": {
+      "versions": {
+        "2.0.0": "provide"
+      }
+    }
+  },
+  "contributors": [
+    {
+      "name": "Dmitry Sadovnychyi",
+      "email": "autocomplete-python@dmit.ro"
+    }
+  ],
+  "bugs": {
+    "url": "https://github.com/sadovnychyi/autocomplete-plus/issues"
+  },
+  "keywords": [
+    "python",
+    "autocomplete"
+  ]
+}
