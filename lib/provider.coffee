@@ -25,6 +25,8 @@ module.exports =
 
     @provider.on 'error', (err) =>
       console.error "Python Provider error: #{err}"
+      if err.code == 'ENOENT'
+        throw "Cannot run python command: check that python is available in the system: #{err}"
     @provider.on 'exit', (code, signal) =>
       console.error "Python Provider exit with code #{code}, signal #{signal}"
     @provider.stderr.on 'data', (err) ->
