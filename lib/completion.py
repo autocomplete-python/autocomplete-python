@@ -5,7 +5,7 @@ import traceback
 sys.path.append(os.path.dirname(__file__))
 import jedi
 
-
+unicode = str if 'unicode' not in dir(__builtins__) else unicode
 MAX_LENGTH = 70
 
 
