@@ -1,4 +1,4 @@
-# Python Autocomplete Package
+# Python Autocomplete Package [![Build Status](https://travis-ci.org/sadovnychyi/autocomplete-python.svg)](https://travis-ci.org/sadovnychyi/autocomplete-python)
 
 Python variables, methods, functions and modules autocompletions in Atom. Install
 [autocomplete-plus](https://github.com/atom-community/autocomplete-plus) before
