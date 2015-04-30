@@ -28,10 +28,10 @@ module.exports =
       title: 'Extra PATH'
       description: 'Comma separated list of modules to additionally include for autocomplete.'
 
-  provider: null
-
   activate: (state) -> provider.constructor()
 
   deactivate: -> provider.dispose()
 
   getProvider: -> provider
+
+  provide: -> @getProvider()
