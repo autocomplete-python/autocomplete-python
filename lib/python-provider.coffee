@@ -24,11 +24,11 @@ class PythonProvider
       'python', [__dirname + '/completion.py', @_serialize(args)])
 
     @provider.on 'error', (err) =>
-      console.log "Python Provider error: #{err}"
+      console.error "Python Provider error: #{err}"
     @provider.on 'exit', (code, signal) =>
-      console.log "Python Provider exit with code #{code}, signal #{signal}"
+      console.error "Python Provider exit with code #{code}, signal #{signal}"
     @provider.stderr.on 'data', (err) ->
-      console.log "Python Provider error: #{err}"
+      throw "Python Provider error: #{err}"
 
     @readline = require('readline').createInterface(input: @provider.stdout)
     @readline.on 'line', (response) => @_deserialize(response)

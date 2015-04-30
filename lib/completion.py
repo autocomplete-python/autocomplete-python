@@ -137,6 +137,8 @@ class JediCompletion(object):
         source=request['source'], line=request['line'] + 1,
         column=request['column'], path=request.get('path', ''))
       completions = script.completions()
+    except KeyError:
+      completions = []
     except Exception:
       traceback.print_exc(file=sys.stderr)
       completions = []
