@@ -1,11 +1,11 @@
 module.exports =
-class PythonProvider
   selector: '.source.python'
   disableForSelector: '.source.python .comment, .source.python .string'
   inclusionPriority: 1
   excludeLowerPriority: true
 
   constructor: ->
+    console.debug 'Preparing python completions...'
     @requests = {}
 
     args =

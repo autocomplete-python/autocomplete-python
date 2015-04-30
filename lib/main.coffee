@@ -1,3 +1,5 @@
+provider = require './provider'
+
 module.exports =
   config:
     caseInsensitiveCompletion:
@@ -28,16 +30,8 @@ module.exports =
 
   provider: null
 
-  activate: (state) ->
+  activate: (state) -> provider.constructor()
 
-  deactivate: ->
-    @provider = null
+  deactivate: -> provider.dispose()
 
-  getProvider: ->
-    return @provider if @provider?
-    PythonProvider = require('./python-provider')
-    @provider = new PythonProvider()
-    return @provider
-
-  provide: ->
-    return @getProvider()
+  getProvider: -> provider
