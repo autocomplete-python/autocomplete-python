@@ -26,14 +26,6 @@ This is powered by [Jedi](https://github.com/davidhalter/jedi).
 * Install [autocomplete-python](https://github.com/sadovnychyi/autocomplete-python).
 * If you're on windows:
   * Install [python](https://www.python.org/downloads/).
-  * Make Sure that python is available in your PATH:
-    ```
-    echo %PATH%
-    ```
-    If it's not, add it and restart your system:
-    ```
-    set PATH=%PATH%;C:\Python27
-    ```
-
+  * Make Sure that python is available in your PATH: `echo %PATH%`. If it's not, add it and restart your system: `set PATH=%PATH%;C:\Python27`.
 
 Inspired by [autocomplete-plus-python-jedi](https://github.com/tinloaf/autocomplete-plus-python-jedi).
