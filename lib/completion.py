@@ -30,7 +30,7 @@ class JediCompletion(object):
     jedi.settings.add_bracket_after_function = kwargs.get(
       'addBracketAfterFunction', False)
 
-    for path in kwargs.get('extraPaths').split(','):
+    for path in kwargs.get('extraPaths', []):
       if path and path not in sys.path:
         sys.path.insert(0, path)
 

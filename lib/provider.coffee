@@ -8,9 +8,15 @@ module.exports =
     console.debug 'Preparing python completions...'
     @requests = {}
 
+    extraPaths = []
+    for path in atom.config.get('autocomplete-python.extraPaths').split(';')
+      for project in atom.project.getPaths()
+        modified = path.replace('$PROJECT', project)
+        if modified not in extraPaths
+          extraPaths.push(modified)
+
     args =
-      'extraPaths': atom.config.get(
-        'autocomplete-python.extraPaths'),
+      'extraPaths': extraPaths,
       'useSnippets': atom.config.get(
         'autocomplete-python.useSnippets'),
       'caseInsensitiveCompletion': atom.config.get(

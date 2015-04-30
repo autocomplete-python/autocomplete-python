@@ -14,6 +14,7 @@ This is powered by [Jedi](https://github.com/davidhalter/jedi).
 * Works with both :snake: Python 2 and 3
 * Watches whole package of the file you're currently editing
 * Configurable additional PATHs to include for completions (global for now)
+* You can include project specific folders by using $PROJECT variable in PATH configuration.
 * Highlights UPPERCASE_VARIABLES as constants according to PEP8
 * Highlights builtin functions and variables with special style
 * Prints first N characters of statement value while completing variables

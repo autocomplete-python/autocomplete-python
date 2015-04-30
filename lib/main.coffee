@@ -26,7 +26,11 @@ module.exports =
       type: 'string'
       default: ''
       title: 'Extra PATH'
-      description: 'Comma separated list of modules to additionally include for autocomplete.'
+      description: '''Semicolon separated list of modules to additionally include for autocomplete.
+      You can use $PROJECT variable here to include project specific folders like virtual environment.
+      Note that it still should be valid python package.
+      For example: $PROJECT/env/lib/python2.7/site-packages.
+      '''
 
   activate: (state) -> provider.constructor()
 
