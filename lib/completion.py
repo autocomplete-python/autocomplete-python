@@ -20,19 +20,7 @@ class JediCompletion(object):
   }
 
   def __init__(self):
-    kwargs = self._deserialize(sys.argv[1])
-    self.use_snippets = kwargs.get('useSnippets', False)
-
-    jedi.settings.case_insensitive_completion = kwargs.get(
-      'caseInsensitiveCompletion', True)
-    jedi.settings.add_dot_after_module = kwargs.get(
-      'addDotAfterModule', False)
-    jedi.settings.add_bracket_after_function = kwargs.get(
-      'addBracketAfterFunction', False)
-
-    for path in kwargs.get('extraPaths', []):
-      if path and path not in sys.path:
-        sys.path.insert(0, path)
+    self.default_sys_path = sys.path
 
   def _get_completion_type(self, completion):
     is_built_in = completion.in_builtin_module
@@ -125,10 +113,34 @@ class JediCompletion(object):
     """
     return json.loads(request)
 
+  def _set_request_config(self, config):
+    """Sets config values for current request including sys.path modifications.
+
+    The sys.path is getting restored to default value on each request so each
+    project should be isolated from each other.
+
+    Args:
+      config: Dictionary with config values.
+    """
+    sys.path = self.default_sys_path
+    self.use_snippets = config.get('useSnippets', False)
+    jedi.settings.case_insensitive_completion = config.get(
+      'caseInsensitiveCompletion', True)
+    jedi.settings.add_dot_after_module = config.get(
+      'addDotAfterModule', False)
+    jedi.settings.add_bracket_after_function = config.get(
+      'addBracketAfterFunction', False)
+    for path in config.get('extraPaths', []):
+      if path and path not in sys.path:
+        sys.path.insert(0, path)
+
   def _process_request(self, request):
     """Accept serialized request from Atom and write response.
     """
     request = self._deserialize(request)
+
+    self._set_request_config(request['config'])
+
     path = self._get_top_level_module(request.get('path', ''))
     if path not in sys.path:
       sys.path.insert(0, path)
@@ -150,7 +162,10 @@ class JediCompletion(object):
 
   def watch(self):
     while True:
-      self._process_request(sys.stdin.readline())
+      try:
+        self._process_request(sys.stdin.readline())
+      except Exception:
+        traceback.print_exc(file=sys.stderr)
 
 if __name__ == '__main__':
   JediCompletion().watch()
