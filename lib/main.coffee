@@ -37,5 +37,3 @@ module.exports =
   deactivate: -> provider.dispose()
 
   getProvider: -> provider
-
-  provide: -> @getProvider()

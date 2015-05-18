@@ -1,8 +1,6 @@
 # Python Autocomplete Package [![Build Status](https://travis-ci.org/sadovnychyi/autocomplete-python.svg)](https://travis-ci.org/sadovnychyi/autocomplete-python)
 
-Python variables, methods, functions and modules autocompletions in Atom. Install
-[autocomplete-plus](https://github.com/atom-community/autocomplete-plus) before
-installing this package.
+Python variables, methods, functions and modules autocompletions in Atom.
 
 This is powered by [Jedi](https://github.com/davidhalter/jedi).
 
@@ -23,7 +21,7 @@ This is powered by [Jedi](https://github.com/davidhalter/jedi).
 
 # Installation
 
-* Install [autocomplete-plus](https://github.com/atom-community/autocomplete-plus).
+* Be sure to use Atom 0.199 or never.
 * Install [autocomplete-python](https://github.com/sadovnychyi/autocomplete-python).
 * If you're on windows:
   * Install [python](https://www.python.org/downloads/).
