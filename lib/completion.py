@@ -139,7 +139,7 @@ class JediCompletion(object):
     """
     request = self._deserialize(request)
 
-    self._set_request_config(request['config'])
+    self._set_request_config(request.get('config', {}))
 
     path = self._get_top_level_module(request.get('path', ''))
     if path not in sys.path:
