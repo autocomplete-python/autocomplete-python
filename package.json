@@ -1,7 +1,7 @@
 {
   "name": "autocomplete-python",
   "main": "./lib/main",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Python variables, methods, functions and modules autocompletions",
   "activationCommands": {},
   "repository": "https://github.com/sadovnychyi/autocomplete-python",
