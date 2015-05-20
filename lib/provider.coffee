@@ -15,6 +15,12 @@ module.exports =
     windowsPaths = ['C:\\Python2.7',
                     'C:\\Python3.4',
                     'C:\\Python3.5',
+                    'C:\\Program Files (x86)\\Python 2.7',
+                    'C:\\Program Files (x86)\\Python 3.4',
+                    'C:\\Program Files (x86)\\Python 3.5',
+                    'C:\\Program Files (x64)\\Python 2.7',
+                    'C:\\Program Files (x64)\\Python 3.4',
+                    'C:\\Program Files (x64)\\Python 3.5',
                     'C:\\Program Files\\Python 2.7',
                     'C:\\Program Files\\Python 3.4',
                     'C:\\Program Files\\Python 3.5']
