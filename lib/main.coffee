@@ -22,6 +22,11 @@ module.exports =
       default: false
       title: 'Complete with snippets'
       description: 'Allows to complete functions with their arguments. Use completion key to jump between arguments. Will ignore some settings if used.'
+    pythonPath:
+      type: 'string'
+      default: ''
+      title: 'Path to python directory'
+      description: 'Optional. Set it if default values are not working for you or you want to use specific python version. For example: `/usr/local/Cellar/python/2.7.3/bin` or `E:\\Python2.7`'
     extraPaths:
       type: 'string'
       default: ''

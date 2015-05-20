@@ -9,13 +9,53 @@ module.exports =
     console.debug 'Preparing python completions...'
     @requests = {}
 
+    env = process.env
+    pythonPath = atom.config.get('autocomplete-python.pythonPath')
+
+    windowsPaths = ['C:\\Python2.7',
+                    'C:\\Python3.4',
+                    'C:\\Python3.5',
+                    'C:\\Program Files (x86)\\Python 2.7',
+                    'C:\\Program Files (x86)\\Python 3.4',
+                    'C:\\Program Files (x86)\\Python 3.5',
+                    'C:\\Program Files (x64)\\Python 2.7',
+                    'C:\\Program Files (x64)\\Python 3.4',
+                    'C:\\Program Files (x64)\\Python 3.5',
+                    'C:\\Program Files\\Python 2.7',
+                    'C:\\Program Files\\Python 3.4',
+                    'C:\\Program Files\\Python 3.5']
+    unixPaths = ['/usr/local/bin', '/usr/bin', '/bin', '/usr/sbin', '/sbin']
+
+    if /^win/.test(process.platform)
+      path = env.PATH.split(';')
+      if pythonPath and pythonPath not in path
+        path.unshift(pythonPath)
+      for p in windowsPaths
+        if p not in path
+          path.push(p)
+      env.PATH = path.join(';')
+    else
+      path = env.PATH.split(':')
+      if pythonPath and pythonPath not in path
+        path.unshift(pythonPath)
+      for p in unixPaths
+        if p not in path
+          path.push(p)
+      env.PATH = path.join(':')
+
     @provider = require('child_process').spawn(
-      'python', [__dirname + '/completion.py'])
+      'python', [__dirname + '/completion.py'], env: env)
 
     @provider.on 'error', (err) =>
       console.error "Python Provider error: #{err}"
       if err.code == 'ENOENT'
-        throw "Cannot run python command: check that python is available in the system (path: #{process.env.PATH}): #{err}"
+        atom.notifications.addError(
+          'autocomplete-python unable to find python executable: please set ' +
+          'the path to python directory manually in package settings and ' +
+          'restart your editor. If issue persists please report it at: ' +
+          'https://github.com/sadovnychyi/autocomplete-python/issues/new', {
+            detail: err,
+            dismissable: true})
       else
         throw "Python Provider error: #{err}"
     @provider.on 'exit', (code, signal) =>
