@@ -21,9 +21,9 @@ This is powered by [Jedi](https://github.com/davidhalter/jedi).
 
 # Installation
 
-* Be sure to use Atom 0.199 or never.
+* Be sure to use Atom 0.199 or newer.
 * Install [autocomplete-python](https://github.com/sadovnychyi/autocomplete-python).
-* If you're on windows:
+* If you're on Windows:
   * Install [python](https://www.python.org/downloads/).
   * Make Sure that python is available in your PATH: `echo %PATH%`. If it's not, add it and restart your system: `set PATH=%PATH%;C:\Python27`.
 
