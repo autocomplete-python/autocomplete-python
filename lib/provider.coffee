@@ -5,8 +5,10 @@ module.exports =
   suggestionPriority: 2
   excludeLowerPriority: true
 
+  _issueReportLink: ['If issue persists please report it at https://github.com',
+                     '/sadovnychyi/autocomplete-python/issues/new'].join('')
+
   constructor: ->
-    console.debug 'Preparing python completions...'
     @requests = {}
 
     env = process.env
@@ -47,22 +49,28 @@ module.exports =
       'python', [__dirname + '/completion.py'], env: env)
 
     @provider.on 'error', (err) =>
-      console.error "Python Provider error: #{err}"
       if err.code == 'ENOENT'
-        atom.notifications.addError(
-          'autocomplete-python unable to find python executable: please set ' +
-          'the path to python directory manually in package settings and ' +
-          'restart your editor. If issue persists please report it at: ' +
-          'https://github.com/sadovnychyi/autocomplete-python/issues/new', {
+        atom.notifications.addWarning(
+          "autocomplete-python unable to find python executable: please set " +
+          "the path to python directory manually in the package settings and " +
+          "restart your editor. #{@_issueReportLink}", {
             detail: err,
             dismissable: true})
       else
-        throw "Python Provider error: #{err}"
+        atom.notifications.addError(
+          "autocomplete-python error. #{@_issueReportLink}", {
+            detail: err,
+            dismissable: true})
     @provider.on 'exit', (code, signal) =>
-      console.error "Python Provider exit with code #{code}, signal #{signal}"
-      throw "Python Provider exit with code #{code}, signal #{signal}"
+      atom.notifications.addError(
+        "autocomplete-python error. #{@_issueReportLink}", {
+          detail: "exit with code #{code}, signal #{signal}",
+          dismissable: true})
     @provider.stderr.on 'data', (err) ->
-      console.error "Python Provider error: #{err}"
+      atom.notifications.addError(
+        'autocomplete-python traceback output:', {
+          detail: "#{err}",
+          dismissable: true})
 
     @readline = require('readline').createInterface(input: @provider.stdout)
     @readline.on 'line', (response) => @_deserialize(response)
