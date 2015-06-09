@@ -27,7 +27,7 @@ module.exports =
                     'C:\\Program Files\\Python 3.4',
                     'C:\\Program Files\\Python 3.5']
     unixPaths = ['/usr/local/bin', '/usr/bin', '/bin', '/usr/sbin', '/sbin']
-
+    env.PATH = env.PATH or ''
     if /^win/.test(process.platform)
       path = env.PATH.split(';')
       if pythonPath and pythonPath not in path
