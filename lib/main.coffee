@@ -7,6 +7,11 @@ module.exports =
       default: true
       title: 'Case Insensitive Completion'
       description: 'The completion is by default case insensitive.'
+    outputProviderErrors:
+      type: 'boolean'
+      default: false
+      title: 'Output Provider Errors'
+      description: 'Select if you would like to see the provider errors when they happen. By default they are hidden. Note that critical errors are always shown.'
     addDotAfterModule:
       type: 'boolean'
       default: false

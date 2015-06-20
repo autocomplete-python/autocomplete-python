@@ -67,10 +67,11 @@ module.exports =
           detail: "exit with code #{code}, signal #{signal}",
           dismissable: true})
     @provider.stderr.on 'data', (err) ->
-      atom.notifications.addError(
-        'autocomplete-python traceback output:', {
-          detail: "#{err}",
-          dismissable: true})
+      if atom.config.get('autocomplete-python.outputProviderErrors')
+        atom.notifications.addError(
+          'autocomplete-python traceback output:', {
+            detail: "#{err}",
+            dismissable: true})
 
     @readline = require('readline').createInterface(input: @provider.stdout)
     @readline.on 'line', (response) => @_deserialize(response)
