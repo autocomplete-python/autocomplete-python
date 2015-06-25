@@ -62,10 +62,11 @@ module.exports =
             detail: err,
             dismissable: true})
     @provider.on 'exit', (code, signal) =>
-      atom.notifications.addError(
-        "autocomplete-python error. #{@_issueReportLink}", {
-          detail: "exit with code #{code}, signal #{signal}",
-          dismissable: true})
+      if signal != 'SIGTERM'
+        atom.notifications.addError(
+          "autocomplete-python provider exit. #{@_issueReportLink}", {
+            detail: "exit with code #{code}, signal #{signal}",
+            dismissable: true})
     @provider.stderr.on 'data', (err) ->
       if atom.config.get('autocomplete-python.outputProviderErrors')
         atom.notifications.addError(
