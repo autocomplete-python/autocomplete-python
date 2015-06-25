@@ -111,6 +111,8 @@ module.exports =
     return args
 
   getSuggestions: ({editor, bufferPosition, scopeDescriptor, prefix}) ->
+    if prefix not in ['.', ' '] and (prefix.length < 1 or /\W/.test(prefix))
+      return []
     payload =
       id: @_generateRequestId(editor, bufferPosition)
       path: editor.getPath()
