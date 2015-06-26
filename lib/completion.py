@@ -88,7 +88,7 @@ class JediCompletion(object):
     """
     _completions = []
     for completion in completions:
-      _completions.append({
+      _completion = {
         'text': '%s%s' % (completion.name[:completion._like_name_length],
                           completion.complete),
         'snippet': self._generate_snippet(completion),
@@ -97,9 +97,11 @@ class JediCompletion(object):
         # TODO: try to understand return value
         # 'leftLabel': '',
         'rightLabel': self._additional_info(completion),
-        'description': completion.docstring(),
+      }
+      if self.show_doc_strings:
+        _completion['description'] = completion.docstring()
         # 'descriptionMoreURL': completion.module_name
-      })
+      _completions.append(_completion)
     return json.dumps({'id': identifier, 'completions': _completions})
 
   def _deserialize(self, request):
@@ -124,6 +126,7 @@ class JediCompletion(object):
     """
     sys.path = self.default_sys_path
     self.use_snippets = config.get('useSnippets', False)
+    self.show_doc_strings = config.get('showDescriptions', True)
     jedi.settings.case_insensitive_completion = config.get(
       'caseInsensitiveCompletion', True)
     jedi.settings.add_dot_after_module = config.get(

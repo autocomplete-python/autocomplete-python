@@ -7,6 +7,11 @@ module.exports =
       default: true
       title: 'Case Insensitive Completion'
       description: 'The completion is by default case insensitive.'
+    showDescriptions:
+      type: 'boolean'
+      default: true
+      title: 'Show descriptions'
+      description: 'Show doc strings from functions, classes, etc.'
     outputProviderErrors:
       type: 'boolean'
       default: false
