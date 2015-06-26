@@ -27,4 +27,9 @@ This is powered by [Jedi](https://github.com/davidhalter/jedi).
   * Install [python](https://www.python.org/downloads/).
   * Make Sure that python is available in your PATH: `echo %PATH%`. If it's not, add it and restart your system: `set PATH=%PATH%;C:\Python27`.
 
+# Common problems
+
+* "Error: spawn UNKNOWN" on Windows.
+  * Solution: Find your python executable and uncheck the "Run this program as an administrator". See issue [#22](https://github.com/sadovnychyi/autocomplete-python/issues/22).
+
 Inspired by [autocomplete-plus-python-jedi](https://github.com/tinloaf/autocomplete-plus-python-jedi).
