@@ -69,11 +69,19 @@ class JediCompletion(object):
   def _generate_snippet(self, completion):
     """Generate Atom snippet with function arguments.
     """
-    if not self.use_snippets or not hasattr(completion, 'params'):
+    if self.use_snippets == 'none' or not hasattr(completion, 'params'):
       return
     arguments = []
     for i, param in enumerate(completion.params, start=1):
-      arguments.append('${%s:%s}' % (i, param.description))
+      try:
+        name, value = param.description.split('=')
+      except ValueError:
+        name = param.description
+        value = None
+      if not value:
+        arguments.append('${%s:%s}' % (i, name))
+      elif self.use_snippets == 'all':
+        arguments.append('%s=${%s:%s}' % (name, i, value))
     return '%s(%s)$0' % (completion.name, ', '.join(arguments))
 
   def _serialize(self, completions, identifier=None):
@@ -125,7 +133,7 @@ class JediCompletion(object):
       config: Dictionary with config values.
     """
     sys.path = self.default_sys_path
-    self.use_snippets = config.get('useSnippets', False)
+    self.use_snippets = config.get('useSnippets')
     self.show_doc_strings = config.get('showDescriptions', True)
     jedi.settings.case_insensitive_completion = config.get(
       'caseInsensitiveCompletion', True)
