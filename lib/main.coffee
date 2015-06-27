@@ -28,9 +28,10 @@ module.exports =
       title: 'Add Bracket After Function'
       description: 'Adds an opening bracket after a function, because that’s normal behaviour.'
     useSnippets:
-      type: 'boolean'
-      default: false
-      title: 'Complete with snippets'
+      type: 'string'
+      default: 'none'
+      enum: ['none', 'all', 'required']
+      title: 'Autocomplete Function Parameters'
       description: 'Allows to complete functions with their arguments. Use completion key to jump between arguments. Will ignore some settings if used.'
     pythonPath:
       type: 'string'
