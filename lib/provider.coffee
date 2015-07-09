@@ -1,3 +1,5 @@
+path = require 'path'
+
 module.exports =
   selector: '.source.python'
   disableForSelector: '.source.python .comment, .source.python .string'
@@ -14,36 +16,27 @@ module.exports =
     env = process.env
     pythonPath = atom.config.get('autocomplete-python.pythonPath')
 
-    windowsPaths = ['C:\\Python2.7',
-                    'C:\\Python3.4',
-                    'C:\\Python3.5',
-                    'C:\\Program Files (x86)\\Python 2.7',
-                    'C:\\Program Files (x86)\\Python 3.4',
-                    'C:\\Program Files (x86)\\Python 3.5',
-                    'C:\\Program Files (x64)\\Python 2.7',
-                    'C:\\Program Files (x64)\\Python 3.4',
-                    'C:\\Program Files (x64)\\Python 3.5',
-                    'C:\\Program Files\\Python 2.7',
-                    'C:\\Program Files\\Python 3.4',
-                    'C:\\Program Files\\Python 3.5']
-    unixPaths = ['/usr/local/bin', '/usr/bin', '/bin', '/usr/sbin', '/sbin']
-    env.PATH = env.PATH or ''
-    if /^win/.test(process.platform)
-      path = env.PATH.split(';')
-      if pythonPath and pythonPath not in path
-        path.unshift(pythonPath)
-      for p in windowsPaths
-        if p not in path
-          path.push(p)
-      env.PATH = path.join(';')
-    else
-      path = env.PATH.split(':')
-      if pythonPath and pythonPath not in path
-        path.unshift(pythonPath)
-      for p in unixPaths
-        if p not in path
-          path.push(p)
-      env.PATH = path.join(':')
+    if /^win/.test process.platform
+      paths = ['C:\\Python2.7',
+               'C:\\Python3.4',
+               'C:\\Python3.5',
+               'C:\\Program Files (x86)\\Python 2.7',
+               'C:\\Program Files (x86)\\Python 3.4',
+               'C:\\Program Files (x86)\\Python 3.5',
+               'C:\\Program Files (x64)\\Python 2.7',
+               'C:\\Program Files (x64)\\Python 3.4',
+               'C:\\Program Files (x64)\\Python 3.5',
+               'C:\\Program Files\\Python 2.7',
+               'C:\\Program Files\\Python 3.4',
+               'C:\\Program Files\\Python 3.5']
+    else:
+      paths = ['/usr/local/bin', '/usr/bin', '/bin', '/usr/sbin', '/sbin']
+    path_env = (env.PATH or '').split path.delimiter
+    path_env.unshift pythonPath if pythonPath and pythonPath not in path_env
+    for p in paths
+      if p not in path_env
+        path_env.push p
+    env.PATH = path_env.join path.delimiter
 
     @provider = require('child_process').spawn(
       'python', [__dirname + '/completion.py'], env: env)
