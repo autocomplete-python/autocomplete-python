@@ -1,4 +1,5 @@
 import os
+import io
 import sys
 import json
 import traceback
@@ -21,6 +22,7 @@ class JediCompletion(object):
 
   def __init__(self):
     self.default_sys_path = sys.path
+    self._input = io.TextIOWrapper(sys.stdin.buffer, encoding='utf-8')
 
   def _get_completion_type(self, completion):
     is_built_in = completion.in_builtin_module
@@ -174,7 +176,7 @@ class JediCompletion(object):
   def watch(self):
     while True:
       try:
-        self._process_request(sys.stdin.readline())
+        self._process_request(self._input.readline())
       except Exception:
         traceback.print_exc(file=sys.stderr)
 
