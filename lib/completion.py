@@ -22,7 +22,7 @@ class JediCompletion(object):
 
   def __init__(self):
     self.default_sys_path = sys.path
-    self._input = io.TextIOWrapper(sys.stdin.buffer, encoding='utf-8')
+    self._input = io.open(sys.stdin.fileno(), encoding='utf-8')
 
   def _get_completion_type(self, completion):
     is_built_in = completion.in_builtin_module
@@ -123,7 +123,7 @@ class JediCompletion(object):
     Returns:
       Python dictionary with request data.
     """
-    return json.loads(request)
+    return json.loads(request.decode('utf-8'))
 
   def _set_request_config(self, config):
     """Sets config values for current request including sys.path modifications.
@@ -170,7 +170,7 @@ class JediCompletion(object):
     self._write_response(self._serialize(completions, request['id']))
 
   def _write_response(self, response):
-    sys.stdout.write(response + '\n')
+    sys.stdout.write(response.encode('utf-8') + '\n')
     sys.stdout.flush()
 
   def watch(self):
