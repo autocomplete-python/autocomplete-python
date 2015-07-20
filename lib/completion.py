@@ -123,7 +123,7 @@ class JediCompletion(object):
     Returns:
       Python dictionary with request data.
     """
-    return json.loads(request.encode('utf-8'))
+    return json.loads(request)
 
   def _set_request_config(self, config):
     """Sets config values for current request including sys.path modifications.
