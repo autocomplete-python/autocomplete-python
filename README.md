@@ -23,6 +23,7 @@ This is powered by [Jedi](https://github.com/davidhalter/jedi).
 
 * Be sure to use Atom 0.199 or newer.
 * Install [autocomplete-python](https://github.com/sadovnychyi/autocomplete-python).
+* If using a [virtualenv](https://virtualenv.pypa.io/en/latest/) with third-party packages, be sure to launch Atom from the [activated virtualenv](https://virtualenv.pypa.io/en/latest/userguide.html#activate-script) to get completion for your third-party packages!
 * If you're on Windows:
   * Install [python](https://www.python.org/downloads/).
   * Make Sure that python is available in your PATH: `echo %PATH%`. If it's not, add it and restart your system: `set PATH=%PATH%;C:\Python27`.
