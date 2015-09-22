@@ -15,6 +15,7 @@ module.exports =
 
     env = process.env
     pythonPath = atom.config.get('autocomplete-python.pythonPath')
+    pythonExecutable = atom.config.get('autocomplete-python.pythonExecutable')
 
     if /^win/.test process.platform
       paths = ['C:\\Python2.7',
@@ -38,8 +39,10 @@ module.exports =
         path_env.push p
     env.PATH = path_env.join path.delimiter
 
+    pythonEx = if pythonExecutable then pythonExecutable else 'python'
+
     @provider = require('child_process').spawn(
-      'python', [__dirname + '/completion.py'], env: env)
+      pythonEx, [__dirname + '/completion.py'], env: env)
 
     @provider.on 'error', (err) =>
       if err.code == 'ENOENT'

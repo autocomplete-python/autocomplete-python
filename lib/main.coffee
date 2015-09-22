@@ -38,6 +38,11 @@ module.exports =
       default: ''
       title: 'Path to python directory'
       description: 'Optional. Set it if default values are not working for you or you want to use specific python version. For example: `/usr/local/Cellar/python/2.7.3/bin` or `E:\\Python2.7`'
+    pythonExecutable:
+      type: 'string'
+      default: ''
+      title: 'Python executable name'
+      description: 'Optional. Set it if default values are not working for you or you want to use specific python version. For example: `python3`'
     extraPaths:
       type: 'string'
       default: ''
