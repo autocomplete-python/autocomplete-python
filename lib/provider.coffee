@@ -73,13 +73,27 @@ module.exports =
     @readline = require('readline').createInterface(input: @provider.stdout)
     @readline.on 'line', (response) => @_deserialize(response)
 
+    atom.commands.add 'atom-text-editor[data-grammar~=python]', 'autocomplete-python:go-to-definition', =>
+      editor = atom.workspace.getActiveTextEditor()
+      bufferPosition = editor.getCursorBufferPosition()
+      @getDefinitions({editor, bufferPosition}).then (results) ->
+        if results.length == 0
+          atom.notifications.addWarning('Unable to go to definition')
+          return
+        definition = results[0]
+        promise = atom.workspace.open(definition.path)
+        console.log(definition)
+        promise.then (editor) ->
+            editor.setCursorBufferPosition([definition.line, definition.column])
+            editor.scrollToCursorPosition()
+
   _serialize: (request) ->
     return JSON.stringify(request)
 
   _deserialize: (response) ->
     response = JSON.parse(response)
     [resolve, reject] = @requests[response['id']]
-    resolve(response['completions'])
+    resolve(response['results'])
 
   _generateRequestId: (editor, bufferPosition) ->
     return require('crypto').createHash('md5').update([
@@ -113,6 +127,22 @@ module.exports =
       return []
     payload =
       id: @_generateRequestId(editor, bufferPosition)
+      lookup: 'completions'
+      path: editor.getPath()
+      source: editor.getText()
+      line: bufferPosition.row
+      column: bufferPosition.column
+      config: @_generateRequestConfig()
+
+    @provider.stdin.write(@_serialize(payload) + '\n')
+
+    return new Promise (resolve, reject) =>
+      @requests[payload.id] = [resolve, reject]
+
+  getDefinitions: ({editor, bufferPosition}) ->
+    payload =
+      id: @_generateRequestId(editor, bufferPosition)
+      lookup: 'definitions'
       path: editor.getPath()
       source: editor.getText()
       line: bufferPosition.row

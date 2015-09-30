@@ -87,7 +87,7 @@ class JediCompletion(object):
                 arguments.append('%s=${%s:%s}' % (name, i, value))
         return '%s(%s)$0' % (completion.name, ', '.join(arguments))
 
-    def _serialize(self, completions, identifier=None):
+    def _serialize_completions(self, completions, identifier=None):
         """Serialize response to be read from Atom.
 
         Args:
@@ -114,7 +114,32 @@ class JediCompletion(object):
                 _completion['description'] = completion.docstring()
                 # 'descriptionMoreURL': completion.module_name
             _completions.append(_completion)
-        return json.dumps({'id': identifier, 'completions': _completions})
+        return json.dumps({'id': identifier, 'results': _completions})
+
+    def _serialize_definitions(self, definitions, identifier=None):
+        """Serialize response to be read from Atom.
+
+        Args:
+          definitions: List of jedi.api.classes.Definition objects.
+          identifier: Unique completion identifier to pass back to Atom.
+
+        Returns:
+          Serialized string to send to Atom.
+        """
+        _definitions = []
+        for definition in definitions:
+            if definition.module_path:
+                _definition = {
+                    'text': definition.name,
+                    'path': definition.module_path,
+                    'line': definition.line - 1,
+                    'column': definition.column,
+                    'type': definition.type
+                }
+                if self.show_doc_strings:
+                    _definition['description'] = definition.docstring()
+                _definitions.append(_definition)
+        return json.dumps({'id': identifier, 'results': _definitions})
 
     def _deserialize(self, request):
         """Deserialize request from Atom.
@@ -160,17 +185,25 @@ class JediCompletion(object):
         path = self._get_top_level_module(request.get('path', ''))
         if path not in sys.path:
             sys.path.insert(0, path)
+        lookup = request.get('lookup', 'completions')
         try:
             script = jedi.api.Script(
                 source=request['source'], line=request['line'] + 1,
                 column=request['column'], path=request.get('path', ''))
-            completions = script.completions()
+            if lookup == 'definitions':
+                results = script.goto_definitions()
+            else:
+                results = script.completions()
         except KeyError:
-            completions = []
+            results = []
         except Exception:
             traceback.print_exc(file=sys.stderr)
-            completions = []
-        self._write_response(self._serialize(completions, request['id']))
+            results = []
+        if lookup == 'definitions':
+            response = self._serialize_definitions(results, request['id'])
+        else:
+            response = self._serialize_completions(results, request['id'])
+        self._write_response(response)
 
     def _write_response(self, response):
         sys.stdout.write(response + '\n')
