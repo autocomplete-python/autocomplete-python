@@ -13,9 +13,7 @@ MAX_LENGTH = 70
 class JediCompletion(object):
     basic_types = {
         'module': 'import',
-        'class': 'class',
         'instance': 'variable',
-        'function': 'function',
         'statement': 'value',
         'keyword': 'keyword',
     }
@@ -24,14 +22,13 @@ class JediCompletion(object):
         self.default_sys_path = sys.path
         self._input = io.open(sys.stdin.fileno(), encoding='utf-8')
 
-    def _get_completion_type(self, completion):
-        is_built_in = completion.in_builtin_module
-        if completion.type not in ['import', 'keyword'] and is_built_in():
+    def _get_definition_type(self, definition):
+        is_built_in = definition.in_builtin_module
+        if definition.type not in ['import', 'keyword'] and is_built_in():
             return 'builtin'
-        if completion.type in ['statement'] and completion.name.isupper():
+        if definition.type in ['statement'] and definition.name.isupper():
             return 'constant'
-        if completion.type in self.basic_types:
-            return self.basic_types.get(completion.type)
+        return self.basic_types.get(definition.type, definition.type)
 
     def _additional_info(self, completion):
         """Provide additional information about the completion object."""
@@ -105,7 +102,7 @@ class JediCompletion(object):
                                   completion.complete),
                 'snippet': self._generate_snippet(completion),
                 'displayText': completion.name,
-                'type': self._get_completion_type(completion),
+                'type': self._get_definition_type(completion),
                 # TODO: try to understand return value
                 # 'leftLabel': '',
                 'rightLabel': self._additional_info(completion),
@@ -134,7 +131,7 @@ class JediCompletion(object):
                     'path': definition.module_path,
                     'line': definition.line - 1,
                     'column': definition.column,
-                    'type': definition.type
+                    'type': self._get_definition_type(definition)
                 }
                 if self.show_doc_strings:
                     _definition['description'] = definition.docstring()
@@ -191,7 +188,7 @@ class JediCompletion(object):
                 source=request['source'], line=request['line'] + 1,
                 column=request['column'], path=request.get('path', ''))
             if lookup == 'definitions':
-                results = script.goto_definitions()
+                results = script.goto_assignments()
             else:
                 results = script.completions()
         except KeyError:

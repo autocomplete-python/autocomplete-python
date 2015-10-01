@@ -1,4 +1,5 @@
 path = require 'path'
+DefinitionsView = require './definitions-view'
 
 module.exports =
   selector: '.source.python'
@@ -12,6 +13,7 @@ module.exports =
 
   constructor: ->
     @requests = {}
+    @definitionsView = null
 
     env = process.env
     pythonPath = atom.config.get('autocomplete-python.pythonPath')
@@ -74,18 +76,14 @@ module.exports =
     @readline.on 'line', (response) => @_deserialize(response)
 
     atom.commands.add 'atom-text-editor[data-grammar~=python]', 'autocomplete-python:go-to-definition', =>
+      if @definitionsView
+        @definitionsView.destroy()
+        @definitionsView = null
+      @definitionsView = new DefinitionsView()
       editor = atom.workspace.getActiveTextEditor()
       bufferPosition = editor.getCursorBufferPosition()
-      @getDefinitions({editor, bufferPosition}).then (results) ->
-        if results.length == 0
-          atom.notifications.addWarning('Unable to go to definition')
-          return
-        definition = results[0]
-        promise = atom.workspace.open(definition.path)
-        console.log(definition)
-        promise.then (editor) ->
-            editor.setCursorBufferPosition([definition.line, definition.column])
-            editor.scrollToCursorPosition()
+      @getDefinitions({editor, bufferPosition}).then (results) =>
+        @definitionsView.setItems(results)
 
   _serialize: (request) ->
     return JSON.stringify(request)
