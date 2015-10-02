@@ -1,5 +1,5 @@
+fs = require 'fs'
 path = require 'path'
-DefinitionsView = require './definitions-view'
 
 module.exports =
   selector: '.source.python'
@@ -14,6 +14,7 @@ module.exports =
   constructor: ->
     @requests = {}
     @definitionsView = null
+    @interpretersView = null
 
     env = process.env
     pythonPath = atom.config.get('autocomplete-python.pythonPath')
@@ -76,14 +77,46 @@ module.exports =
     @readline.on 'line', (response) => @_deserialize(response)
 
     atom.commands.add 'atom-text-editor[data-grammar~=python]', 'autocomplete-python:go-to-definition', =>
+      DefinitionsView = require './definitions-view'
       if @definitionsView
         @definitionsView.destroy()
-        @definitionsView = null
       @definitionsView = new DefinitionsView()
       editor = atom.workspace.getActiveTextEditor()
       bufferPosition = editor.getCursorBufferPosition()
       @getDefinitions({editor, bufferPosition}).then (results) =>
         @definitionsView.setItems(results)
+
+    atom.commands.add 'atom-text-editor[data-grammar~=python]', 'autocomplete-python:set-interpreter', =>
+      InterpretersView = require './interpreters-view'
+      if @interpretersView
+        @interpretersView.destroy()
+      @interpretersView = new InterpretersView()
+      globalInterpreters = []
+      projectInterpreters = []
+      tryBinary = (potentialInterpreter, bucket) =>
+        if potentialInterpreter not in bucket
+          fs.access potentialInterpreter, fs.X_OK, (err) =>
+            if err
+              return
+            if potentialInterpreter not in bucket
+              bucket.push(potentialInterpreter)
+              bucket.sort()
+              @interpretersView.setItems(projectInterpreters.concat(globalInterpreters))
+      checkDir = (potentialPath) =>
+        fs.readdir potentialPath, (err, files) ->
+          matches = (fileName for fileName in files when /^python(\d+\.\d+)?$/.test(fileName))
+          for fileName in matches
+            target = path.join(potentialPath, fileName)
+            tryBinary(target, globalInterpreters)
+      checkProject = (project) =>
+        fs.readdir project, (err, files) =>
+          for fileName in files
+            target = path.join(project, fileName, 'bin/python')
+            tryBinary(target, projectInterpreters)
+      for potentialPath in path_env
+        checkDir(potentialPath)
+      for project in atom.project.getPaths()
+        checkProject(project)
 
   _serialize: (request) ->
     return JSON.stringify(request)
