@@ -13,9 +13,7 @@ MAX_LENGTH = 70
 class JediCompletion(object):
     basic_types = {
         'module': 'import',
-        'class': 'class',
         'instance': 'variable',
-        'function': 'function',
         'statement': 'value',
         'keyword': 'keyword',
     }
@@ -24,14 +22,13 @@ class JediCompletion(object):
         self.default_sys_path = sys.path
         self._input = io.open(sys.stdin.fileno(), encoding='utf-8')
 
-    def _get_completion_type(self, completion):
-        is_built_in = completion.in_builtin_module
-        if completion.type not in ['import', 'keyword'] and is_built_in():
+    def _get_definition_type(self, definition):
+        is_built_in = definition.in_builtin_module
+        if definition.type not in ['import', 'keyword'] and is_built_in():
             return 'builtin'
-        if completion.type in ['statement'] and completion.name.isupper():
+        if definition.type in ['statement'] and definition.name.isupper():
             return 'constant'
-        if completion.type in self.basic_types:
-            return self.basic_types.get(completion.type)
+        return self.basic_types.get(definition.type, definition.type)
 
     def _additional_info(self, completion):
         """Provide additional information about the completion object."""
@@ -87,7 +84,7 @@ class JediCompletion(object):
                 arguments.append('%s=${%s:%s}' % (name, i, value))
         return '%s(%s)$0' % (completion.name, ', '.join(arguments))
 
-    def _serialize(self, completions, identifier=None):
+    def _serialize_completions(self, completions, identifier=None):
         """Serialize response to be read from Atom.
 
         Args:
@@ -105,7 +102,7 @@ class JediCompletion(object):
                                   completion.complete),
                 'snippet': self._generate_snippet(completion),
                 'displayText': completion.name,
-                'type': self._get_completion_type(completion),
+                'type': self._get_definition_type(completion),
                 # TODO: try to understand return value
                 # 'leftLabel': '',
                 'rightLabel': self._additional_info(completion),
@@ -114,7 +111,32 @@ class JediCompletion(object):
                 _completion['description'] = completion.docstring()
                 # 'descriptionMoreURL': completion.module_name
             _completions.append(_completion)
-        return json.dumps({'id': identifier, 'completions': _completions})
+        return json.dumps({'id': identifier, 'results': _completions})
+
+    def _serialize_definitions(self, definitions, identifier=None):
+        """Serialize response to be read from Atom.
+
+        Args:
+          definitions: List of jedi.api.classes.Definition objects.
+          identifier: Unique completion identifier to pass back to Atom.
+
+        Returns:
+          Serialized string to send to Atom.
+        """
+        _definitions = []
+        for definition in definitions:
+            if definition.module_path:
+                _definition = {
+                    'text': definition.name,
+                    'path': definition.module_path,
+                    'line': definition.line - 1,
+                    'column': definition.column,
+                    'type': self._get_definition_type(definition)
+                }
+                if self.show_doc_strings:
+                    _definition['description'] = definition.docstring()
+                _definitions.append(_definition)
+        return json.dumps({'id': identifier, 'results': _definitions})
 
     def _deserialize(self, request):
         """Deserialize request from Atom.
@@ -160,17 +182,25 @@ class JediCompletion(object):
         path = self._get_top_level_module(request.get('path', ''))
         if path not in sys.path:
             sys.path.insert(0, path)
+        lookup = request.get('lookup', 'completions')
         try:
             script = jedi.api.Script(
                 source=request['source'], line=request['line'] + 1,
                 column=request['column'], path=request.get('path', ''))
-            completions = script.completions()
+            if lookup == 'definitions':
+                results = script.goto_assignments()
+            else:
+                results = script.completions()
         except KeyError:
-            completions = []
+            results = []
         except Exception:
             traceback.print_exc(file=sys.stderr)
-            completions = []
-        self._write_response(self._serialize(completions, request['id']))
+            results = []
+        if lookup == 'definitions':
+            response = self._serialize_definitions(results, request['id'])
+        else:
+            response = self._serialize_completions(results, request['id'])
+        self._write_response(response)
 
     def _write_response(self, response):
         sys.stdout.write(response + '\n')
