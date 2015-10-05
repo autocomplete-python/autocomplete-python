@@ -128,7 +128,7 @@ class JediCompletion(object):
             if definition.module_path:
                 _definition = {
                     'text': definition.name,
-                    'path': definition.module_path,
+                    'fileName': definition.module_path,
                     'line': definition.line - 1,
                     'column': definition.column,
                     'type': self._get_definition_type(definition)

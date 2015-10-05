@@ -1,4 +1,5 @@
 {$$, SelectListView} = require 'atom-space-pen-views'
+path = require 'path'
 
 module.exports =
 class DefinitionsView extends SelectListView
@@ -14,13 +15,18 @@ class DefinitionsView extends SelectListView
     @cancel()
     @panel.destroy()
 
-  viewForItem: ({text, path, line, column, type}) ->
+  viewForItem: ({text, fileName, line, column, type}) ->
+    for projectPath in atom.project.getPaths()
+      relativePath = path.relative(projectPath, fileName)
+      if relativePath.indexOf('..') != 0
+        fileName = relativePath
+        break
     return $$ ->
       @li class: 'two-lines', =>
         @div "#{type} #{text}", class: 'primary-line'
-        @div "#{path}, line #{line}", class: 'secondary-line'
+        @div "#{fileName}, line #{line}", class: 'secondary-line'
 
-  getFilterKey: -> 'path'
+  getFilterKey: -> 'fileName'
 
   getEmptyMessage: (itemCount) ->
     if itemCount is 0
@@ -28,10 +34,10 @@ class DefinitionsView extends SelectListView
     else
       super
 
-  confirmed: ({path, line, column}) ->
+  confirmed: ({fileName, line, column}) ->
     @cancelPosition = null
     @cancel()
-    promise = atom.workspace.open(path)
+    promise = atom.workspace.open(fileName)
     promise.then (editor) ->
       editor.setCursorBufferPosition([line, column])
       editor.scrollToCursorPosition()
