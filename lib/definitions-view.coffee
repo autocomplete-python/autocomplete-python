@@ -24,7 +24,7 @@ class DefinitionsView extends SelectListView
     return $$ ->
       @li class: 'two-lines', =>
         @div "#{type} #{text}", class: 'primary-line'
-        @div "#{fileName}, line #{line}", class: 'secondary-line'
+        @div "#{fileName}, line #{line + 1}", class: 'secondary-line'
 
   getFilterKey: -> 'fileName'
 
