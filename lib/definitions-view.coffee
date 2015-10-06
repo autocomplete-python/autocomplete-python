@@ -16,15 +16,11 @@ class DefinitionsView extends SelectListView
     @panel.destroy()
 
   viewForItem: ({text, fileName, line, column, type}) ->
-    for projectPath in atom.project.getPaths()
-      relativePath = path.relative(projectPath, fileName)
-      if relativePath.indexOf('..') != 0
-        fileName = relativePath
-        break
+    [_, relativePath] = atom.project.relativizePath(fileName)
     return $$ ->
       @li class: 'two-lines', =>
         @div "#{type} #{text}", class: 'primary-line'
-        @div "#{fileName}, line #{line + 1}", class: 'secondary-line'
+        @div "#{relativePath}, line #{line + 1}", class: 'secondary-line'
 
   getFilterKey: -> 'fileName'
 
