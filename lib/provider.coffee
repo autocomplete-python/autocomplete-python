@@ -78,12 +78,13 @@ module.exports =
     atom.commands.add 'atom-text-editor[data-grammar~=python]', 'autocomplete-python:go-to-definition', =>
       if @definitionsView
         @definitionsView.destroy()
-        @definitionsView = null
       @definitionsView = new DefinitionsView()
       editor = atom.workspace.getActiveTextEditor()
       bufferPosition = editor.getCursorBufferPosition()
       @getDefinitions({editor, bufferPosition}).then (results) =>
         @definitionsView.setItems(results)
+        if results.length == 1
+          @definitionsView.confirmed(results[0])
 
   _serialize: (request) ->
     return JSON.stringify(request)
