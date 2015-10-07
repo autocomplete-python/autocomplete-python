@@ -5,6 +5,7 @@ module.exports =
 class DefinitionsView extends SelectListView
   initialize: (matches) ->
     super
+    @storeFocusedElement()
     @addClass('symbols-view')
     @panel ?= atom.workspace.addModalPanel(item: this)
     @panel.show()
@@ -39,4 +40,4 @@ class DefinitionsView extends SelectListView
       editor.scrollToCursorPosition()
 
   cancelled: ->
-    @panel.hide()
+    @panel?.hide()
