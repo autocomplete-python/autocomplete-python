@@ -17,7 +17,7 @@ This is powered by [Jedi](https://github.com/davidhalter/jedi).
 * Highlights builtin functions and variables with special style
 * Prints first N characters of statement value while completing variables
 * Prints function arguments while completing functions
-* Go-to-definition functionality, by default on `Ctrl+Cmd+G`/`Ctrl+Alt+G` (thanks to [@patrys](https://github.com/patrys))
+* Go-to-definition functionality, by default on `Alt+Cmd+G`/`Ctrl+Alt+G` (thanks to [@patrys](https://github.com/patrys))
 
 # Installation
 
@@ -39,4 +39,3 @@ This is powered by [Jedi](https://github.com/davidhalter/jedi).
 
 * "Error: spawn UNKNOWN" on Windows.
   * Solution: Find your python executable and uncheck the "Run this program as an administrator". See issue [#22](https://github.com/sadovnychyi/autocomplete-python/issues/22).
-
