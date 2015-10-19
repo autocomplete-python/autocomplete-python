@@ -9,7 +9,6 @@ import jedi
 sys.path.pop(0)
 
 unicode = str if 'unicode' not in dir(__builtins__) else unicode
-MAX_LENGTH = 70
 
 
 class JediCompletion(object):
@@ -36,24 +35,13 @@ class JediCompletion(object):
         """Provide additional information about the completion object."""
         if completion._definition is None:
             return ''
-        t = completion.type
-        if t == 'statement':
+        if completion.type == 'statement':
             nodes_to_display = ['InstanceElement', 'String', 'Node', 'Lambda',
                                 'Number']
-            desc = ''.join(c.get_code() for c in
+            return ''.join(c.get_code() for c in
                            completion._definition.children if type(c).__name__
                            in nodes_to_display).replace('\n', '')
-        elif t == 'keyword':
-            desc = ''
-        elif t == 'function' and hasattr(completion, 'params'):
-            desc = ', '.join([p.description for p in completion.params])
-        elif t == 'import':
-            desc = ''
-        else:
-            desc = '.'.join(unicode(p) for p in completion._path())
-        line = '' if completion.in_builtin_module else '@%s' % completion.line
-        return ('%s: %s%s' % (t, desc, line))[:MAX_LENGTH -
-                                              len(completion.name)]
+        return ''
 
     @classmethod
     def _get_top_level_module(cls, path):
@@ -72,7 +60,7 @@ class JediCompletion(object):
         """Generate Atom snippet with function arguments.
         """
         if self.use_snippets == 'none' or not hasattr(completion, 'params'):
-            return
+            return completion.name
         arguments = []
         for i, param in enumerate(completion.params, start=1):
             try:
@@ -80,11 +68,22 @@ class JediCompletion(object):
             except ValueError:
                 name = param.description
                 value = None
+            if name.startswith('*'):
+                continue
             if not value:
                 arguments.append('${%s:%s}' % (i, name))
             elif self.use_snippets == 'all':
                 arguments.append('%s=${%s:%s}' % (name, i, value))
         return '%s(%s)$0' % (completion.name, ', '.join(arguments))
+
+    def _generate_signature(self, completion):
+        """Generate signature with function arguments.
+        """
+        if not hasattr(completion, 'params'):
+            return ''
+        return '%s(%s)' % (
+            completion.name,
+            ', '.join(param.description for param in completion.params))
 
     def _serialize_completions(self, completions, identifier=None):
         """Serialize response to be read from Atom.
@@ -99,19 +98,11 @@ class JediCompletion(object):
         _completions = []
         for completion in completions:
             _completion = {
-                'text': '%s%s' % (completion.name[
-                                  :completion._like_name_length],
-                                  completion.complete),
                 'snippet': self._generate_snippet(completion),
-                'displayText': completion.name,
                 'type': self._get_definition_type(completion),
-                # TODO: try to understand return value
-                # 'leftLabel': '',
+                'description': self._generate_signature(completion),
                 'rightLabel': self._additional_info(completion),
             }
-            if self.show_doc_strings:
-                _completion['description'] = completion.docstring()
-                # 'descriptionMoreURL': completion.module_name
             _completions.append(_completion)
         return json.dumps({'id': identifier, 'results': _completions})
 
@@ -130,13 +121,11 @@ class JediCompletion(object):
             if definition.module_path:
                 _definition = {
                     'text': definition.name,
+                    'type': self._get_definition_type(definition),
                     'fileName': definition.module_path,
                     'line': definition.line - 1,
-                    'column': definition.column,
-                    'type': self._get_definition_type(definition)
+                    'column': definition.column
                 }
-                if self.show_doc_strings:
-                    _definition['description'] = definition.docstring()
                 _definitions.append(_definition)
         return json.dumps({'id': identifier, 'results': _definitions})
 
@@ -163,7 +152,6 @@ class JediCompletion(object):
         """
         sys.path = self.default_sys_path
         self.use_snippets = config.get('useSnippets')
-        self.show_doc_strings = config.get('showDescriptions', True)
         jedi.settings.case_insensitive_completion = config.get(
             'caseInsensitiveCompletion', True)
         jedi.settings.add_dot_after_module = config.get(
