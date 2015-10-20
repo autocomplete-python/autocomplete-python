@@ -117,6 +117,8 @@ module.exports =
         'autocomplete-python.addDotAfterModule')
       'addBracketAfterFunction': atom.config.get(
         'autocomplete-python.addBracketAfterFunction')
+      'showDescriptions': atom.config.get(
+        'autocomplete-python.showDescriptions')
     return args
 
   getSuggestions: ({editor, bufferPosition, scopeDescriptor, prefix}) ->

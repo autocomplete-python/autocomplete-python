@@ -97,11 +97,15 @@ class JediCompletion(object):
         """
         _completions = []
         for completion in completions:
+            if self.show_doc_strings:
+                description = completion.docstring()
+            else:
+                description = self._generate_signature(completion)
             _completion = {
                 'snippet': self._generate_snippet(completion),
                 'type': self._get_definition_type(completion),
-                'description': self._generate_signature(completion),
-                'rightLabel': self._additional_info(completion),
+                'description': description,
+                'rightLabel': self._additional_info(completion)
             }
             _completions.append(_completion)
         return json.dumps({'id': identifier, 'results': _completions})
@@ -152,10 +156,13 @@ class JediCompletion(object):
         """
         sys.path = self.default_sys_path
         self.use_snippets = config.get('useSnippets')
+        self.show_doc_strings = config.get('showDescriptions', True)
         jedi.settings.case_insensitive_completion = config.get(
             'caseInsensitiveCompletion', True)
         jedi.settings.add_dot_after_module = config.get(
             'addDotAfterModule', False)
+        jedi.settings.add_bracket_after_function = config.get(
+            'addBracketAfterFunction', False)
         jedi.settings.add_bracket_after_function = config.get(
             'addBracketAfterFunction', False)
         for path in config.get('extraPaths', []):
