@@ -91,15 +91,20 @@ module.exports =
 
   _deserialize: (response) ->
     response = JSON.parse(response)
-    [resolve, reject] = @requests[response['id']]
-    resolve(response['results'])
+    if response['arguments']
+      console.log('Expanding function arguments:', response['arguments'])
+      editor = @requests[response['id']]
+      editor.insertText(response['arguments'])
+    else
+      resolve = @requests[response['id']]
+      resolve(response['results'])
 
   _generateRequestId: (editor, bufferPosition) ->
     return require('crypto').createHash('md5').update([
       editor.getPath(), editor.getText(), bufferPosition.row,
       bufferPosition.column].join()).digest('hex')
 
-  _generateRequestConfig: () ->
+  _generateRequestConfig: ->
     extraPaths = []
 
     for path in atom.config.get('autocomplete-python.extraPaths').split(';')
@@ -118,21 +123,27 @@ module.exports =
     return args
 
   getSuggestions: ({editor, bufferPosition, scopeDescriptor, prefix}) ->
-    if prefix not in ['.', ' '] and (prefix.length < 1 or /\W/.test(prefix))
-      return []
     payload =
       id: @_generateRequestId(editor, bufferPosition)
-      lookup: 'completions'
       path: editor.getPath()
       source: editor.getText()
       line: bufferPosition.row
       column: bufferPosition.column
       config: @_generateRequestConfig()
 
-    @provider.stdin.write(@_serialize(payload) + '\n')
+    if prefix == '('
+      payload['lookup'] = 'arguments'
+      @provider.stdin.write(@_serialize(payload) + '\n')
+      return new Promise =>
+        @requests[payload.id] = editor
 
-    return new Promise (resolve, reject) =>
-      @requests[payload.id] = [resolve, reject]
+    if prefix not in ['.', ' '] and (prefix.length < 1 or /\W/.test(prefix))
+      return []
+
+    payload['lookup'] = 'completions'
+    @provider.stdin.write(@_serialize(payload) + '\n')
+    return new Promise (resolve) =>
+      @requests[payload.id] = resolve
 
   getDefinitions: ({editor, bufferPosition}) ->
     payload =
@@ -146,8 +157,8 @@ module.exports =
 
     @provider.stdin.write(@_serialize(payload) + '\n')
 
-    return new Promise (resolve, reject) =>
-      @requests[payload.id] = [resolve, reject]
+    return new Promise (resolve) =>
+      @requests[payload.id] = resolve
 
   dispose: ->
     @readline.close()

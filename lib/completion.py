@@ -56,28 +56,6 @@ class JediCompletion(object):
             return cls._get_top_level_module(_path)
         return path
 
-    def _generate_snippet(self, completion):
-        """Generate Atom snippet with function arguments.
-        """
-        if self.context.split()[-1].lower() == 'import':
-            return '%s$0' % completion.name
-        if self.use_snippets == 'none' or not hasattr(completion, 'params'):
-            return '%s$0' % completion.name
-        arguments = []
-        for i, param in enumerate(completion.params, start=1):
-            try:
-                name, value = param.description.split('=')
-            except ValueError:
-                name = param.description
-                value = None
-            if name.startswith('*'):
-                continue
-            if not value:
-                arguments.append('${%s:%s}' % (i, name))
-            elif self.use_snippets == 'all':
-                arguments.append('%s=${%s:%s}' % (name, i, value))
-        return '%s(%s)$0' % (completion.name, ', '.join(arguments))
-
     def _generate_signature(self, completion):
         """Generate signature with function arguments.
         """
@@ -131,13 +109,45 @@ class JediCompletion(object):
             else:
                 description = self._generate_signature(completion)
             _completion = {
-                'snippet': self._generate_snippet(completion),
+                'text': completion.name,
                 'type': self._get_definition_type(completion),
                 'description': description,
                 'rightLabel': self._additional_info(completion)
             }
             _completions.append(_completion)
         return json.dumps({'id': identifier, 'results': _completions})
+
+    def _serialize_arguments(self, script, identifier=None):
+        """Serialize response to be read from Atom.
+
+        Args:
+          script: Instance of jedi.api.Script object.
+          identifier: Unique completion identifier to pass back to Atom.
+
+        Returns:
+          Serialized string to send to Atom.
+        """
+        arguments = []
+        i = 1
+        for call_signature in script.call_signatures():
+            for param in call_signature.params:
+                if not param.name:
+                    continue
+                try:
+                    name, value = param.description.split('=')
+                except ValueError:
+                    name = param.description
+                    value = None
+                if name.startswith('*'):
+                    continue
+                if not value:
+                    arguments.append('${%s:%s}' % (i, name))
+                elif self.use_snippets == 'all':
+                    arguments.append('%s=${%s:%s}' % (name, i, value))
+                i += 1
+        snippet = '%s$0' % ', '.join(arguments)
+        return json.dumps({'id': identifier, 'results': [],
+                           'arguments': snippet})
 
     def _serialize_definitions(self, definitions, identifier=None):
         """Serialize response to be read from Atom.
@@ -221,6 +231,9 @@ class JediCompletion(object):
         if lookup == 'definitions':
             return self._write_response(self._serialize_definitions(
                 script.goto_assignments(), request['id']))
+        elif lookup == 'arguments':
+            return self._write_response(self._serialize_arguments(
+                script, request['id']))
         else:
             return self._write_response(
                 self._serialize_completions(script, request['id']))
