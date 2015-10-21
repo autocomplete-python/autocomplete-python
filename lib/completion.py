@@ -60,7 +60,7 @@ class JediCompletion(object):
         """Generate Atom snippet with function arguments.
         """
         if self.context.split()[-1].lower() == 'import':
-          return
+            return completion.name
         if self.use_snippets == 'none' or not hasattr(completion, 'params'):
             return completion.name
         arguments = []
@@ -172,9 +172,13 @@ class JediCompletion(object):
                 sys.path.insert(0, path)
 
     def _get_completion_context(self, request):
-      """Returns string with everything before cursor on current line.
-      """
-      return request['source'].splitlines()[request['line']][:request['column']]
+        """Returns string with everything before cursor on current line.
+        """
+        try:
+          return request['source'].splitlines()[
+            request['line']][:request['column']]
+        except (KeyError, IndexError, AttributeError):
+            return ''
 
     def _process_request(self, request):
         """Accept serialized request from Atom and write response.
