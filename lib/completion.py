@@ -76,8 +76,10 @@ class JediCompletion(object):
         _completions = []
 
         for call_signature in script.call_signatures():
-            for param in call_signature.params:
+            for pos, param in enumerate(call_signature.params):
                 if not param.name:
+                    continue
+                if param.name == 'self' and pos == 0:
                     continue
                 try:
                     name, value = param.description.split('=')
@@ -126,8 +128,10 @@ class JediCompletion(object):
         arguments = []
         i = 1
         for call_signature in script.call_signatures():
-            for param in call_signature.params:
+            for pos, param in enumerate(call_signature.params):
                 if not param.name:
+                    continue
+                if param.name == 'self' and pos == 0:
                     continue
                 try:
                     name, value = param.description.split('=')
