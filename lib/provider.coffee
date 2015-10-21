@@ -1,6 +1,7 @@
 {Disposable, CompositeDisposable} = require 'atom'
 path = require 'path'
 DefinitionsView = require './definitions-view'
+filter = undefined
 
 module.exports =
   selector: '.source.python'
@@ -161,20 +162,27 @@ module.exports =
   getSuggestions: ({editor, bufferPosition, scopeDescriptor, prefix}) ->
     if prefix not in ['.', ' '] and (prefix.length < 1 or /\W/.test(prefix))
       return []
+    # we want to do our own filtering, hide any existing prefix from Jedi
+    line = editor.getTextInRange([[bufferPosition.row, 0], bufferPosition])
+    lastIdentifier = /[a-zA-Z_][a-zA-Z0-9_]*$/.exec(line)
+    column = if lastIdentifier then lastIdentifier.index else bufferPosition.column
     payload =
       id: @_generateRequestId(editor, bufferPosition)
-      prefix: prefix
       lookup: 'completions'
       path: editor.getPath()
       source: editor.getText()
       line: bufferPosition.row
-      column: bufferPosition.column
+      column: column
       config: @_generateRequestConfig()
 
     @provider.stdin.write(@_serialize(payload) + '\n')
 
     return new Promise (resolve) =>
-      @requests[payload.id] = resolve
+      @requests[payload.id] = (matches) =>
+        if matches.length isnt 0 and prefix isnt '.'
+          filter ?= require('fuzzaldrin').filter
+          matches = filter(matches, prefix, key: 'snippet')
+        resolve(matches)
 
   getDefinitions: ({editor, bufferPosition}) ->
     payload =
