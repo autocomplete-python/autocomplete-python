@@ -163,6 +163,7 @@ module.exports =
       return []
     payload =
       id: @_generateRequestId(editor, bufferPosition)
+      prefix: prefix
       lookup: 'completions'
       path: editor.getPath()
       source: editor.getText()

@@ -63,12 +63,13 @@ class JediCompletion(object):
             completion.name,
             ', '.join(param.description for param in completion.params))
 
-    def _serialize_completions(self, script, identifier=None):
+    def _serialize_completions(self, script, identifier=None, prefix=''):
         """Serialize response to be read from Atom.
 
         Args:
           script: Instance of jedi.api.Script object.
           identifier: Unique completion identifier to pass back to Atom.
+          prefix: String with prefix to filter function arguments.
 
         Returns:
           Serialized string to send to Atom.
@@ -84,7 +85,7 @@ class JediCompletion(object):
                 except ValueError:
                     name = param.description
                     value = None
-                if name.startswith('*'):
+                if not name.lower().startswith(prefix.lower()):
                     continue
                 _completion = {
                     'type': 'property',
@@ -234,7 +235,8 @@ class JediCompletion(object):
                 script, request['id']))
         else:
             return self._write_response(
-                self._serialize_completions(script, request['id']))
+                self._serialize_completions(script, request['id'],
+                                            request['prefix']))
 
     def _write_response(self, response):
         sys.stdout.write(response + '\n')
