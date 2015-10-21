@@ -1,5 +1,7 @@
+{Disposable, CompositeDisposable} = require 'atom'
 path = require 'path'
 DefinitionsView = require './definitions-view'
+filter = undefined
 
 module.exports =
   selector: '.source.python'
@@ -14,6 +16,7 @@ module.exports =
   constructor: ->
     @requests = {}
     @definitionsView = null
+    @snippetsManager = null
 
     env = process.env
     pythonPath = atom.config.get('autocomplete-python.pythonPath')
@@ -75,7 +78,9 @@ module.exports =
     @readline = require('readline').createInterface(input: @provider.stdout)
     @readline.on 'line', (response) => @_deserialize(response)
 
-    atom.commands.add 'atom-text-editor[data-grammar~=python]', 'autocomplete-python:go-to-definition', =>
+    editorSelector = 'atom-text-editor[data-grammar~=python]'
+    commandName = 'autocomplete-python:go-to-definition'
+    atom.commands.add editorSelector, commandName, =>
       if @definitionsView
         @definitionsView.destroy()
       @definitionsView = new DefinitionsView()
@@ -86,20 +91,40 @@ module.exports =
         if results.length == 1
           @definitionsView.confirmed(results[0])
 
+    disposables = new CompositeDisposable()
+    addEventListener = (editor, eventName, handler) ->
+      editorView = atom.views.getView editor
+      editorView.addEventListener eventName, handler
+      new Disposable ->
+        editor.removeEventListener eventName, handler
+    atom.workspace.observeTextEditors (editor) =>
+      if editor.getGrammar().scopeName == 'source.python'
+        disposables.add addEventListener editor, 'keyup', (event) =>
+          if event.shiftKey and event.keyCode == 57
+            @_completeArguments(editor, editor.getCursorBufferPosition())
+
   _serialize: (request) ->
     return JSON.stringify(request)
 
   _deserialize: (response) ->
     response = JSON.parse(response)
-    [resolve, reject] = @requests[response['id']]
-    resolve(response['results'])
+    if response['arguments']
+      editor = @requests[response['id']]
+      bufferPosition = editor.getCursorBufferPosition()
+      # Compare response ID with current state to avoid stale completions
+      if response['id'] == @_generateRequestId(editor, bufferPosition)
+        @snippetsManager?.insertSnippet(response['arguments'], editor)
+    else
+      resolve = @requests[response['id']]
+      resolve(response['results'])
+    delete @requests[response['id']]
 
   _generateRequestId: (editor, bufferPosition) ->
     return require('crypto').createHash('md5').update([
       editor.getPath(), editor.getText(), bufferPosition.row,
       bufferPosition.column].join()).digest('hex')
 
-  _generateRequestConfig: () ->
+  _generateRequestConfig: ->
     extraPaths = []
 
     for path in atom.config.get('autocomplete-python.extraPaths').split(';')
@@ -117,12 +142,12 @@ module.exports =
         'autocomplete-python.showDescriptions')
     return args
 
-  getSuggestions: ({editor, bufferPosition, scopeDescriptor, prefix}) ->
-    if prefix not in ['.', ' '] and (prefix.length < 1 or /\W/.test(prefix))
-      return []
+  setSnippetsManager: (@snippetsManager) ->
+
+  _completeArguments: (editor, bufferPosition) ->
     payload =
       id: @_generateRequestId(editor, bufferPosition)
-      lookup: 'completions'
+      lookup: 'arguments'
       path: editor.getPath()
       source: editor.getText()
       line: bufferPosition.row
@@ -131,8 +156,33 @@ module.exports =
 
     @provider.stdin.write(@_serialize(payload) + '\n')
 
-    return new Promise (resolve, reject) =>
-      @requests[payload.id] = [resolve, reject]
+    return new Promise =>
+      @requests[payload.id] = editor
+
+  getSuggestions: ({editor, bufferPosition, scopeDescriptor, prefix}) ->
+    if prefix not in ['.', ' '] and (prefix.length < 1 or /\W/.test(prefix))
+      return []
+    # we want to do our own filtering, hide any existing prefix from Jedi
+    line = editor.getTextInRange([[bufferPosition.row, 0], bufferPosition])
+    lastIdentifier = /[a-zA-Z_][a-zA-Z0-9_]*$/.exec(line)
+    column = if lastIdentifier then lastIdentifier.index else bufferPosition.column
+    payload =
+      id: @_generateRequestId(editor, bufferPosition)
+      lookup: 'completions'
+      path: editor.getPath()
+      source: editor.getText()
+      line: bufferPosition.row
+      column: column
+      config: @_generateRequestConfig()
+
+    @provider.stdin.write(@_serialize(payload) + '\n')
+
+    return new Promise (resolve) =>
+      @requests[payload.id] = (matches) =>
+        if matches.length isnt 0 and prefix isnt '.'
+          filter ?= require('fuzzaldrin').filter
+          matches = filter(matches, prefix, key: 'snippet')
+        resolve(matches)
 
   getDefinitions: ({editor, bufferPosition}) ->
     payload =
@@ -146,8 +196,8 @@ module.exports =
 
     @provider.stdin.write(@_serialize(payload) + '\n')
 
-    return new Promise (resolve, reject) =>
-      @requests[payload.id] = [resolve, reject]
+    return new Promise (resolve) =>
+      @requests[payload.id] = resolve
 
   dispose: ->
     @readline.close()

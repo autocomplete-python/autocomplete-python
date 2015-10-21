@@ -52,7 +52,8 @@ describe 'Python autocompletions', ->
               if completion.type == 'keyword'
                 expect(completion.snippet).toBe 'import$0'
               expect(completion.snippet.length).toBeGreaterThan 0
-            expect(completions.length).toBe 3
+            console.log completions
+            expect(completions.length).toBe 5
 
       it 'autocompletes defined functions', ->
         editor.setText """
