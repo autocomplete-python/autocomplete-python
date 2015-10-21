@@ -161,10 +161,6 @@ class JediCompletion(object):
         self.show_doc_strings = config.get('showDescriptions', True)
         jedi.settings.case_insensitive_completion = config.get(
             'caseInsensitiveCompletion', True)
-        jedi.settings.add_dot_after_module = config.get(
-            'addDotAfterModule', False)
-        jedi.settings.add_bracket_after_function = config.get(
-            'addBracketAfterFunction', False)
         for path in config.get('extraPaths', []):
             if path and path not in sys.path:
                 sys.path.insert(0, path)

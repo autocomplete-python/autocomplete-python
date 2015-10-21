@@ -17,16 +17,6 @@ module.exports =
       default: false
       title: 'Output Provider Errors'
       description: 'Select if you would like to see the provider errors when they happen. By default they are hidden. Note that critical errors are always shown.'
-    addDotAfterModule:
-      type: 'boolean'
-      default: false
-      title: 'Add Dot After Module'
-      description: 'Adds a dot after a module, because a module that is not accessed this way is definitely not the normal case.'
-    addBracketAfterFunction:
-      type: 'boolean'
-      default: false
-      title: 'Add Bracket After Function'
-      description: 'Adds an opening bracket after a function, because that’s normal behaviour.'
     useSnippets:
       type: 'string'
       default: 'none'
