@@ -102,7 +102,11 @@ class JediCompletion(object):
                       call_signature)
                 _completions.append(_completion)
 
-        for completion in script.completions():
+        try:
+          completions = script.completions()
+        except KeyError:
+          completions = []
+        for completion in completions:
             if self.show_doc_strings:
                 description = completion.docstring()
             else:
