@@ -87,18 +87,45 @@ class JediCompletion(object):
             completion.name,
             ', '.join(param.description for param in completion.params))
 
-    def _serialize_completions(self, completions, identifier=None):
+    def _serialize_completions(self, script, identifier=None):
         """Serialize response to be read from Atom.
 
         Args:
-          completions: List of jedi.api.classes.Completion objects.
+          script: Instance of jedi.api.Script object.
           identifier: Unique completion identifier to pass back to Atom.
 
         Returns:
           Serialized string to send to Atom.
         """
         _completions = []
-        for completion in completions:
+
+        for call_signature in script.call_signatures():
+            for param in call_signature.params:
+                if not param.name:
+                    continue
+                try:
+                    name, value = param.description.split('=')
+                except ValueError:
+                    name = param.description
+                    value = None
+                if name.startswith('*'):
+                    continue
+                _completion = {
+                    'type': 'property',
+                    'rightLabel': self._additional_info(call_signature)
+                }
+                if value:
+                    _completion['snippet'] = '%s=${1:%s}$0' % (name, value)
+                else:
+                    _completion['snippet'] = '%s$0' % name
+                if self.show_doc_strings:
+                    _completion['description'] = call_signature.docstring()
+                else:
+                    _completion['description'] = self._generate_signature(
+                      call_signature)
+                _completions.append(_completion)
+
+        for completion in script.completions():
             if self.show_doc_strings:
                 description = completion.docstring()
             else:
@@ -186,24 +213,17 @@ class JediCompletion(object):
         if path not in sys.path:
             sys.path.insert(0, path)
         lookup = request.get('lookup', 'completions')
-        try:
-            script = jedi.api.Script(
-                source=request['source'], line=request['line'] + 1,
-                column=request['column'], path=request.get('path', ''))
-            if lookup == 'definitions':
-                results = script.goto_assignments()
-            else:
-                results = script.completions()
-        except KeyError:
-            results = []
-        except Exception:
-            traceback.print_exc(file=sys.stderr)
-            results = []
+
+        script = jedi.api.Script(
+            source=request['source'], line=request['line'] + 1,
+            column=request['column'], path=request.get('path', ''))
+
         if lookup == 'definitions':
-            response = self._serialize_definitions(results, request['id'])
+            return self._write_response(self._serialize_definitions(
+                script.goto_assignments(), request['id']))
         else:
-            response = self._serialize_completions(results, request['id'])
-        self._write_response(response)
+            return self._write_response(
+                self._serialize_completions(script, request['id']))
 
     def _write_response(self, response):
         sys.stdout.write(response + '\n')
