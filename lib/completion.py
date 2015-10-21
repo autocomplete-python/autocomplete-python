@@ -60,9 +60,9 @@ class JediCompletion(object):
         """Generate Atom snippet with function arguments.
         """
         if self.context.split()[-1].lower() == 'import':
-            return completion.name
+            return '%s$0' % completion.name
         if self.use_snippets == 'none' or not hasattr(completion, 'params'):
-            return completion.name
+            return '%s$0' % completion.name
         arguments = []
         for i, param in enumerate(completion.params, start=1):
             try:
@@ -163,8 +163,6 @@ class JediCompletion(object):
             'caseInsensitiveCompletion', True)
         jedi.settings.add_dot_after_module = config.get(
             'addDotAfterModule', False)
-        jedi.settings.add_bracket_after_function = config.get(
-            'addBracketAfterFunction', False)
         jedi.settings.add_bracket_after_function = config.get(
             'addBracketAfterFunction', False)
         for path in config.get('extraPaths', []):
