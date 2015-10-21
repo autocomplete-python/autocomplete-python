@@ -22,7 +22,7 @@ module.exports =
       default: 'none'
       enum: ['none', 'all', 'required']
       title: 'Autocomplete Function Parameters'
-      description: 'Allows to complete functions with their arguments. Use completion key to jump between arguments. Will ignore some settings if used.'
+      description: 'Allows to complete functions with their arguments. Use completion key to jump between arguments.'
     pythonPath:
       type: 'string'
       default: ''
