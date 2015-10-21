@@ -102,16 +102,16 @@ class JediCompletion(object):
                 _completions.append(_completion)
 
         try:
-          completions = script.completions()
+            completions = script.completions()
         except KeyError:
-          completions = []
+            completions = []
         for completion in completions:
             if self.show_doc_strings:
                 description = completion.docstring()
             else:
                 description = self._generate_signature(completion)
             _completion = {
-                'snippet': '%s$0' % (completion.name,),
+                'snippet': '%s$0' % completion.name,
                 'type': self._get_definition_type(completion),
                 'description': description,
                 'rightLabel': self._additional_info(completion)
