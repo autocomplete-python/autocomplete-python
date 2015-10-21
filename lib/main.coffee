@@ -48,3 +48,6 @@ module.exports =
   deactivate: -> provider.dispose()
 
   getProvider: -> provider
+
+  consumeSnippets: (snippetsManager) ->
+    provider.setSnippetsManager snippetsManager

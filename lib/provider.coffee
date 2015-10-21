@@ -14,6 +14,7 @@ module.exports =
   constructor: ->
     @requests = {}
     @definitionsView = null
+    @snippetsManager = null
 
     env = process.env
     pythonPath = atom.config.get('autocomplete-python.pythonPath')
@@ -94,7 +95,7 @@ module.exports =
     if response['arguments']
       console.log('Expanding function arguments:', response['arguments'])
       editor = @requests[response['id']]
-      editor.insertText(response['arguments'])
+      @snippetsManager?.insertSnippet(response['arguments'], editor)
     else
       resolve = @requests[response['id']]
       resolve(response['results'])
@@ -121,6 +122,8 @@ module.exports =
       'showDescriptions': atom.config.get(
         'autocomplete-python.showDescriptions')
     return args
+
+  setSnippetsManager: (@snippetsManager) ->
 
   getSuggestions: ({editor, bufferPosition, scopeDescriptor, prefix}) ->
     payload =
