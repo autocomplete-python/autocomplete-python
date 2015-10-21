@@ -20,6 +20,13 @@
       }
     }
   },
+  "consumedServices": {
+    "snippets": {
+      "versions": {
+        "0.1.0": "consumeSnippets"
+      }
+    }
+  },
   "contributors": [
     {
       "name": "Dmitry Sadovnychyi",
