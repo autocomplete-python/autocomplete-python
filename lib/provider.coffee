@@ -145,6 +145,8 @@ module.exports =
   setSnippetsManager: (@snippetsManager) ->
 
   _completeArguments: (editor, bufferPosition) ->
+    if atom.config.get('autocomplete-python.useSnippets') == 'none'
+      return
     payload =
       id: @_generateRequestId(editor, bufferPosition)
       lookup: 'arguments'
