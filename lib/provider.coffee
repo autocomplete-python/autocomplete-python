@@ -108,12 +108,15 @@ module.exports =
   _deserialize: (response) ->
     response = JSON.parse(response)
     if response['arguments']
-      console.log('Expanding function arguments:', response['arguments'])
       editor = @requests[response['id']]
-      @snippetsManager?.insertSnippet(response['arguments'], editor)
+      bufferPosition = editor.getCursorBufferPosition()
+      # Compare response ID with current state to avoid stale completions
+      if response['id'] == @_generateRequestId(editor, bufferPosition)
+        @snippetsManager?.insertSnippet(response['arguments'], editor)
     else
       resolve = @requests[response['id']]
       resolve(response['results'])
+    delete @requests[response['id']]
 
   _generateRequestId: (editor, bufferPosition) ->
     return require('crypto').createHash('md5').update([
