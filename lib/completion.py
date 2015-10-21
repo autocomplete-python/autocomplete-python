@@ -63,13 +63,12 @@ class JediCompletion(object):
             completion.name,
             ', '.join(param.description for param in completion.params))
 
-    def _serialize_completions(self, script, identifier=None, prefix=''):
+    def _serialize_completions(self, script, identifier=None):
         """Serialize response to be read from Atom.
 
         Args:
           script: Instance of jedi.api.Script object.
           identifier: Unique completion identifier to pass back to Atom.
-          prefix: String with prefix to filter function arguments.
 
         Returns:
           Serialized string to send to Atom.
@@ -85,21 +84,19 @@ class JediCompletion(object):
                 except ValueError:
                     name = param.description
                     value = None
-                if not name.lower().startswith(prefix.lower()):
-                    continue
                 _completion = {
-                    'type': 'property',
+                    'type': 'variable',
                     'rightLabel': self._additional_info(call_signature)
                 }
                 if value:
                     _completion['snippet'] = '%s=${1:%s}$0' % (name, value)
                 else:
-                    _completion['snippet'] = '%s$0' % name
+                    _completion['snippet'] = '%s=$1$0' % name
                 if self.show_doc_strings:
                     _completion['description'] = call_signature.docstring()
                 else:
                     _completion['description'] = self._generate_signature(
-                      call_signature)
+                        call_signature)
                 _completions.append(_completion)
 
         for completion in script.completions():
@@ -108,7 +105,7 @@ class JediCompletion(object):
             else:
                 description = self._generate_signature(completion)
             _completion = {
-                'text': completion.name,
+                'snippet': '%s$0' % (completion.name,),
                 'type': self._get_definition_type(completion),
                 'description': description,
                 'rightLabel': self._additional_info(completion)
@@ -225,8 +222,7 @@ class JediCompletion(object):
                 script, request['id']))
         else:
             return self._write_response(
-                self._serialize_completions(script, request['id'],
-                                            request['prefix']))
+                self._serialize_completions(script, request['id']))
 
     def _write_response(self, response):
         sys.stdout.write(response + '\n')
