@@ -8,8 +8,6 @@ import jedi
 # remove jedi from path after we import it so it will not be completed
 sys.path.pop(0)
 
-unicode = str if 'unicode' not in dir(__builtins__) else unicode
-
 
 class JediCompletion(object):
     basic_types = {
