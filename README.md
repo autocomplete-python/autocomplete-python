@@ -1,4 +1,4 @@
-# <img src="https://camo.githubusercontent.com/93db48ccf6668e60c8c6c9579765d31b033d88f7/68747470733a2f2f7777772e69636f6e66696e6465722e636f6d2f69636f6e732f3231363936352f646f776e6c6f61642f7376672f313238" width="32" title="May the Force be with you"> Python Autocomplete Package [![Build Status](https://travis-ci.org/sadovnychyi/autocomplete-python.svg?branch=master)](https://travis-ci.org/sadovnychyi/autocomplete-python)
+# Python Autocomplete Package [![Build Status](https://travis-ci.org/sadovnychyi/autocomplete-python.svg?branch=master)](https://travis-ci.org/sadovnychyi/autocomplete-python)
 
 Python packages, variables, methods and functions with their arguments autocompletion in [Atom](http://atom.io) powered by [Jedi](https://github.com/davidhalter/jedi).
 
