@@ -75,7 +75,11 @@ class JediCompletion(object):
         """
         _completions = []
 
-        for call_signature in script.call_signatures():
+        try:
+            call_signatures = script.call_signatures()
+        except KeyError:
+            call_signatures = []
+        for call_signature in call_signatures:
             for pos, param in enumerate(call_signature.params):
                 if not param.name:
                     continue

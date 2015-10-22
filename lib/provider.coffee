@@ -116,7 +116,8 @@ module.exports =
         @snippetsManager?.insertSnippet(response['arguments'], editor)
     else
       resolve = @requests[response['id']]
-      resolve(response['results'])
+      if typeof resolve == 'function'
+        resolve(response['results'])
     delete @requests[response['id']]
 
   _generateRequestId: (editor, bufferPosition) ->
