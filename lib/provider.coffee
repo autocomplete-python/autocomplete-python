@@ -1,4 +1,4 @@
-{Disposable, CompositeDisposable} = require 'atom'
+{Disposable, CompositeDisposable, BufferedProcess} = require 'atom'
 path = require 'path'
 DefinitionsView = require './definitions-view'
 filter = undefined
@@ -13,17 +13,9 @@ module.exports =
   _issueReportLink: ['If issue persists please report it at https://github.com',
                      '/sadovnychyi/autocomplete-python/issues/new'].join('')
 
-  constructor: ->
-    @requests = {}
-    @definitionsView = null
-    @snippetsManager = null
-
-    env = process.env
-    pythonPath = atom.config.get('autocomplete-python.pythonPath')
-    pythonExecutable = atom.config.get('autocomplete-python.pythonExecutable')
-
+  _possiblePythonPaths: ->
     if /^win/.test process.platform
-      paths = ['C:\\Python2.7',
+      return ['C:\\Python2.7',
                'C:\\Python3.4',
                'C:\\Python3.5',
                'C:\\Program Files (x86)\\Python 2.7',
@@ -35,48 +27,52 @@ module.exports =
                'C:\\Program Files\\Python 2.7',
                'C:\\Program Files\\Python 3.4',
                'C:\\Program Files\\Python 3.5']
-    else:
-      paths = ['/usr/local/bin', '/usr/bin', '/bin', '/usr/sbin', '/sbin']
+    else
+      return ['/usr/local/bin', '/usr/bin', '/bin', '/usr/sbin', '/sbin']
+
+  constructor: ->
+    @requests = {}
+    @definitionsView = null
+    @snippetsManager = null
+
+    pythonPath = atom.config.get('autocomplete-python.pythonPath')
+    env = process.env
     path_env = (env.PATH or '').split path.delimiter
     path_env.unshift pythonPath if pythonPath and pythonPath not in path_env
-    for p in paths
+    for p in @_possiblePythonPaths()
       if p not in path_env
         path_env.push p
     env.PATH = path_env.join path.delimiter
 
-    pythonEx = if pythonExecutable then pythonExecutable else 'python'
+    pythonExecutable = atom.config.get('autocomplete-python.pythonExecutable')
 
-    @provider = require('child_process').spawn(
-      pythonEx, [__dirname + '/completion.py'], env: env)
-
-    @provider.on 'error', (err) =>
-      if err.code == 'ENOENT'
+    @provider = new BufferedProcess
+      command: if pythonExecutable then pythonExecutable else 'python1',
+      args: [__dirname + '/completion.py'],
+      options:
+        env: env
+      stdout: (data) =>
+        @_deserialize(data)
+      stderr: (data) ->
+        if atom.config.get('autocomplete-python.outputProviderErrors')
+          atom.notifications.addError(
+            'autocomplete-python traceback output:', {
+              detail: "#{data}",
+              dismissable: true})
+      exit: (code) =>
+        console.warn('autocomplete-python:exit', code, @provider)
+    @provider.onWillThrowError ({error, handle}) =>
+      if error.code is 'ENOENT' and error.syscall.indexOf('spawn') is 0
         atom.notifications.addWarning(
-          "autocomplete-python unable to find python executable: please set " +
-          "the path to python directory manually in the package settings and " +
-          "restart your editor. #{@_issueReportLink}", {
-            detail: err,
-            dismissable: true})
+          ["autocomplete-python unable to find python executable. Please set"
+           "the path to python directory manually in the package settings and"
+           "restart your editor"].join(' '), {
+          detail: [error, "Current path config: #{env.PATH}"].join('\n'),
+          dismissable: true})
+        @dispose()
+        handle()
       else
-        atom.notifications.addError(
-          "autocomplete-python error. #{@_issueReportLink}", {
-            detail: err,
-            dismissable: true})
-    @provider.on 'exit', (code, signal) =>
-      if signal != 'SIGTERM'
-        atom.notifications.addError(
-          "autocomplete-python provider exit. #{@_issueReportLink}", {
-            detail: "exit with code #{code}, signal #{signal}",
-            dismissable: true})
-    @provider.stderr.on 'data', (err) ->
-      if atom.config.get('autocomplete-python.outputProviderErrors')
-        atom.notifications.addError(
-          'autocomplete-python traceback output:', {
-            detail: "#{err}",
-            dismissable: true})
-
-    @readline = require('readline').createInterface(input: @provider.stdout)
-    @readline.on 'line', (response) => @_deserialize(response)
+        throw error
 
     editorSelector = 'atom-text-editor[data-grammar~=python]'
     commandName = 'autocomplete-python:go-to-definition'
@@ -106,6 +102,27 @@ module.exports =
   _serialize: (request) ->
     return JSON.stringify(request)
 
+  _sendRequest: (data, respawned) ->
+    if @provider and @provider.process
+      process = @provider.process
+      if process.exitCode == null and process.signalCode == null
+        return @provider.process.stdin.write(data + '\n')
+      else if respawned
+        atom.notifications.addWarning(
+          ["Failed to spawn daemon for autocomplete-python."
+           "Completions will not work anymore"
+           "unless you restart your editor."].join(' '), {
+          detail: ["exitCode: #{process.exitCode}"
+                   "signalCode: #{process.signalCode}"].join('\n'),
+          dismissable: true})
+        @dispose()
+      else
+        @constructor()
+        @_sendRequest(data, respawned: true)
+        console.log 'Re-spawning python process...'
+    else
+      console.debug 'Attempt to communicate with terminated process', @provider
+
   _deserialize: (response) ->
     response = JSON.parse(response)
     if response['arguments']
@@ -128,10 +145,9 @@ module.exports =
 
   _generateRequestConfig: ->
     extraPaths = []
-
-    for path in atom.config.get('autocomplete-python.extraPaths').split(';')
+    for p in atom.config.get('autocomplete-python.extraPaths').split(';')
       for project in atom.project.getPaths()
-        modified = path.replace('$PROJECT', project)
+        modified = p.replace('$PROJECT', project)
         if modified not in extraPaths
           extraPaths.push(modified)
     args =
@@ -158,8 +174,7 @@ module.exports =
       column: bufferPosition.column
       config: @_generateRequestConfig()
 
-    @provider.stdin.write(@_serialize(payload) + '\n')
-
+    @_sendRequest(@_serialize(payload))
     return new Promise =>
       @requests[payload.id] = editor
 
@@ -169,18 +184,17 @@ module.exports =
     # we want to do our own filtering, hide any existing prefix from Jedi
     line = editor.getTextInRange([[bufferPosition.row, 0], bufferPosition])
     lastIdentifier = /[a-zA-Z_][a-zA-Z0-9_]*$/.exec(line)
-    column = if lastIdentifier then lastIdentifier.index else bufferPosition.column
+    col = if lastIdentifier then lastIdentifier.index else bufferPosition.column
     payload =
       id: @_generateRequestId(editor, bufferPosition)
       lookup: 'completions'
       path: editor.getPath()
       source: editor.getText()
       line: bufferPosition.row
-      column: column
+      column: col
       config: @_generateRequestConfig()
 
-    @provider.stdin.write(@_serialize(payload) + '\n')
-
+    @_sendRequest(@_serialize(payload))
     return new Promise (resolve) =>
       @requests[payload.id] = (matches) ->
         if matches.length isnt 0 and prefix isnt '.'
@@ -198,11 +212,9 @@ module.exports =
       column: bufferPosition.column
       config: @_generateRequestConfig()
 
-    @provider.stdin.write(@_serialize(payload) + '\n')
-
+    @_sendRequest(@_serialize(payload))
     return new Promise (resolve) =>
       @requests[payload.id] = resolve
 
   dispose: ->
-    @readline.close()
     @provider.kill()
