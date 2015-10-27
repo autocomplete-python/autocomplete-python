@@ -10,9 +10,6 @@ module.exports =
   suggestionPriority: 2
   excludeLowerPriority: true
 
-  _issueReportLink: ['If issue persists please report it at https://github.com',
-                     '/sadovnychyi/autocomplete-python/issues/new'].join('')
-
   _possiblePythonPaths: ->
     if /^win/.test process.platform
       return ['C:\\Python2.7',
@@ -44,10 +41,8 @@ module.exports =
         path_env.push p
     env.PATH = path_env.join path.delimiter
 
-    pythonExecutable = atom.config.get('autocomplete-python.pythonExecutable')
-
     @provider = new BufferedProcess
-      command: if pythonExecutable then pythonExecutable else 'python1',
+      command: atom.config.get('autocomplete-python.pythonExecutable'),
       args: [__dirname + '/completion.py'],
       options:
         env: env
@@ -119,7 +114,7 @@ module.exports =
       else
         @constructor()
         @_sendRequest(data, respawned: true)
-        console.log 'Re-spawning python process...'
+        console.debug 'Re-spawning python process...'
     else
       console.debug 'Attempt to communicate with terminated process', @provider
 
@@ -152,8 +147,7 @@ module.exports =
           extraPaths.push(modified)
     args =
       'extraPaths': extraPaths
-      'useSnippets': atom.config.get(
-        'autocomplete-python.useSnippets')
+      'useSnippets': atom.config.get('autocomplete-python.useSnippets')
       'caseInsensitiveCompletion': atom.config.get(
         'autocomplete-python.caseInsensitiveCompletion')
       'showDescriptions': atom.config.get(
