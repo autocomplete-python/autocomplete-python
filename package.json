@@ -2,7 +2,7 @@
   "name": "autocomplete-python",
   "main": "./lib/main",
   "version": "0.8.2",
-  "description": "Python variables, methods, functions and modules autocompletions",
+  "description": "Python packages, variables, methods and functions with their arguments autocompletion powered by Jedi",
   "activationCommands": {},
   "repository": "https://github.com/sadovnychyi/autocomplete-python",
   "license": "GPL",
@@ -39,6 +39,7 @@
   },
   "keywords": [
     "python",
-    "autocomplete"
+    "autocomplete",
+    "jedi"
   ]
 }
