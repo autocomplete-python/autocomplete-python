@@ -110,10 +110,11 @@ module.exports =
     response = JSON.parse(response)
     if response['arguments']
       editor = @requests[response['id']]
-      bufferPosition = editor.getCursorBufferPosition()
-      # Compare response ID with current state to avoid stale completions
-      if response['id'] == @_generateRequestId(editor, bufferPosition)
-        @snippetsManager?.insertSnippet(response['arguments'], editor)
+      if typeof editor == 'function'
+        bufferPosition = editor.getCursorBufferPosition()
+        # Compare response ID with current state to avoid stale completions
+        if response['id'] == @_generateRequestId(editor, bufferPosition)
+          @snippetsManager?.insertSnippet(response['arguments'], editor)
     else
       resolve = @requests[response['id']]
       if typeof resolve == 'function'
@@ -181,7 +182,7 @@ module.exports =
     @provider.stdin.write(@_serialize(payload) + '\n')
 
     return new Promise (resolve) =>
-      @requests[payload.id] = (matches) =>
+      @requests[payload.id] = (matches) ->
         if matches.length isnt 0 and prefix isnt '.'
           filter ?= require('fuzzaldrin').filter
           matches = filter(matches, prefix, key: 'snippet')
