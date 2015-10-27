@@ -110,7 +110,7 @@ module.exports =
     response = JSON.parse(response)
     if response['arguments']
       editor = @requests[response['id']]
-      if typeof editor == 'function'
+      if typeof editor == 'object'
         bufferPosition = editor.getCursorBufferPosition()
         # Compare response ID with current state to avoid stale completions
         if response['id'] == @_generateRequestId(editor, bufferPosition)
