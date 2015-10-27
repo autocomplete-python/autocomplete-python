@@ -30,9 +30,10 @@ module.exports =
       description: 'Optional. Set it if default values are not working for you or you want to use specific python version. For example: `/usr/local/Cellar/python/2.7.3/bin` or `E:\\Python2.7`'
     pythonExecutable:
       type: 'string'
-      default: ''
+      default: 'python'
+      enum: ['python', 'python2', 'python3']
       title: 'Python executable name'
-      description: 'Optional. Set it if default values are not working for you or you want to use specific python version. For example: `python3`'
+      description: 'Set it if default values are not working for you or you want to use specific python version.'
     extraPaths:
       type: 'string'
       default: ''
