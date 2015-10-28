@@ -123,20 +123,25 @@ module.exports =
   _deserialize: (response) ->
     if atom.config.get('autocomplete-python.outputDebug')
       console.debug 'Deserealizing response from Jedi', response
+      console.debug "Got #{response.trim().split('\n').length} lines"
       console.debug 'Pending requests:', @requests
-    response = JSON.parse(response)
-    if response['arguments']
-      editor = @requests[response['id']]
-      if typeof editor == 'object'
-        bufferPosition = editor.getCursorBufferPosition()
-        # Compare response ID with current state to avoid stale completions
-        if response['id'] == @_generateRequestId(editor, bufferPosition)
-          @snippetsManager?.insertSnippet(response['arguments'], editor)
-    else
-      resolve = @requests[response['id']]
-      if typeof resolve == 'function'
-        resolve(response['results'])
-    delete @requests[response['id']]
+
+    # TODO: not sure that such cases even possible, bufferedProcess should care
+    # about splitting responses by lines.
+    for response in response.trim().split('\n')
+      response = JSON.parse(response)
+      if response['arguments']
+        editor = @requests[response['id']]
+        if typeof editor == 'object'
+          bufferPosition = editor.getCursorBufferPosition()
+          # Compare response ID with current state to avoid stale completions
+          if response['id'] == @_generateRequestId(editor, bufferPosition)
+            @snippetsManager?.insertSnippet(response['arguments'], editor)
+      else
+        resolve = @requests[response['id']]
+        if typeof resolve == 'function'
+          resolve(response['results'])
+      delete @requests[response['id']]
 
   _generateRequestId: (editor, bufferPosition) ->
     return require('crypto').createHash('md5').update([
