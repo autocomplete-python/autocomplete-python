@@ -95,6 +95,8 @@ module.exports =
             @_completeArguments(editor, editor.getCursorBufferPosition())
 
   _serialize: (request) ->
+    if atom.config.get('autocomplete-python.outputDebug')
+      console.debug 'Serializing request to be sent to Jedi', request
     return JSON.stringify(request)
 
   _sendRequest: (data, respawned) ->
@@ -119,6 +121,9 @@ module.exports =
       console.debug 'Attempt to communicate with terminated process', @provider
 
   _deserialize: (response) ->
+    if atom.config.get('autocomplete-python.outputDebug')
+      console.debug 'Deserealizing response from Jedi', response
+      console.debug 'Pending requests:', @requests
     response = JSON.parse(response)
     if response['arguments']
       editor = @requests[response['id']]

@@ -17,6 +17,11 @@ module.exports =
       default: false
       title: 'Output Provider Errors'
       description: 'Select if you would like to see the provider errors when they happen. By default they are hidden. Note that critical errors are always shown.'
+    outputDebug:
+      type: 'boolean'
+      default: false
+      title: 'Output Debug Logs'
+      description: 'Select if you would like to see debug information in developer tools logs. May slow down your editor.'
     useSnippets:
       type: 'string'
       default: 'none'
