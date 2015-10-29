@@ -72,15 +72,7 @@ module.exports =
     editorSelector = 'atom-text-editor[data-grammar~=python]'
     commandName = 'autocomplete-python:go-to-definition'
     atom.commands.add editorSelector, commandName, =>
-      if @definitionsView
-        @definitionsView.destroy()
-      @definitionsView = new DefinitionsView()
-      editor = atom.workspace.getActiveTextEditor()
-      bufferPosition = editor.getCursorBufferPosition()
-      @getDefinitions({editor, bufferPosition}).then (results) =>
-        @definitionsView.setItems(results)
-        if results.length == 1
-          @definitionsView.confirmed(results[0])
+      @goToDefinition
 
     disposables = new CompositeDisposable()
     addEventListener = (editor, eventName, handler) ->
@@ -206,7 +198,7 @@ module.exports =
           matches = filter(matches, prefix, key: 'snippet')
         resolve(matches)
 
-  getDefinitions: ({editor, bufferPosition}) ->
+  getDefinitions: (editor, bufferPosition) ->
     payload =
       id: @_generateRequestId(editor, bufferPosition)
       lookup: 'definitions'
@@ -219,6 +211,17 @@ module.exports =
     @_sendRequest(@_serialize(payload))
     return new Promise (resolve) =>
       @requests[payload.id] = resolve
+
+  goToDefinition: ->
+    if @definitionsView
+      @definitionsView.destroy()
+    @definitionsView = new DefinitionsView()
+    editor = atom.workspace.getActiveTextEditor()
+    bufferPosition = editor.getCursorBufferPosition()
+    @getDefinitions(editor, bufferPosition).then (results) =>
+      @definitionsView.setItems(results)
+      if results.length == 1
+        @definitionsView.confirmed(results[0])
 
   dispose: ->
     @provider.kill()
