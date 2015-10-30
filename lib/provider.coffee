@@ -10,6 +10,18 @@ module.exports =
   suggestionPriority: 2
   excludeLowerPriority: true
 
+  _debug: (msg...) ->
+    if atom.config.get('autocomplete-python.outputDebug')
+      return console.debug msg...
+
+  _addEventListener: (editor, eventName, handler) ->
+    editorView = atom.views.getView editor
+    editorView.addEventListener eventName, handler
+    disposable = new Disposable =>
+      @_debug 'Unsubscribing from event listener ', eventName, handler
+      editorView.removeEventListener eventName, handler
+    return disposable
+
   _possiblePythonPaths: ->
     if /^win/.test process.platform
       return ['C:\\Python2.7',
@@ -29,6 +41,8 @@ module.exports =
 
   constructor: ->
     @requests = {}
+    @disposables = new CompositeDisposable
+    @subscriptions = {}
     @definitionsView = null
     @snippetsManager = null
 
@@ -49,6 +63,7 @@ module.exports =
       stdout: (data) =>
         @_deserialize(data)
       stderr: (data) ->
+        @_debug "autocomplete-python traceback output: #{data}"
         if atom.config.get('autocomplete-python.outputProviderErrors')
           atom.notifications.addError(
             'autocomplete-python traceback output:', {
@@ -82,21 +97,24 @@ module.exports =
         if results.length == 1
           @definitionsView.confirmed(results[0])
 
-    disposables = new CompositeDisposable()
-    addEventListener = (editor, eventName, handler) ->
-      editorView = atom.views.getView editor
-      editorView.addEventListener eventName, handler
-      new Disposable ->
-        editor.removeEventListener eventName, handler
     atom.workspace.observeTextEditors (editor) =>
-      if editor.getGrammar().scopeName == 'source.python'
-        disposables.add addEventListener editor, 'keyup', (event) =>
-          if event.shiftKey and event.keyCode == 57
-            @_completeArguments(editor, editor.getCursorBufferPosition())
+      editor.displayBuffer.onDidChangeGrammar (grammar) =>
+        eventName = 'keyup'
+        eventId = "#{editor.displayBuffer.id}.#{eventName}"
+        if grammar.scopeName == 'source.python'
+          disposable = @_addEventListener editor, eventName, (event) =>
+            if event.shiftKey and event.keyCode == 57
+              @_completeArguments(editor, editor.getCursorBufferPosition())
+          @disposables.add disposable
+          @subscriptions[eventId] = disposable
+          @_debug 'Subscribed on event', eventId
+        else
+          if eventId of @subscriptions
+            @subscriptions[eventId].dispose()
+            @_debug 'Unsubscribed from event', eventId
 
   _serialize: (request) ->
-    if atom.config.get('autocomplete-python.outputDebug')
-      console.debug 'Serializing request to be sent to Jedi', request
+    @_debug 'Serializing request to be sent to Jedi', request
     return JSON.stringify(request)
 
   _sendRequest: (data, respawned) ->
@@ -121,13 +139,10 @@ module.exports =
       console.debug 'Attempt to communicate with terminated process', @provider
 
   _deserialize: (response) ->
-    if atom.config.get('autocomplete-python.outputDebug')
-      console.debug 'Deserealizing response from Jedi', response
-      console.debug "Got #{response.trim().split('\n').length} lines"
-      console.debug 'Pending requests:', @requests
+    @_debug 'Deserealizing response from Jedi', response
+    @_debug "Got #{response.trim().split('\n').length} lines"
+    @_debug 'Pending requests:', @requests
 
-    # TODO: not sure that such cases even possible, bufferedProcess should care
-    # about splitting responses by lines.
     for response in response.trim().split('\n')
       response = JSON.parse(response)
       if response['arguments']
@@ -167,6 +182,7 @@ module.exports =
   setSnippetsManager: (@snippetsManager) ->
 
   _completeArguments: (editor, bufferPosition) ->
+    @_debug 'Trying to complete arguments after bracket...'
     if atom.config.get('autocomplete-python.useSnippets') == 'none'
       return
     payload =
@@ -221,4 +237,5 @@ module.exports =
       @requests[payload.id] = resolve
 
   dispose: ->
+    @disposables.dispose()
     @provider.kill()
