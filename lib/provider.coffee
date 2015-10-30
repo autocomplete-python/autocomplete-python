@@ -62,7 +62,7 @@ module.exports =
         env: env
       stdout: (data) =>
         @_deserialize(data)
-      stderr: (data) ->
+      stderr: (data) =>
         @_debug "autocomplete-python traceback output: #{data}"
         if atom.config.get('autocomplete-python.outputProviderErrors')
           atom.notifications.addError(
