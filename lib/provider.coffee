@@ -10,7 +10,7 @@ module.exports =
   suggestionPriority: 2
   excludeLowerPriority: true
 
-  _debug: (msg...) ->
+  _log: (msg...) ->
     if atom.config.get('autocomplete-python.outputDebug')
       return console.debug msg...
 
@@ -18,7 +18,7 @@ module.exports =
     editorView = atom.views.getView editor
     editorView.addEventListener eventName, handler
     disposable = new Disposable =>
-      @_debug 'Unsubscribing from event listener ', eventName, handler
+      @_log 'Unsubscribing from event listener ', eventName, handler
       editorView.removeEventListener eventName, handler
     return disposable
 
@@ -63,7 +63,7 @@ module.exports =
       stdout: (data) =>
         @_deserialize(data)
       stderr: (data) =>
-        @_debug "autocomplete-python traceback output: #{data}"
+        @_log "autocomplete-python traceback output: #{data}"
         if atom.config.get('autocomplete-python.outputProviderErrors')
           atom.notifications.addError(
             'autocomplete-python traceback output:', {
@@ -107,14 +107,14 @@ module.exports =
               @_completeArguments(editor, editor.getCursorBufferPosition())
           @disposables.add disposable
           @subscriptions[eventId] = disposable
-          @_debug 'Subscribed on event', eventId
+          @_log 'Subscribed on event', eventId
         else
           if eventId of @subscriptions
             @subscriptions[eventId].dispose()
-            @_debug 'Unsubscribed from event', eventId
+            @_log 'Unsubscribed from event', eventId
 
   _serialize: (request) ->
-    @_debug 'Serializing request to be sent to Jedi', request
+    @_log 'Serializing request to be sent to Jedi', request
     return JSON.stringify(request)
 
   _sendRequest: (data, respawned) ->
@@ -139,9 +139,9 @@ module.exports =
       console.debug 'Attempt to communicate with terminated process', @provider
 
   _deserialize: (response) ->
-    @_debug 'Deserealizing response from Jedi', response
-    @_debug "Got #{response.trim().split('\n').length} lines"
-    @_debug 'Pending requests:', @requests
+    @_log 'Deserealizing response from Jedi', response
+    @_log "Got #{response.trim().split('\n').length} lines"
+    @_log 'Pending requests:', @requests
 
     for response in response.trim().split('\n')
       response = JSON.parse(response)
@@ -182,7 +182,7 @@ module.exports =
   setSnippetsManager: (@snippetsManager) ->
 
   _completeArguments: (editor, bufferPosition) ->
-    @_debug 'Trying to complete arguments after bracket...'
+    @_log 'Trying to complete arguments after bracket...'
     if atom.config.get('autocomplete-python.useSnippets') == 'none'
       return
     payload =
