@@ -177,6 +177,7 @@ module.exports =
         'autocomplete-python.caseInsensitiveCompletion')
       'showDescriptions': atom.config.get(
         'autocomplete-python.showDescriptions')
+      'fuzzyMatcher': atom.config.get('autocomplete-python.fuzzyMatcher')
     return args
 
   setSnippetsManager: (@snippetsManager) ->
@@ -201,26 +202,36 @@ module.exports =
   getSuggestions: ({editor, bufferPosition, scopeDescriptor, prefix}) ->
     if prefix not in ['.', ' '] and (prefix.length < 1 or /\W/.test(prefix))
       return []
-    # we want to do our own filtering, hide any existing prefix from Jedi
-    line = editor.getTextInRange([[bufferPosition.row, 0], bufferPosition])
-    lastIdentifier = /[a-zA-Z_][a-zA-Z0-9_]*$/.exec(line)
-    col = if lastIdentifier then lastIdentifier.index else bufferPosition.column
+    if atom.config.get('autocomplete-python.fuzzyMatcher')
+      # we want to do our own filtering, hide any existing prefix from Jedi
+      line = editor.getTextInRange([[bufferPosition.row, 0], bufferPosition])
+      lastIdentifier = /[a-zA-Z_][a-zA-Z0-9_]*$/.exec(line)
+      if lastIdentifier
+        column = lastIdentifier.index
+      else
+        column = bufferPosition.column
+    else
+      column = bufferPosition.column
     payload =
       id: @_generateRequestId(editor, bufferPosition)
+      prefix: prefix
       lookup: 'completions'
       path: editor.getPath()
       source: editor.getText()
       line: bufferPosition.row
-      column: col
+      column: column
       config: @_generateRequestConfig()
 
     @_sendRequest(@_serialize(payload))
     return new Promise (resolve) =>
-      @requests[payload.id] = (matches) ->
-        if matches.length isnt 0 and prefix isnt '.'
-          filter ?= require('fuzzaldrin').filter
-          matches = filter(matches, prefix, key: 'snippet')
-        resolve(matches)
+      if atom.config.get('autocomplete-python.fuzzyMatcher')
+        @requests[payload.id] = (matches) ->
+          if matches.length isnt 0 and prefix isnt '.'
+            filter ?= require('fuzzaldrin').filter
+            matches = filter(matches, prefix, key: 'snippet')
+          resolve(matches)
+      else
+        @requests[payload.id] = resolve
 
   getDefinitions: ({editor, bufferPosition}) ->
     payload =
