@@ -1,4 +1,6 @@
 {Disposable, CompositeDisposable, BufferedProcess} = require 'atom'
+{selectorsMatchScopeChain} = require './scope-helpers'
+{Selector} = require 'selector-kit'
 path = require 'path'
 DefinitionsView = require './definitions-view'
 filter = undefined
@@ -9,6 +11,18 @@ module.exports =
   inclusionPriority: 1
   suggestionPriority: 2
   excludeLowerPriority: true
+
+  _log: (msg...) ->
+    if atom.config.get('autocomplete-python.outputDebug')
+      return console.debug msg...
+
+  _addEventListener: (editor, eventName, handler) ->
+    editorView = atom.views.getView editor
+    editorView.addEventListener eventName, handler
+    disposable = new Disposable =>
+      @_log 'Unsubscribing from event listener ', eventName, handler
+      editorView.removeEventListener eventName, handler
+    return disposable
 
   _possiblePythonPaths: ->
     if /^win/.test process.platform
@@ -29,6 +43,8 @@ module.exports =
 
   constructor: ->
     @requests = {}
+    @disposables = new CompositeDisposable
+    @subscriptions = {}
     @definitionsView = null
     @snippetsManager = null
 
@@ -48,7 +64,8 @@ module.exports =
         env: env
       stdout: (data) =>
         @_deserialize(data)
-      stderr: (data) ->
+      stderr: (data) =>
+        @_log "autocomplete-python traceback output: #{data}"
         if atom.config.get('autocomplete-python.outputProviderErrors')
           atom.notifications.addError(
             'autocomplete-python traceback output:', {
@@ -74,21 +91,24 @@ module.exports =
     atom.commands.add editorSelector, commandName, =>
       @goToDefinition
 
-    disposables = new CompositeDisposable()
-    addEventListener = (editor, eventName, handler) ->
-      editorView = atom.views.getView editor
-      editorView.addEventListener eventName, handler
-      new Disposable ->
-        editor.removeEventListener eventName, handler
     atom.workspace.observeTextEditors (editor) =>
-      if editor.getGrammar().scopeName == 'source.python'
-        disposables.add addEventListener editor, 'keyup', (event) =>
-          if event.shiftKey and event.keyCode == 57
-            @_completeArguments(editor, editor.getCursorBufferPosition())
+      editor.displayBuffer.onDidChangeGrammar (grammar) =>
+        eventName = 'keyup'
+        eventId = "#{editor.displayBuffer.id}.#{eventName}"
+        if grammar.scopeName == 'source.python'
+          disposable = @_addEventListener editor, eventName, (event) =>
+            if event.shiftKey and event.keyCode == 57
+              @_completeArguments(editor, editor.getCursorBufferPosition())
+          @disposables.add disposable
+          @subscriptions[eventId] = disposable
+          @_log 'Subscribed on event', eventId
+        else
+          if eventId of @subscriptions
+            @subscriptions[eventId].dispose()
+            @_log 'Unsubscribed from event', eventId
 
   _serialize: (request) ->
-    if atom.config.get('autocomplete-python.outputDebug')
-      console.debug 'Serializing request to be sent to Jedi', request
+    @_log 'Serializing request to be sent to Jedi', request
     return JSON.stringify(request)
 
   _sendRequest: (data, respawned) ->
@@ -113,13 +133,10 @@ module.exports =
       console.debug 'Attempt to communicate with terminated process', @provider
 
   _deserialize: (response) ->
-    if atom.config.get('autocomplete-python.outputDebug')
-      console.debug 'Deserealizing response from Jedi', response
-      console.debug "Got #{response.trim().split('\n').length} lines"
-      console.debug 'Pending requests:', @requests
+    @_log 'Deserealizing response from Jedi', response
+    @_log "Got #{response.trim().split('\n').length} lines"
+    @_log 'Pending requests:', @requests
 
-    # TODO: not sure that such cases even possible, bufferedProcess should care
-    # about splitting responses by lines.
     for response in response.trim().split('\n')
       response = JSON.parse(response)
       if response['arguments']
@@ -154,12 +171,20 @@ module.exports =
         'autocomplete-python.caseInsensitiveCompletion')
       'showDescriptions': atom.config.get(
         'autocomplete-python.showDescriptions')
+      'fuzzyMatcher': atom.config.get('autocomplete-python.fuzzyMatcher')
     return args
 
   setSnippetsManager: (@snippetsManager) ->
 
   _completeArguments: (editor, bufferPosition) ->
     if atom.config.get('autocomplete-python.useSnippets') == 'none'
+      return
+    @_log 'Trying to complete arguments after bracket...'
+    scopeDescriptor = editor.scopeDescriptorForBufferPosition(bufferPosition)
+    scopeChain = scopeDescriptor.getScopeChain()
+    disableForSelector = Selector.create(@disableForSelector)
+    if selectorsMatchScopeChain(disableForSelector, scopeChain)
+      @_log 'Ignoring argument completion inside of', scopeChain
       return
     payload =
       id: @_generateRequestId(editor, bufferPosition)
@@ -177,26 +202,36 @@ module.exports =
   getSuggestions: ({editor, bufferPosition, scopeDescriptor, prefix}) ->
     if prefix not in ['.', ' '] and (prefix.length < 1 or /\W/.test(prefix))
       return []
-    # we want to do our own filtering, hide any existing prefix from Jedi
-    line = editor.getTextInRange([[bufferPosition.row, 0], bufferPosition])
-    lastIdentifier = /[a-zA-Z_][a-zA-Z0-9_]*$/.exec(line)
-    col = if lastIdentifier then lastIdentifier.index else bufferPosition.column
+    if atom.config.get('autocomplete-python.fuzzyMatcher')
+      # we want to do our own filtering, hide any existing prefix from Jedi
+      line = editor.getTextInRange([[bufferPosition.row, 0], bufferPosition])
+      lastIdentifier = /[a-zA-Z_][a-zA-Z0-9_]*$/.exec(line)
+      if lastIdentifier
+        column = lastIdentifier.index
+      else
+        column = bufferPosition.column
+    else
+      column = bufferPosition.column
     payload =
       id: @_generateRequestId(editor, bufferPosition)
+      prefix: prefix
       lookup: 'completions'
       path: editor.getPath()
       source: editor.getText()
       line: bufferPosition.row
-      column: col
+      column: column
       config: @_generateRequestConfig()
 
     @_sendRequest(@_serialize(payload))
     return new Promise (resolve) =>
-      @requests[payload.id] = (matches) ->
-        if matches.length isnt 0 and prefix isnt '.'
-          filter ?= require('fuzzaldrin').filter
-          matches = filter(matches, prefix, key: 'snippet')
-        resolve(matches)
+      if atom.config.get('autocomplete-python.fuzzyMatcher')
+        @requests[payload.id] = (matches) ->
+          if matches.length isnt 0 and prefix isnt '.'
+            filter ?= require('fuzzaldrin').filter
+            matches = filter(matches, prefix, key: 'snippet')
+          resolve(matches)
+      else
+        @requests[payload.id] = resolve
 
   getDefinitions: (editor, bufferPosition) ->
     payload =
@@ -224,4 +259,5 @@ module.exports =
         @definitionsView.confirmed(results[0])
 
   dispose: ->
+    @disposables.dispose()
     @provider.kill()

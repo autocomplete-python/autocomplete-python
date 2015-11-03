@@ -63,12 +63,14 @@ class JediCompletion(object):
             completion.name,
             ', '.join(param.description for param in completion.params))
 
-    def _serialize_completions(self, script, identifier=None):
+    def _serialize_completions(self, script, identifier=None, prefix=''):
         """Serialize response to be read from Atom.
 
         Args:
           script: Instance of jedi.api.Script object.
           identifier: Unique completion identifier to pass back to Atom.
+          prefix: String with prefix to filter function arguments.
+            Used only when fuzzy matcher turned off.
 
         Returns:
           Serialized string to send to Atom.
@@ -90,6 +92,9 @@ class JediCompletion(object):
                 except ValueError:
                     name = param.description
                     value = None
+                if not self.fuzzy_matcher and not name.lower().startswith(
+                  prefix.lower()):
+                    continue
                 _completion = {
                     'type': 'variable',
                     'rightLabel': self._additional_info(call_signature)
@@ -208,6 +213,7 @@ class JediCompletion(object):
         sys.path = self.default_sys_path
         self.use_snippets = config.get('useSnippets')
         self.show_doc_strings = config.get('showDescriptions', True)
+        self.fuzzy_matcher = config.get('fuzzyMatcher', False)
         jedi.settings.case_insensitive_completion = config.get(
             'caseInsensitiveCompletion', True)
         for path in config.get('extraPaths', []):
@@ -238,7 +244,8 @@ class JediCompletion(object):
                 script, request['id']))
         else:
             return self._write_response(
-                self._serialize_completions(script, request['id']))
+                self._serialize_completions(script, request['id'],
+                                            request['prefix']))
 
     def _write_response(self, response):
         sys.stdout.write(response + '\n')

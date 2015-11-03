@@ -17,7 +17,7 @@ Python packages, variables, methods and functions with their arguments autocompl
 
 # Configuration
 
-* If using a [virtualenv](https://virtualenv.pypa.io/en/latest/) with third-party packages, be sure to launch Atom from the [activated virtualenv](https://virtualenv.pypa.io/en/latest/userguide.html#activate-script) to get completion for your third-party packages
+* If using a [virtualenv](https://virtualenv.pypa.io/en/latest/) with third-party packages, use the "Extra PATH" configuration option to specify the virtualenv's site-packages. Or launch Atom from the [activated virtualenv](https://virtualenv.pypa.io/en/latest/userguide.html#activate-script) to get completion for your third-party packages
 * If you're on Windows:
   * Install [python](https://www.python.org/downloads/)
   * Make Sure that python is available in your PATH: `echo %PATH%`. If it's not, add it and restart your system: `set PATH=%PATH%;C:\Python27`
