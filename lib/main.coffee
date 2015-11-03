@@ -1,4 +1,5 @@
 provider = require './provider'
+hyperclickProvider = require './hyperclickProvider'
 
 module.exports =
   config:
@@ -59,6 +60,8 @@ module.exports =
   deactivate: -> provider.dispose()
 
   getProvider: -> provider
+
+  getHyperclickProvider: -> hyperclickProvider
 
   consumeSnippets: (snippetsManager) ->
     provider.setSnippetsManager snippetsManager
