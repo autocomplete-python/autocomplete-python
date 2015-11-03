@@ -1,4 +1,6 @@
 {Disposable, CompositeDisposable, BufferedProcess} = require 'atom'
+{selectorsMatchScopeChain} = require './scope-helpers'
+{Selector} = require 'selector-kit'
 path = require 'path'
 DefinitionsView = require './definitions-view'
 filter = undefined
@@ -182,8 +184,14 @@ module.exports =
   setSnippetsManager: (@snippetsManager) ->
 
   _completeArguments: (editor, bufferPosition) ->
-    @_log 'Trying to complete arguments after bracket...'
     if atom.config.get('autocomplete-python.useSnippets') == 'none'
+      return
+    @_log 'Trying to complete arguments after bracket...'
+    scopeDescriptor = editor.scopeDescriptorForBufferPosition(bufferPosition)
+    scopeChain = scopeDescriptor.getScopeChain()
+    disableForSelector = Selector.create(@disableForSelector)
+    if selectorsMatchScopeChain(disableForSelector, scopeChain)
+      @_log 'Ignoring argument completion inside of', scopeChain
       return
     payload =
       id: @_generateRequestId(editor, bufferPosition)

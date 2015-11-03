@@ -10,7 +10,9 @@
     "atom": ">=0.194.0 <2.0.0"
   },
   "dependencies": {
+    "atom-slick": "^2.0.0",
     "atom-space-pen-views": "~2.1.0",
+    "selector-kit": "^0.1",
     "fuzzaldrin": "~2.1.0"
   },
   "package-dependencies": {},
