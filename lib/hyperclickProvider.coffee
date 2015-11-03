@@ -9,8 +9,8 @@ module.exports =
   getSuggestionForWord: (editor, text, range) ->
     if editor.getGrammar().scopeName == 'source.python'
       if atom.config.get('autocomplete-python.outputDebug')
-        console.debug range.start, @_getScopes(editor, range.start)
-        console.debug range.end, @_getScopes(editor, range.end)
+        provider._log range.start, @_getScopes(editor, range.start)
+        provider._log range.end, @_getScopes(editor, range.end)
       callback = ->
         provider.goToDefinition()
       return {range, callback}
