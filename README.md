@@ -14,6 +14,8 @@ Python packages, variables, methods and functions with their arguments autocompl
 * Prints first N characters of statement value while completing variables
 * Prints function arguments while completing functions
 * Go-to-definition functionality, by default on `Alt+Cmd+G`/`Ctrl+Alt+G` (thanks to [@patrys](https://github.com/patrys))
+* If you have [Hyperclick](https://atom.io/packages/hyperclick) installed – you can click on anything to go-to-definition
+![sample](https://cloud.githubusercontent.com/assets/193864/10814177/17fb8bce-7e5f-11e5-8285-6b0100b3a0f8.gif)
 
 # Configuration
 
