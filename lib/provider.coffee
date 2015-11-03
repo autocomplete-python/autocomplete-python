@@ -89,7 +89,7 @@ module.exports =
     editorSelector = 'atom-text-editor[data-grammar~=python]'
     commandName = 'autocomplete-python:go-to-definition'
     atom.commands.add editorSelector, commandName, =>
-      @goToDefinition
+      @goToDefinition()
 
     atom.workspace.observeTextEditors (editor) =>
       editor.displayBuffer.onDidChangeGrammar (grammar) =>
