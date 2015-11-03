@@ -48,6 +48,11 @@ module.exports =
       Note that it still should be valid python package.
       For example: $PROJECT/env/lib/python2.7/site-packages.
       '''
+    fuzzyMatcher:
+      type: 'boolean'
+      default: true
+      title: 'Use fuzzy matcher for completions'
+      description: 'Typing `stdr` will match `stderr`. May significantly slow down completions on slow machines.'
 
   activate: (state) -> provider.constructor()
 
