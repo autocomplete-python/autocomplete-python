@@ -245,7 +245,7 @@ class JediCompletion(object):
         else:
             return self._write_response(
                 self._serialize_completions(script, request['id'],
-                                            request['prefix']))
+                                            request.get('prefix', '')))
 
     def _write_response(self, response):
         sys.stdout.write(response + '\n')
