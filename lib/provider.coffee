@@ -86,10 +86,12 @@ module.exports =
       else
         throw error
 
-    editorSelector = 'atom-text-editor[data-grammar~=python]'
-    commandName = 'autocomplete-python:go-to-definition'
-    atom.commands.add editorSelector, commandName, =>
+    selector = 'atom-text-editor[data-grammar~=python]'
+    atom.commands.add selector, 'autocomplete-python:go-to-definition', =>
       @goToDefinition()
+    atom.commands.add selector, 'autocomplete-python:complete-arguments', =>
+      editor = atom.workspace.getActiveTextEditor()
+      @_completeArguments(editor, editor.getCursorBufferPosition())
 
     atom.workspace.observeTextEditors (editor) =>
       editor.displayBuffer.onDidChangeGrammar (grammar) =>
