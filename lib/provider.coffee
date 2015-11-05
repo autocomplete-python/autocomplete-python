@@ -91,7 +91,7 @@ module.exports =
       @goToDefinition()
     atom.commands.add selector, 'autocomplete-python:complete-arguments', =>
       editor = atom.workspace.getActiveTextEditor()
-      @_completeArguments(editor, editor.getCursorBufferPosition())
+      @_completeArguments(editor, editor.getCursorBufferPosition(), true)
 
     atom.workspace.observeTextEditors (editor) =>
       editor.displayBuffer.onDidChangeGrammar (grammar) =>
@@ -178,8 +178,9 @@ module.exports =
 
   setSnippetsManager: (@snippetsManager) ->
 
-  _completeArguments: (editor, bufferPosition) ->
-    if atom.config.get('autocomplete-python.useSnippets') == 'none'
+  _completeArguments: (editor, bufferPosition, force) ->
+    useSnippets = atom.config.get('autocomplete-python.useSnippets')
+    if not force and useSnippets == 'none'
       return
     @_log 'Trying to complete arguments after left parenthesis...'
     scopeDescriptor = editor.scopeDescriptorForBufferPosition(bufferPosition)
