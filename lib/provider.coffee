@@ -97,7 +97,7 @@ module.exports =
         eventId = "#{editor.displayBuffer.id}.#{eventName}"
         if grammar.scopeName == 'source.python'
           disposable = @_addEventListener editor, eventName, (event) =>
-            if event.shiftKey and event.keyCode == 57
+            if event.keyIdentifier == 'U+0028'
               @_completeArguments(editor, editor.getCursorBufferPosition())
           @disposables.add disposable
           @subscriptions[eventId] = disposable
