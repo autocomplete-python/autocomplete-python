@@ -179,7 +179,7 @@ module.exports =
   _completeArguments: (editor, bufferPosition) ->
     if atom.config.get('autocomplete-python.useSnippets') == 'none'
       return
-    @_log 'Trying to complete arguments after bracket...'
+    @_log 'Trying to complete arguments after left parenthesis...'
     scopeDescriptor = editor.scopeDescriptorForBufferPosition(bufferPosition)
     scopeChain = scopeDescriptor.getScopeChain()
     disableForSelector = Selector.create(@disableForSelector)
