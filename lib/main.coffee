@@ -51,7 +51,7 @@ module.exports =
       '''
     fuzzyMatcher:
       type: 'boolean'
-      default: true
+      default: false
       title: 'Use fuzzy matcher for completions'
       description: 'Typing `stdr` will match `stderr`. May significantly slow down completions on slow machines.'
 
