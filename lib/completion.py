@@ -252,7 +252,7 @@ class JediCompletion(object):
         sys.stdout.flush()
 
     def watch(self):
-        while True:
+        for _ in range(10**3):
             try:
                 self._process_request(self._input.readline())
             except Exception:
