@@ -256,12 +256,14 @@ module.exports =
     return new Promise (resolve) =>
       @requests[payload.id] = resolve
 
-  goToDefinition: ->
+  goToDefinition: (editor, bufferPosition) ->
+    if not editor
+      editor = atom.workspace.getActiveTextEditor()
+    if not bufferPosition
+      bufferPosition = editor.getCursorBufferPosition()
     if @definitionsView
       @definitionsView.destroy()
     @definitionsView = new DefinitionsView()
-    editor = atom.workspace.getActiveTextEditor()
-    bufferPosition = editor.getCursorBufferPosition()
     @getDefinitions(editor, bufferPosition).then (results) =>
       @definitionsView.setItems(results)
       if results.length == 1
