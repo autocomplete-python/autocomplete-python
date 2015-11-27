@@ -53,7 +53,7 @@ describe 'Python autocompletions', ->
                 expect(completion.snippet).toBe 'import$0'
               expect(completion.snippet.length).toBeGreaterThan 0
             console.log completions
-            expect(completions.length).toBe 5
+            expect(completions.length).toBe 3
 
       it 'autocompletes defined functions', ->
         editor.setText """
