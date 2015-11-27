@@ -3,6 +3,8 @@ provider = require './provider'
 module.exports =
   priority: 1
 
+  providerName: 'autocomplete-python'
+
   _getScopes: (editor, range) ->
     return editor.scopeDescriptorForBufferPosition(range).scopes
 
