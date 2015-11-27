@@ -86,10 +86,11 @@ module.exports =
       else
         throw error
 
-    if @provider and @provider.process
-      setTimeout =>
+    setTimeout =>
+      @_log 'Killing python process after timeout...'
+      if @provider and @provider.process
         @provider.process.kill()
-      , 60 * 30 * 1000
+    , 60 * 30 * 1000
 
     selector = 'atom-text-editor[data-grammar~=python]'
     atom.commands.add selector, 'autocomplete-python:go-to-definition', =>
