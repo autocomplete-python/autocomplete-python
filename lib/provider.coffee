@@ -100,20 +100,25 @@ module.exports =
       @_completeArguments(editor, editor.getCursorBufferPosition(), true)
 
     atom.workspace.observeTextEditors (editor) =>
+      # TODO: this should be deprecated in next stable release
+      @_handleGrammarChangeEvent(editor, editor.getGrammar())
       editor.displayBuffer.onDidChangeGrammar (grammar) =>
-        eventName = 'keyup'
-        eventId = "#{editor.displayBuffer.id}.#{eventName}"
-        if grammar.scopeName == 'source.python'
-          disposable = @_addEventListener editor, eventName, (event) =>
-            if event.keyIdentifier == 'U+0028'
-              @_completeArguments(editor, editor.getCursorBufferPosition())
-          @disposables.add disposable
-          @subscriptions[eventId] = disposable
-          @_log 'Subscribed on event', eventId
-        else
-          if eventId of @subscriptions
-            @subscriptions[eventId].dispose()
-            @_log 'Unsubscribed from event', eventId
+        @_handleGrammarChangeEvent(editor, grammar)
+
+  _handleGrammarChangeEvent: (editor, grammar) ->
+    eventName = 'keyup'
+    eventId = "#{editor.displayBuffer.id}.#{eventName}"
+    if grammar.scopeName == 'source.python'
+      disposable = @_addEventListener editor, eventName, (event) =>
+        if event.keyIdentifier == 'U+0028'
+          @_completeArguments(editor, editor.getCursorBufferPosition())
+      @disposables.add disposable
+      @subscriptions[eventId] = disposable
+      @_log 'Subscribed on event', eventId
+    else
+      if eventId of @subscriptions
+        @subscriptions[eventId].dispose()
+        @_log 'Unsubscribed from event', eventId
 
   _serialize: (request) ->
     @_log 'Serializing request to be sent to Jedi', request
