@@ -1,5 +1,5 @@
 '.platform-darwin atom-text-editor[data-grammar="source python"]:not(.mini)':
-  'ctrl-cmd-g': 'autocomplete-python:go-to-definition'
+  'alt-cmd-g': 'autocomplete-python:go-to-definition'
 
 '.platform-linux atom-text-editor[data-grammar="source python"]:not(.mini)':
   'ctrl-alt-g': 'autocomplete-python:go-to-definition'

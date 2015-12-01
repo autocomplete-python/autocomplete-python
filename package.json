@@ -1,8 +1,8 @@
 {
   "name": "autocomplete-python",
   "main": "./lib/main",
-  "version": "0.6.0",
-  "description": "Python variables, methods, functions and modules autocompletions",
+  "version": "0.10.7",
+  "description": "Python packages, variables, methods and functions with their arguments autocompletion powered by Jedi",
   "activationCommands": {},
   "repository": "https://github.com/sadovnychyi/autocomplete-python",
   "license": "GPL",
@@ -10,13 +10,28 @@
     "atom": ">=0.194.0 <2.0.0"
   },
   "dependencies": {
-    "atom-space-pen-views": "~2.1.0"
+    "atom-slick": "^2.0.0",
+    "atom-space-pen-views": "~2.1.0",
+    "selector-kit": "^0.1",
+    "fuzzaldrin": "~2.1.0"
   },
   "package-dependencies": {},
   "providedServices": {
     "autocomplete.provider": {
       "versions": {
         "2.0.0": "getProvider"
+      }
+    },
+    "hyperclick.provider": {
+      "versions": {
+        "0.0.0": "getHyperclickProvider"
+      }
+    }
+  },
+  "consumedServices": {
+    "snippets": {
+      "versions": {
+        "0.1.0": "consumeSnippets"
       }
     }
   },
@@ -31,6 +46,7 @@
   },
   "keywords": [
     "python",
-    "autocomplete"
+    "autocomplete",
+    "jedi"
   ]
 }

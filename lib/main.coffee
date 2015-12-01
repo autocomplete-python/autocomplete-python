@@ -1,4 +1,5 @@
 provider = require './provider'
+hyperclickProvider = require './hyperclickProvider'
 
 module.exports =
   config:
@@ -17,22 +18,17 @@ module.exports =
       default: false
       title: 'Output Provider Errors'
       description: 'Select if you would like to see the provider errors when they happen. By default they are hidden. Note that critical errors are always shown.'
-    addDotAfterModule:
+    outputDebug:
       type: 'boolean'
       default: false
-      title: 'Add Dot After Module'
-      description: 'Adds a dot after a module, because a module that is not accessed this way is definitely not the normal case.'
-    addBracketAfterFunction:
-      type: 'boolean'
-      default: false
-      title: 'Add Bracket After Function'
-      description: 'Adds an opening bracket after a function, because that’s normal behaviour.'
+      title: 'Output Debug Logs'
+      description: 'Select if you would like to see debug information in developer tools logs. May slow down your editor.'
     useSnippets:
       type: 'string'
       default: 'none'
       enum: ['none', 'all', 'required']
       title: 'Autocomplete Function Parameters'
-      description: 'Allows to complete functions with their arguments. Use completion key to jump between arguments. Will ignore some settings if used.'
+      description: 'Automatically complete function arguments after typing left parenthesis character. Use completion key to jump between arguments.'
     pythonPath:
       type: 'string'
       default: ''
@@ -40,9 +36,10 @@ module.exports =
       description: 'Optional. Set it if default values are not working for you or you want to use specific python version. For example: `/usr/local/Cellar/python/2.7.3/bin` or `E:\\Python2.7`'
     pythonExecutable:
       type: 'string'
-      default: ''
+      default: 'python'
+      enum: ['python', 'python2', 'python3']
       title: 'Python executable name'
-      description: 'Optional. Set it if default values are not working for you or you want to use specific python version. For example: `python3`'
+      description: 'Set it if default values are not working for you or you want to use specific python version.'
     extraPaths:
       type: 'string'
       default: ''
@@ -52,9 +49,19 @@ module.exports =
       Note that it still should be valid python package.
       For example: $PROJECT/env/lib/python2.7/site-packages.
       '''
+    fuzzyMatcher:
+      type: 'boolean'
+      default: false
+      title: 'Use fuzzy matcher for completions'
+      description: 'Typing `stdr` will match `stderr`. May significantly slow down completions on slow machines.'
 
   activate: (state) -> provider.constructor()
 
   deactivate: -> provider.dispose()
 
   getProvider: -> provider
+
+  getHyperclickProvider: -> hyperclickProvider
+
+  consumeSnippets: (snippetsManager) ->
+    provider.setSnippetsManager snippetsManager
