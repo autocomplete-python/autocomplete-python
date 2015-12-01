@@ -52,12 +52,12 @@ module.exports =
 
     pythonPath = atom.config.get('autocomplete-python.pythonPath')
     env = process.env
-    path_env = (env.PATH or '').split path.delimiter
-    path_env.unshift pythonPath if pythonPath and pythonPath not in path_env
+    envPath = (env.PATH or '').split path.delimiter
+    envPath.unshift pythonPath if pythonPath and pythonPath not in envPath
     for p in @_possiblePythonPaths()
-      if p not in path_env
-        path_env.push p
-    env.PATH = path_env.join path.delimiter
+      if p not in envPath
+        envPath.push p
+    env.PATH = envPath.join path.delimiter
 
     @provider = new BufferedProcess
       command: atom.config.get('autocomplete-python.pythonExecutable'),
@@ -100,6 +100,8 @@ module.exports =
     atom.commands.add selector, 'autocomplete-python:complete-arguments', =>
       editor = atom.workspace.getActiveTextEditor()
       @_completeArguments(editor, editor.getCursorBufferPosition(), true)
+    atom.commands.add selector, 'autocomplete-python:set-interpreter', =>
+      @setInterpreter(envPath)
 
     atom.workspace.observeTextEditors (editor) =>
       # TODO: this should be deprecated in next stable release
@@ -122,38 +124,41 @@ module.exports =
         @subscriptions[eventId].dispose()
         @_log 'Unsubscribed from event', eventId
 
-  _setInterpreter: () ->
-    atom.commands.add 'atom-text-editor[data-grammar~=python]', 'autocomplete-python:set-interpreter', =>
-      InterpretersView = require './interpreters-view'
-      if @interpretersView
-        @interpretersView.destroy()
-      @interpretersView = new InterpretersView()
-      globalInterpreters = []
-      projectInterpreters = []
-      tryBinary = (potentialInterpreter, bucket) =>
-        if potentialInterpreter not in bucket
-          fs.access potentialInterpreter, fs.X_OK, (err) =>
-            if err
-              return
-            if potentialInterpreter not in bucket
-              bucket.push(potentialInterpreter)
-              bucket.sort()
-              @interpretersView.setItems(projectInterpreters.concat(globalInterpreters))
-      checkDir = (potentialPath) =>
-        fs.readdir potentialPath, (err, files) ->
-          matches = (fileName for fileName in files when /^python(\d+\.\d+)?$/.test(fileName))
-          for fileName in matches
-            target = path.join(potentialPath, fileName)
-            tryBinary(target, globalInterpreters)
-      checkProject = (project) =>
-        fs.readdir project, (err, files) =>
-          for fileName in files
-            target = path.join(project, fileName, 'bin/python')
-            tryBinary(target, projectInterpreters)
-      for potentialPath in path_env
-        checkDir(potentialPath)
-      for project in atom.project.getPaths()
-        checkProject(project)
+  setInterpreter: (envPath) =>
+    InterpretersView = require './interpreters-view'
+    if @interpretersView
+      @interpretersView.destroy()
+    @interpretersView = new InterpretersView()
+    globalInterpreters = []
+    projectInterpreters = []
+    tryBinary = (potentialInterpreter, bucket) =>
+      if potentialInterpreter not in bucket
+        fs.access potentialInterpreter, fs.X_OK, (err) =>
+          if err
+            return
+          if potentialInterpreter not in bucket
+            bucket.push(potentialInterpreter)
+            bucket.sort()
+            @interpretersView.setItems(projectInterpreters.concat(
+              globalInterpreters))
+    checkDir = (potentialPath) ->
+      fs.readdir potentialPath, (err, files) ->
+        pythonRe = /^python(\d+(.\d+)?)?$/
+        matches = (fileName for fileName in files when pythonRe.test(fileName))
+        for fileName in matches
+          target = path.join(potentialPath, fileName)
+          tryBinary(target, globalInterpreters)
+    checkProject = (project) ->
+      fs.readdir project, (err, files) ->
+        for fileName in files
+          target = path.join(project, fileName, 'bin/python')
+          tryBinary(target, projectInterpreters)
+    for potentialPath in envPath
+      checkDir(potentialPath)
+    for project in atom.project.getPaths()
+      checkProject(project)
+    console.log 'projectInterpreters', projectInterpreters
+    console.log 'globalInterpreters', globalInterpreters
 
   _serialize: (request) ->
     @_log 'Serializing request to be sent to Jedi', request
