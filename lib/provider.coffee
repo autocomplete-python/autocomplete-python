@@ -151,7 +151,7 @@ module.exports =
     extraPaths = []
     for p in atom.config.get('autocomplete-python.extraPaths').split(';')
       for project in atom.project.getPaths()
-        modified = p.replace('$PROJECT', project)
+        modified = p.replace(/\$PROJECT/i, project)
         if modified not in extraPaths
           extraPaths.push(modified)
     args =
