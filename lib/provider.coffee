@@ -55,11 +55,14 @@ module.exports =
       else
         throw error
 
+    @provider.process.stdin.on 'error', (err) ->
+      log.debug 'stdin', err
+
     setTimeout =>
       log.debug 'Killing python process after timeout...'
       if @provider and @provider.process
-        @provider.process.kill()
-    , 60 * 30 * 1000
+        @provider.kill()
+    , 60 * 10 * 1000
 
   constructor: ->
     @requests = {}
@@ -102,6 +105,15 @@ module.exports =
     return JSON.stringify(request)
 
   _sendRequest: (data, respawned) ->
+    log.debug 'Pending requests:', Object.keys(@requests).length, @requests
+    if Object.keys(@requests).length > 10
+      log.debug 'Cleaning up request queue to avoid overflow, ignoring request'
+      @requests = {}
+      if @provider and @provider.process
+        log.debug 'Killing python process'
+        @provider.kill()
+        return
+
     if @provider and @provider.process
       process = @provider.process
       if process.exitCode == null and process.signalCode == null
@@ -130,7 +142,6 @@ module.exports =
   _deserialize: (response) ->
     log.debug 'Deserealizing response from Jedi', response
     log.debug "Got #{response.trim().split('\n').length} lines"
-    log.debug 'Pending requests:', @requests
 
     for response in response.trim().split('\n')
       response = JSON.parse(response)
