@@ -21,13 +21,7 @@ module.exports =
       editorView.removeEventListener eventName, handler
     return disposable
 
-  constructor: ->
-    @requests = {}
-    @disposables = new CompositeDisposable
-    @subscriptions = {}
-    @definitionsView = null
-    @snippetsManager = null
-
+  _spawnDaemon: ->
     @provider = new BufferedProcess
       command: InterpreterLookup.getInterpreter() or 'python'
       args: [__dirname + '/completion.py']
@@ -67,6 +61,14 @@ module.exports =
         @provider.process.kill()
     , 60 * 30 * 1000
 
+  constructor: ->
+    @requests = {}
+    @provider = null
+    @disposables = new CompositeDisposable
+    @subscriptions = {}
+    @definitionsView = null
+    @snippetsManager = null
+
     selector = 'atom-text-editor[data-grammar~=python]'
     atom.commands.add selector, 'autocomplete-python:go-to-definition', =>
       @goToDefinition()
@@ -103,7 +105,10 @@ module.exports =
     if @provider and @provider.process
       process = @provider.process
       if process.exitCode == null and process.signalCode == null
-        return @provider.process.stdin.write(data + '\n')
+        if @provider.process.pid
+          return @provider.process.stdin.write(data + '\n')
+        else
+          log.debug 'Attempt to communicate with terminated process', @provider
       else if respawned
         atom.notifications.addWarning(
           ["Failed to spawn daemon for autocomplete-python."
@@ -114,11 +119,13 @@ module.exports =
           dismissable: true})
         @dispose()
       else
-        @constructor()
+        @_spawnDaemon()
         @_sendRequest(data, respawned: true)
         log.debug 'Re-spawning python process...'
     else
-      log.debug 'Attempt to communicate with terminated process', @provider
+      log.debug 'Spawning python process...'
+      @_spawnDaemon()
+      @_sendRequest(data)
 
   _deserialize: (response) ->
     log.debug 'Deserealizing response from Jedi', response
