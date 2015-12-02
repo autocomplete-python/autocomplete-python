@@ -1,8 +1,6 @@
-fs = require 'fs'
 {Disposable, CompositeDisposable, BufferedProcess} = require 'atom'
 {selectorsMatchScopeChain} = require './scope-helpers'
 {Selector} = require 'selector-kit'
-path = require 'path'
 DefinitionsView = require './definitions-view'
 InterpreterLookup = require './interpreters-lookup'
 log = require './log'
