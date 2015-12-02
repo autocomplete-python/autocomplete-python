@@ -4,6 +4,8 @@ fs = require 'fs'
 {Selector} = require 'selector-kit'
 path = require 'path'
 DefinitionsView = require './definitions-view'
+InterpreterLookup = require './interpreters-lookup'
+log = require './log'
 filter = undefined
 
 module.exports =
@@ -13,75 +15,48 @@ module.exports =
   suggestionPriority: 2
   excludeLowerPriority: true
 
-  _log: (msg...) ->
-    if atom.config.get('autocomplete-python.outputDebug')
-      return console.debug msg...
-
   _addEventListener: (editor, eventName, handler) ->
     editorView = atom.views.getView editor
     editorView.addEventListener eventName, handler
-    disposable = new Disposable =>
-      @_log 'Unsubscribing from event listener ', eventName, handler
+    disposable = new Disposable ->
+      log.debug 'Unsubscribing from event listener ', eventName, handler
       editorView.removeEventListener eventName, handler
     return disposable
-
-  _possiblePythonPaths: ->
-    if /^win/.test process.platform
-      return ['C:\\Python2.7',
-               'C:\\Python3.4',
-               'C:\\Python3.5',
-               'C:\\Program Files (x86)\\Python 2.7',
-               'C:\\Program Files (x86)\\Python 3.4',
-               'C:\\Program Files (x86)\\Python 3.5',
-               'C:\\Program Files (x64)\\Python 2.7',
-               'C:\\Program Files (x64)\\Python 3.4',
-               'C:\\Program Files (x64)\\Python 3.5',
-               'C:\\Program Files\\Python 2.7',
-               'C:\\Program Files\\Python 3.4',
-               'C:\\Program Files\\Python 3.5']
-    else
-      return ['/usr/local/bin', '/usr/bin', '/bin', '/usr/sbin', '/sbin']
 
   constructor: ->
     @requests = {}
     @disposables = new CompositeDisposable
     @subscriptions = {}
     @definitionsView = null
-    @interpretersView = null
     @snippetsManager = null
 
-    pythonPath = atom.config.get('autocomplete-python.pythonPath')
-    env = process.env
-    envPath = (env.PATH or '').split path.delimiter
-    envPath.unshift pythonPath if pythonPath and pythonPath not in envPath
-    for p in @_possiblePythonPaths()
-      if p not in envPath
-        envPath.push p
-    env.PATH = envPath.join path.delimiter
-
     @provider = new BufferedProcess
-      command: atom.config.get('autocomplete-python.pythonExecutable'),
-      args: [__dirname + '/completion.py'],
-      options:
-        env: env
+      command: InterpreterLookup.getInterpreter() or 'python'
+      args: [__dirname + '/completion.py']
       stdout: (data) =>
         @_deserialize(data)
-      stderr: (data) =>
-        @_log "autocomplete-python traceback output: #{data}"
+      stderr: (data) ->
+        log.debug "autocomplete-python traceback output: #{data}"
         if atom.config.get('autocomplete-python.outputProviderErrors')
           atom.notifications.addError(
             'autocomplete-python traceback output:', {
               detail: "#{data}",
               dismissable: true})
       exit: (code) =>
-        console.warn('autocomplete-python:exit', code, @provider)
+        log.warning 'Process exit with', code, @provider
     @provider.onWillThrowError ({error, handle}) =>
       if error.code is 'ENOENT' and error.syscall.indexOf('spawn') is 0
+        log.warning 'No python executable found'
         atom.notifications.addWarning(
-          ["autocomplete-python unable to find python executable. Please set"
-           "the path to python directory manually in the package settings and"
-           "restart your editor"].join(' '), {
-          detail: [error, "Current path config: #{env.PATH}"].join('\n'),
+          'autocomplete-python unable to find python binary.', {
+          detail: """Please set path to python executable manually in package
+          settings and restart your editor. Be sure to migrate on new settings
+          if everything worked on previous version.
+          Detailed error message: #{error}
+
+          Current config: #{atom.config.get('autocomplete-python.pythonPaths')}
+
+          Old config: #{atom.config.get('autocomplete-python.pythonPath')}"""
           dismissable: true})
         @dispose()
         handle()
@@ -89,7 +64,7 @@ module.exports =
         throw error
 
     setTimeout =>
-      @_log 'Killing python process after timeout...'
+      log.debug 'Killing python process after timeout...'
       if @provider and @provider.process
         @provider.process.kill()
     , 60 * 30 * 1000
@@ -100,8 +75,6 @@ module.exports =
     atom.commands.add selector, 'autocomplete-python:complete-arguments', =>
       editor = atom.workspace.getActiveTextEditor()
       @_completeArguments(editor, editor.getCursorBufferPosition(), true)
-    atom.commands.add selector, 'autocomplete-python:set-interpreter', =>
-      @setInterpreter(envPath)
 
     atom.workspace.observeTextEditors (editor) =>
       # TODO: this should be deprecated in next stable release
@@ -118,50 +91,14 @@ module.exports =
           @_completeArguments(editor, editor.getCursorBufferPosition())
       @disposables.add disposable
       @subscriptions[eventId] = disposable
-      @_log 'Subscribed on event', eventId
+      log.debug 'Subscribed on event', eventId
     else
       if eventId of @subscriptions
         @subscriptions[eventId].dispose()
-        @_log 'Unsubscribed from event', eventId
-
-  setInterpreter: (envPath) =>
-    InterpretersView = require './interpreters-view'
-    if @interpretersView
-      @interpretersView.destroy()
-    @interpretersView = new InterpretersView()
-    globalInterpreters = []
-    projectInterpreters = []
-    tryBinary = (potentialInterpreter, bucket) =>
-      if potentialInterpreter not in bucket
-        fs.access potentialInterpreter, fs.X_OK, (err) =>
-          if err
-            return
-          if potentialInterpreter not in bucket
-            bucket.push(potentialInterpreter)
-            bucket.sort()
-            @interpretersView.setItems(projectInterpreters.concat(
-              globalInterpreters))
-    checkDir = (potentialPath) ->
-      fs.readdir potentialPath, (err, files) ->
-        pythonRe = /^python(\d+(.\d+)?)?$/
-        matches = (fileName for fileName in files when pythonRe.test(fileName))
-        for fileName in matches
-          target = path.join(potentialPath, fileName)
-          tryBinary(target, globalInterpreters)
-    checkProject = (project) ->
-      fs.readdir project, (err, files) ->
-        for fileName in files
-          target = path.join(project, fileName, 'bin/python')
-          tryBinary(target, projectInterpreters)
-    for potentialPath in envPath
-      checkDir(potentialPath)
-    for project in atom.project.getPaths()
-      checkProject(project)
-    console.log 'projectInterpreters', projectInterpreters
-    console.log 'globalInterpreters', globalInterpreters
+        log.debug 'Unsubscribed from event', eventId
 
   _serialize: (request) ->
-    @_log 'Serializing request to be sent to Jedi', request
+    log.debug 'Serializing request to be sent to Jedi', request
     return JSON.stringify(request)
 
   _sendRequest: (data, respawned) ->
@@ -181,14 +118,14 @@ module.exports =
       else
         @constructor()
         @_sendRequest(data, respawned: true)
-        console.debug 'Re-spawning python process...'
+        log.debug 'Re-spawning python process...'
     else
-      console.debug 'Attempt to communicate with terminated process', @provider
+      log.debug 'Attempt to communicate with terminated process', @provider
 
   _deserialize: (response) ->
-    @_log 'Deserealizing response from Jedi', response
-    @_log "Got #{response.trim().split('\n').length} lines"
-    @_log 'Pending requests:', @requests
+    log.debug 'Deserealizing response from Jedi', response
+    log.debug "Got #{response.trim().split('\n').length} lines"
+    log.debug 'Pending requests:', @requests
 
     for response in response.trim().split('\n')
       response = JSON.parse(response)
@@ -233,12 +170,12 @@ module.exports =
     useSnippets = atom.config.get('autocomplete-python.useSnippets')
     if not force and useSnippets == 'none'
       return
-    @_log 'Trying to complete arguments after left parenthesis...'
+    log.debug 'Trying to complete arguments after left parenthesis...'
     scopeDescriptor = editor.scopeDescriptorForBufferPosition(bufferPosition)
     scopeChain = scopeDescriptor.getScopeChain()
     disableForSelector = Selector.create(@disableForSelector)
     if selectorsMatchScopeChain(disableForSelector, scopeChain)
-      @_log 'Ignoring argument completion inside of', scopeChain
+      log.debug 'Ignoring argument completion inside of', scopeChain
       return
     payload =
       id: @_generateRequestId(editor, bufferPosition)
