@@ -21,13 +21,32 @@ module.exports =
       editorView.removeEventListener eventName, handler
     return disposable
 
+  _noExecutableError: (error) ->
+    if @providerNoExecutable
+      return
+    log.warning 'No python executable found'
+    atom.notifications.addWarning(
+      'autocomplete-python unable to find python binary.', {
+      detail: """Please set path to python executable manually in package
+      settings and restart your editor. Be sure to migrate on new settings
+      if everything worked on previous version.
+      Detailed error message: #{error}
+
+      Current config: #{atom.config.get('autocomplete-python.pythonPaths')}"""
+      dismissable: true})
+    @providerNoExecutable = true
+
   _spawnDaemon: ->
+    interpreter = InterpreterLookup.getInterpreter()
+    log.debug 'Using interpreter', interpreter
     @provider = new BufferedProcess
-      command: InterpreterLookup.getInterpreter() or 'python'
+      command: interpreter or 'python'
       args: [__dirname + '/completion.py']
       stdout: (data) =>
         @_deserialize(data)
-      stderr: (data) ->
+      stderr: (data) =>
+        if data.indexOf 'is not recognized as an internal or external command, operable program or batch file' > -1
+          return @_noExecutableError(data)
         log.debug "autocomplete-python traceback output: #{data}"
         if atom.config.get('autocomplete-python.outputProviderErrors')
           atom.notifications.addError(
@@ -38,18 +57,7 @@ module.exports =
         log.warning 'Process exit with', code, @provider
     @provider.onWillThrowError ({error, handle}) =>
       if error.code is 'ENOENT' and error.syscall.indexOf('spawn') is 0
-        log.warning 'No python executable found'
-        atom.notifications.addWarning(
-          'autocomplete-python unable to find python binary.', {
-          detail: """Please set path to python executable manually in package
-          settings and restart your editor. Be sure to migrate on new settings
-          if everything worked on previous version.
-          Detailed error message: #{error}
-
-          Current config: #{atom.config.get('autocomplete-python.pythonPaths')}
-
-          Old config: #{atom.config.get('autocomplete-python.pythonPath')}"""
-          dismissable: true})
+        @_noExecutableError(error)
         @dispose()
         handle()
       else
