@@ -1,4 +1,5 @@
 provider = require './provider'
+log = require './log'
 {selectorsMatchScopeChain} = require './scope-helpers'
 {Selector} = require 'selector-kit'
 
@@ -25,8 +26,8 @@ module.exports =
         return
 
       if atom.config.get('autocomplete-python.outputDebug')
-        provider._log range.start, @_getScopes(editor, range.start)
-        provider._log range.end, @_getScopes(editor, range.end)
+        log.debug range.start, @_getScopes(editor, range.start)
+        log.debug range.end, @_getScopes(editor, range.end)
       callback = ->
         provider.goToDefinition(editor, bufferPosition)
       return {range, callback}

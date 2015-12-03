@@ -8,9 +8,8 @@ Python packages, variables, methods and functions with their arguments autocompl
 
 * Works with :apple: Mac OSX, :penguin: Linux and :checkered_flag: Windows
 * Works with both :snake: Python 2 and 3
-* Watches whole package of the file you're currently editing
-* Configurable additional PATHs to include for completions (global for now)
-* You can include project specific folders by using $PROJECT variable in PATH configuration
+* Automatic lookup of virtual environments inside of your projects
+* Configurable additional packages to include for completions
 * Prints first N characters of statement value while completing variables
 * Prints function arguments while completing functions
 * Go-to-definition functionality, by default on `Alt+Cmd+G`/`Ctrl+Alt+G` (thanks to [@patrys](https://github.com/patrys))
@@ -19,7 +18,7 @@ Python packages, variables, methods and functions with their arguments autocompl
 
 # Configuration
 
-* If using a [virtualenv](https://virtualenv.pypa.io/en/latest/) with third-party packages, use the "Extra PATH" configuration option to specify the virtualenv's site-packages. Or launch Atom from the [activated virtualenv](https://virtualenv.pypa.io/en/latest/userguide.html#activate-script) to get completion for your third-party packages
+* If using a [virtualenv](https://virtualenv.pypa.io/en/latest/) with third-party packages, everything should "just work", but if it's not – use the `Python Executable Paths` and/or `Extra Paths For Packages` configuration options to specify the virtualenv's site-packages. Or launch Atom from the [activated virtualenv](https://virtualenv.pypa.io/en/latest/userguide.html#activate-script) to get completion for your third-party packages
 * If you're on Windows:
   * Install [python](https://www.python.org/downloads/)
   * Make Sure that python is available in your PATH: `echo %PATH%`. If it's not, add it and restart your system: `set PATH=%PATH%;C:\Python27`
