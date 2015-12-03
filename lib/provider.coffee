@@ -24,7 +24,7 @@ module.exports =
   _noExecutableError: (error) ->
     if @providerNoExecutable
       return
-    log.warning 'No python executable found'
+    log.warning 'No python executable found', error
     atom.notifications.addWarning(
       'autocomplete-python unable to find python binary.', {
       detail: """Please set path to python executable manually in package
@@ -45,7 +45,7 @@ module.exports =
       stdout: (data) =>
         @_deserialize(data)
       stderr: (data) =>
-        if data.indexOf 'is not recognized as an internal or external command, operable program or batch file' > -1
+        if data.indexOf('is not recognized as an internal or external command, operable program or batch file') > -1
           return @_noExecutableError(data)
         log.debug "autocomplete-python traceback output: #{data}"
         if atom.config.get('autocomplete-python.outputProviderErrors')
