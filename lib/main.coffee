@@ -7,7 +7,7 @@ module.exports =
       type: 'boolean'
       default: true
       order: 1
-      title: 'Show descriptions'
+      title: 'Show Descriptions'
       description: 'Show doc strings from functions, classes, etc.'
     useSnippets:
       type: 'string'
@@ -17,33 +17,35 @@ module.exports =
       title: 'Autocomplete Function Parameters'
       description: '''Automatically complete function arguments after typing
       left parenthesis character. Use completion key to jump between
-      arguments.'''
+      arguments. See `autocomplete-python:complete-arguments` command if you
+      want to trigger argument completions manually.'''
     pythonPaths:
       type: 'string'
       default: ''
       order: 3
-      title: 'Python executable paths'
+      title: 'Python Executable Paths'
       description: '''Optional semicolon separated list of paths to python
       executables (including executable names), where the first one will take
       higher priority over the last one. By default autocomplete-python will
-      automatically look for venvs inside of your project and try to use them
-      as well as try to find global python executable.
-      Use $PROJECT variable for project specific paths to point on executables
-      in virtual environments.
-      For example: `$PROJECT/env/bin/python3;/usr/bin/python`.
-      Such config will fall back on `/usr/bin/python` for projects without venv.
+      automatically look for virtual environments inside of your project and
+      try to use them as well as try to find global python executable.
+      Use `$PROJECT` substitution for project-specific paths to point on
+      executables in virtual environments.
+      For example: `$PROJECT/venv/bin/python3;/usr/bin/python`.
+      Such config will fall back on `/usr/bin/python` for projects without
+      `venv`.
       If you are using python3 executable while coding for python2 you will get
       python2 completions for some built-ins.'''
     extraPaths:
       type: 'string'
       default: ''
       order: 4
-      title: 'Extra PATH'
+      title: 'Extra Paths For Packages'
       description: '''Semicolon separated list of modules to additionally
-      include for autocomplete. You can use $PROJECT variable here to include
-      project specific folders like virtual environment.
+      include for autocomplete. You can use `$PROJECT` substitution here to
+      include project specific folders like virtual environment.
       Note that it still should be valid python package.
-      For example: $PROJECT/env/lib/python2.7/site-packages.
+      For example: `$PROJECT/env/lib/python2.7/site-packages`.
       You don't need to specify extra paths for libraries installed with python
       executable you use.'''
     caseInsensitiveCompletion:
@@ -56,9 +58,9 @@ module.exports =
       type: 'boolean'
       default: false
       order: 6
-      title: 'Use fuzzy matcher for completions'
+      title: 'Use Fuzzy Matcher For Completions'
       description: '''Typing `stdr` will match `stderr`. May significantly slow
-      down completions on slow machines.'''
+      down completions.'''
     outputProviderErrors:
       type: 'boolean'
       default: false
