@@ -1,8 +1,8 @@
-'.platform-darwin atom-text-editor[data-grammar="source python"]:not(.mini)':
+'.platform-darwin atom-text-editor[data-grammar~=python]:not(.mini)':
   'alt-cmd-g': 'autocomplete-python:go-to-definition'
 
-'.platform-linux atom-text-editor[data-grammar="source python"]:not(.mini)':
+'.platform-linux atom-text-editor[data-grammar~=python]:not(.mini)':
   'ctrl-alt-g': 'autocomplete-python:go-to-definition'
 
-'.platform-win32 atom-text-editor[data-grammar="source python"]:not(.mini)':
+'.platform-win32 atom-text-editor[data-grammar~=python]:not(.mini)':
   'ctrl-alt-g': 'autocomplete-python:go-to-definition'
