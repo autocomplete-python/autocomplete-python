@@ -28,7 +28,8 @@ module.exports =
       executables (including executable names), where the first one will take
       higher priority over the last one. By default autocomplete-python will
       automatically look for virtual environments inside of your project and
-      try to use them as well as try to find global python executable.
+      try to use them as well as try to find global python executable. If you
+      use this config, automatic lookup will have lowest priority.
       Use `$PROJECT` substitution for project-specific paths to point on
       executables in virtual environments.
       For example: `$PROJECT/venv/bin/python3;/usr/bin/python`.
