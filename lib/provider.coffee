@@ -243,7 +243,7 @@ module.exports =
         @requests[payload.id] = (matches) ->
           if matches.length isnt 0 and prefix isnt '.'
             filter ?= require('fuzzaldrin').filter
-            matches = filter(matches, prefix, key: 'snippet')
+            matches = filter(matches, prefix, key: 'text')
           resolve(matches)
       else
         @requests[payload.id] = resolve

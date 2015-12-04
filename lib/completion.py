@@ -99,10 +99,13 @@ class JediCompletion(object):
                     'type': 'variable',
                     'rightLabel': self._additional_info(call_signature)
                 }
+                # we pass 'text' here only for fuzzy matcher
                 if value:
                     _completion['snippet'] = '%s=${1:%s}$0' % (name, value)
+                    _completion['text'] = '%s=%s' % (name, value)
                 else:
                     _completion['snippet'] = '%s=$1$0' % name
+                    _completion['text'] = name
                 if self.show_doc_strings:
                     _completion['description'] = call_signature.docstring()
                 else:
@@ -120,7 +123,7 @@ class JediCompletion(object):
             else:
                 description = self._generate_signature(completion)
             _completion = {
-                'snippet': '%s$0' % completion.name,
+                'text': completion.name,
                 'type': self._get_definition_type(completion),
                 'description': description,
                 'rightLabel': self._additional_info(completion)
