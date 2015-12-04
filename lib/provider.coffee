@@ -234,10 +234,10 @@ module.exports =
     bufferPosition =
       row: bufferPosition.row
       column: bufferPosition.column
+    lines = editor.getText().split('\n')
     if atom.config.get('autocomplete-python.fuzzyMatcher')
       # we want to do our own filtering, hide any existing prefix from Jedi
       # TODO: will \n work for windows?
-      lines = editor.getText().split('\n')
       line = lines[bufferPosition.row]
       lastIdentifier = /[a-zA-Z_][a-zA-Z0-9_]*$/.exec(
         line.slice 0, bufferPosition.column)
