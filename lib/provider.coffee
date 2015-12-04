@@ -74,6 +74,7 @@ module.exports =
 
   constructor: ->
     @requests = {}
+    @responses = {}
     @provider = null
     @disposables = new CompositeDisposable
     @subscriptions = {}
@@ -164,11 +165,15 @@ module.exports =
         resolve = @requests[response['id']]
         if typeof resolve == 'function'
           resolve(response['results'])
+      @responses[response['id']] = response
+      log.debug 'Cached request with id', response['id']
       delete @requests[response['id']]
 
-  _generateRequestId: (editor, bufferPosition) ->
+  _generateRequestId: (editor, bufferPosition, text) ->
+    if not text
+      text = editor.getText()
     return require('crypto').createHash('md5').update([
-      editor.getPath(), editor.getText(), bufferPosition.row,
+      editor.getPath(), text, bufferPosition.row,
       bufferPosition.column].join()).digest('hex')
 
   _generateRequestConfig: ->
@@ -217,24 +222,35 @@ module.exports =
   getSuggestions: ({editor, bufferPosition, scopeDescriptor, prefix}) ->
     if prefix not in ['.', ' '] and (prefix.length < 1 or /\W/.test(prefix))
       return []
+    bufferPosition =
+      row: bufferPosition.row
+      column: bufferPosition.column
     if atom.config.get('autocomplete-python.fuzzyMatcher')
       # we want to do our own filtering, hide any existing prefix from Jedi
-      line = editor.getTextInRange([[bufferPosition.row, 0], bufferPosition])
+      # TODO: will \n work for windows?
+      lines = editor.getText().split('\n')
+      line = lines[bufferPosition.row]
+      # TODO: this is not going to match inside of brackets. bug or feature?
       lastIdentifier = /[a-zA-Z_][a-zA-Z0-9_]*$/.exec(line)
       if lastIdentifier
-        column = lastIdentifier.index + 1
-      else
-        column = bufferPosition.column
-    else
-      column = bufferPosition.column
+        lines[bufferPosition.row] = line.slice(0, lastIdentifier.index + 1)
+        bufferPosition.column = lastIdentifier.index + 1
+    requestId = @_generateRequestId(editor, bufferPosition, lines.join('\n'))
+    if requestId of @responses
+      log.debug 'Using cached response with id', requestId
+      matches = @responses[requestId]['results']
+      if matches.length isnt 0 and prefix isnt '.'
+        filter ?= require('fuzzaldrin').filter
+        matches = filter(matches, prefix, key: 'text')
+      return matches
     payload =
-      id: @_generateRequestId(editor, bufferPosition)
+      id: requestId
       prefix: prefix
       lookup: 'completions'
       path: editor.getPath()
       source: editor.getText()
       line: bufferPosition.row
-      column: column
+      column: bufferPosition.column
       config: @_generateRequestConfig()
 
     @_sendRequest(@_serialize(payload))
