@@ -14,6 +14,7 @@ class JediCompletion(object):
         'module': 'import',
         'instance': 'variable',
         'statement': 'value',
+        'param': 'variable',
     }
 
     def __init__(self):
