@@ -239,8 +239,8 @@ module.exports =
       # TODO: will \n work for windows?
       lines = editor.getText().split('\n')
       line = lines[bufferPosition.row]
-      # TODO: this is not going to match inside of brackets. bug or feature?
-      lastIdentifier = /[a-zA-Z_][a-zA-Z0-9_]*$/.exec(line)
+      lastIdentifier = /[a-zA-Z_][a-zA-Z0-9_]*$/.exec(
+        line.slice 0, bufferPosition.column)
       if lastIdentifier
         lines[bufferPosition.row] = line.slice(0, lastIdentifier.index + 1)
         bufferPosition.column = lastIdentifier.index + 1
