@@ -38,8 +38,8 @@ describe 'Python autocompletions', ->
         waitsForPromise ->
           getCompletions().then (completions) ->
             for completion in completions
-              expect(completion.snippet.length).toBeGreaterThan 0
-              expect(completion.snippet).toBe 'isinstance$0'
+              expect(completion.text.length).toBeGreaterThan 0
+              expect(completion.text).toBe 'isinstance'
             expect(completions.length).toBe 1
 
       it 'autocompletes python keywords', ->
@@ -50,8 +50,8 @@ describe 'Python autocompletions', ->
           getCompletions().then (completions) ->
             for completion in completions
               if completion.type == 'keyword'
-                expect(completion.snippet).toBe 'import$0'
-              expect(completion.snippet.length).toBeGreaterThan 0
+                expect(completion.text).toBe 'import'
+              expect(completion.text.length).toBeGreaterThan 0
             console.log completions
             expect(completions.length).toBe 3
 
@@ -65,5 +65,5 @@ describe 'Python autocompletions', ->
         completions = getCompletions()
         waitsForPromise ->
           getCompletions().then (completions) ->
-            expect(completions[0].snippet).toBe 'hello_world$0'
+            expect(completions[0].text).toBe 'hello_world'
             expect(completions.length).toBe 1
