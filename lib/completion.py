@@ -118,8 +118,6 @@ class JediCompletion(object):
         except KeyError:
             completions = []
         for completion in completions:
-            if completion.type == 'param':
-              continue
             if self.show_doc_strings:
                 description = completion.docstring()
             else:
@@ -130,6 +128,10 @@ class JediCompletion(object):
                 'description': description,
                 'rightLabel': self._additional_info(completion)
             }
+            if any([c['text'].split('=')[0] == _completion['text']
+                    for c in _completions]):
+              # ignore function arguments we already have
+              continue
             _completions.append(_completion)
         return json.dumps({'id': identifier, 'results': _completions})
 
