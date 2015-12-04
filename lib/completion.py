@@ -14,7 +14,6 @@ class JediCompletion(object):
         'module': 'import',
         'instance': 'variable',
         'statement': 'value',
-        'keyword': 'keyword',
     }
 
     def __init__(self):
@@ -96,7 +95,7 @@ class JediCompletion(object):
                   prefix.lower()):
                     continue
                 _completion = {
-                    'type': 'variable',
+                    'type': 'property',
                     'rightLabel': self._additional_info(call_signature)
                 }
                 # we pass 'text' here only for fuzzy matcher
@@ -106,6 +105,7 @@ class JediCompletion(object):
                 else:
                     _completion['snippet'] = '%s=$1$0' % name
                     _completion['text'] = name
+                    _completion['displayText'] = name
                 if self.show_doc_strings:
                     _completion['description'] = call_signature.docstring()
                 else:
@@ -118,6 +118,8 @@ class JediCompletion(object):
         except KeyError:
             completions = []
         for completion in completions:
+            if completion.type == 'param':
+              continue
             if self.show_doc_strings:
                 description = completion.docstring()
             else:
