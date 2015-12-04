@@ -228,16 +228,22 @@ module.exports =
     return new Promise =>
       @requests[payload.id] = editor
 
+  _fuzzyFilter: (candidates, query) ->
+    if candidates.length isnt 0 and query isnt '.'
+      filter ?= require('fuzzaldrin-plus').filter
+      candidates = filter(candidates, query, key: 'text')
+    return candidates
+
   getSuggestions: ({editor, bufferPosition, scopeDescriptor, prefix}) ->
     if prefix not in ['.', ' '] and (prefix.length < 1 or /\W/.test(prefix))
       return []
     bufferPosition =
       row: bufferPosition.row
       column: bufferPosition.column
+    # TODO: will \n work for windows?
     lines = editor.getText().split('\n')
     if atom.config.get('autocomplete-python.fuzzyMatcher')
       # we want to do our own filtering, hide any existing prefix from Jedi
-      # TODO: will \n work for windows?
       line = lines[bufferPosition.row]
       lastIdentifier = /[a-zA-Z_][a-zA-Z0-9_]*$/.exec(
         line.slice 0, bufferPosition.column)
@@ -249,10 +255,7 @@ module.exports =
       log.debug 'Using cached response with ID', requestId
       # We have to parse JSON on each request here to pass only a copy
       matches = JSON.parse(@responses[requestId]['source'])['results']
-      if matches.length isnt 0 and prefix isnt '.'
-        filter ?= require('fuzzaldrin').filter
-        matches = filter(matches, prefix, key: 'text')
-      return matches
+      return @_fuzzyFilter(matches, prefix)
     payload =
       id: requestId
       prefix: prefix
@@ -266,11 +269,8 @@ module.exports =
     @_sendRequest(@_serialize(payload))
     return new Promise (resolve) =>
       if atom.config.get('autocomplete-python.fuzzyMatcher')
-        @requests[payload.id] = (matches) ->
-          if matches.length isnt 0 and prefix isnt '.'
-            filter ?= require('fuzzaldrin').filter
-            matches = filter(matches, prefix, key: 'text')
-          resolve(matches)
+        @requests[payload.id] = (matches) =>
+          resolve(@_fuzzyFilter(matches, prefix))
       else
         @requests[payload.id] = resolve
 
