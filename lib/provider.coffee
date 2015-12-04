@@ -9,8 +9,8 @@ filter = undefined
 module.exports =
   selector: '.source.python'
   disableForSelector: '.source.python .comment, .source.python .string'
-  inclusionPriority: 1
-  suggestionPriority: 2
+  inclusionPriority: 2
+  suggestionPriority: 3
   excludeLowerPriority: true
   cacheSize: 10
 
