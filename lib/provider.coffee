@@ -222,7 +222,7 @@ module.exports =
       line = editor.getTextInRange([[bufferPosition.row, 0], bufferPosition])
       lastIdentifier = /[a-zA-Z_][a-zA-Z0-9_]*$/.exec(line)
       if lastIdentifier
-        column = lastIdentifier.index
+        column = lastIdentifier.index + 1
       else
         column = bufferPosition.column
     else
