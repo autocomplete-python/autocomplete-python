@@ -12,6 +12,7 @@ module.exports =
   inclusionPriority: 1
   suggestionPriority: 2
   excludeLowerPriority: true
+  cacheSize: 10
 
   _addEventListener: (editor, eventName, handler) ->
     editorView = atom.views.getView editor
@@ -151,9 +152,8 @@ module.exports =
   _deserialize: (response) ->
     log.debug 'Deserealizing response from Jedi', response
     log.debug "Got #{response.trim().split('\n').length} lines"
-
-    for response in response.trim().split('\n')
-      response = JSON.parse(response)
+    for responseSource in response.trim().split('\n')
+      response = JSON.parse(responseSource)
       if response['arguments']
         editor = @requests[response['id']]
         if typeof editor == 'object'
@@ -165,8 +165,17 @@ module.exports =
         resolve = @requests[response['id']]
         if typeof resolve == 'function'
           resolve(response['results'])
-      @responses[response['id']] = response
-      log.debug 'Cached request with id', response['id']
+      cacheSizeDelta = Object.keys(@responses).length > @cacheSize
+      if cacheSizeDelta > 0
+        ids = Object.keys(@responses).sort (a, b) =>
+          return @responses[a]['timestamp'] - @responses[b]['timestamp']
+        for id in ids.slice(0, cacheSizeDelta)
+          log.debug 'Removing old item from cache with ID', id
+          delete @responses[id]
+      @responses[response['id']] =
+        source: responseSource
+        timestamp: Date.now()
+      log.debug 'Cached request with ID', response['id']
       delete @requests[response['id']]
 
   _generateRequestId: (editor, bufferPosition, text) ->
@@ -237,8 +246,9 @@ module.exports =
         bufferPosition.column = lastIdentifier.index + 1
     requestId = @_generateRequestId(editor, bufferPosition, lines.join('\n'))
     if requestId of @responses
-      log.debug 'Using cached response with id', requestId
-      matches = @responses[requestId]['results']
+      log.debug 'Using cached response with ID', requestId
+      # We have to parse JSON on each request here to pass only a copy
+      matches = JSON.parse(@responses[requestId]['source'])['results']
       if matches.length isnt 0 and prefix isnt '.'
         filter ?= require('fuzzaldrin').filter
         matches = filter(matches, prefix, key: 'text')
