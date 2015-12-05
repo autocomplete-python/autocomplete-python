@@ -55,16 +55,23 @@ module.exports =
       order: 5
       title: 'Case Insensitive Completion'
       description: 'The completion is by default case insensitive.'
+    triggerCompletionRegex:
+      type: 'string'
+      default: '([\.\ ]|[a-zA-Z_][a-zA-Z0-9_]*)'
+      order: 6
+      title: 'Regex To Trigger Autocompletions'
+      description: '''By default completions triggered after words, dots and
+      spaces. You will need to restart your editor after changing this.'''
     fuzzyMatcher:
       type: 'boolean'
       default: false
-      order: 6
+      order: 7
       title: 'Use Fuzzy Matcher For Completions'
       description: '''Typing `stdr` will match `stderr`.'''
     outputProviderErrors:
       type: 'boolean'
       default: false
-      order: 6
+      order: 8
       title: 'Output Provider Errors'
       description: '''Select if you would like to see the provider errors when
       they happen. By default they are hidden. Note that critical errors are
@@ -72,7 +79,7 @@ module.exports =
     outputDebug:
       type: 'boolean'
       default: false
-      order: 7
+      order: 9
       title: 'Output Debug Logs'
       description: '''Select if you would like to see debug information in
       developer tools logs. May slow down your editor.'''

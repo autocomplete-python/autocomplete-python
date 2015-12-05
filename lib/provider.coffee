@@ -82,6 +82,19 @@ module.exports =
     @definitionsView = null
     @snippetsManager = null
 
+    try
+      @triggerCompletionRegex = RegExp atom.config.get(
+        'autocomplete-python.triggerCompletionRegex')
+    catch err
+      atom.notifications.addWarning(
+        '''autocomplete-python invalid regexp to trigger autocompletions.
+        Falling back to default value.''', {
+        detail: "Original exception: #{err}"
+        dismissable: true})
+      atom.config.set('autocomplete-python.triggerCompletionRegex',
+                      '([\.\ ]|[a-zA-Z_][a-zA-Z0-9_]*)')
+      @triggerCompletionRegex = /([\.\ ]|[a-zA-Z_][a-zA-Z0-9_]*)/
+
     selector = 'atom-text-editor[data-grammar~=python]'
     atom.commands.add selector, 'autocomplete-python:go-to-definition', =>
       @goToDefinition()
@@ -235,7 +248,7 @@ module.exports =
     return candidates
 
   getSuggestions: ({editor, bufferPosition, scopeDescriptor, prefix}) ->
-    if prefix not in ['.', ' '] and (prefix.length < 1 or /\W/.test(prefix))
+    if not @triggerCompletionRegex.test(prefix)
       return []
     bufferPosition =
       row: bufferPosition.row
