@@ -9,9 +9,10 @@ filter = undefined
 module.exports =
   selector: '.source.python'
   disableForSelector: '.source.python .comment, .source.python .string'
-  inclusionPriority: 1
-  suggestionPriority: 2
+  inclusionPriority: 2
+  suggestionPriority: 3
   excludeLowerPriority: true
+  cacheSize: 10
 
   _addEventListener: (editor, eventName, handler) ->
     editorView = atom.views.getView editor
@@ -74,6 +75,7 @@ module.exports =
 
   constructor: ->
     @requests = {}
+    @responses = {}
     @provider = null
     @disposables = new CompositeDisposable
     @subscriptions = {}
@@ -150,9 +152,8 @@ module.exports =
   _deserialize: (response) ->
     log.debug 'Deserealizing response from Jedi', response
     log.debug "Got #{response.trim().split('\n').length} lines"
-
-    for response in response.trim().split('\n')
-      response = JSON.parse(response)
+    for responseSource in response.trim().split('\n')
+      response = JSON.parse(responseSource)
       if response['arguments']
         editor = @requests[response['id']]
         if typeof editor == 'object'
@@ -164,11 +165,24 @@ module.exports =
         resolve = @requests[response['id']]
         if typeof resolve == 'function'
           resolve(response['results'])
+      cacheSizeDelta = Object.keys(@responses).length > @cacheSize
+      if cacheSizeDelta > 0
+        ids = Object.keys(@responses).sort (a, b) =>
+          return @responses[a]['timestamp'] - @responses[b]['timestamp']
+        for id in ids.slice(0, cacheSizeDelta)
+          log.debug 'Removing old item from cache with ID', id
+          delete @responses[id]
+      @responses[response['id']] =
+        source: responseSource
+        timestamp: Date.now()
+      log.debug 'Cached request with ID', response['id']
       delete @requests[response['id']]
 
-  _generateRequestId: (editor, bufferPosition) ->
+  _generateRequestId: (editor, bufferPosition, text) ->
+    if not text
+      text = editor.getText()
     return require('crypto').createHash('md5').update([
-      editor.getPath(), editor.getText(), bufferPosition.row,
+      editor.getPath(), text, bufferPosition.row,
       bufferPosition.column].join()).digest('hex')
 
   _generateRequestConfig: ->
@@ -214,37 +228,51 @@ module.exports =
     return new Promise =>
       @requests[payload.id] = editor
 
+  _fuzzyFilter: (candidates, query) ->
+    if candidates.length isnt 0 and query isnt '.'
+      filter ?= require('fuzzaldrin-plus').filter
+      candidates = filter(candidates, query, key: 'text')
+    return candidates
+
   getSuggestions: ({editor, bufferPosition, scopeDescriptor, prefix}) ->
     if prefix not in ['.', ' '] and (prefix.length < 1 or /\W/.test(prefix))
       return []
+    bufferPosition =
+      row: bufferPosition.row
+      column: bufferPosition.column
+    lines = editor.getBuffer().getLines()
     if atom.config.get('autocomplete-python.fuzzyMatcher')
-      # we want to do our own filtering, hide any existing prefix from Jedi
-      line = editor.getTextInRange([[bufferPosition.row, 0], bufferPosition])
-      lastIdentifier = /[a-zA-Z_][a-zA-Z0-9_]*$/.exec(line)
+      # we want to do our own filtering, hide any existing suffix from Jedi
+      line = lines[bufferPosition.row]
+      lastIdentifier = /\.?[a-zA-Z_][a-zA-Z0-9_]*$/.exec(
+        line.slice 0, bufferPosition.column)
       if lastIdentifier
-        column = lastIdentifier.index + 1
+        bufferPosition.column = lastIdentifier.index + 1
+        lines[bufferPosition.row] = line.slice(0, bufferPosition.column)
+    requestId = @_generateRequestId(editor, bufferPosition, lines.join('\n'))
+    if requestId of @responses
+      log.debug 'Using cached response with ID', requestId
+      # We have to parse JSON on each request here to pass only a copy
+      matches = JSON.parse(@responses[requestId]['source'])['results']
+      if atom.config.get('autocomplete-python.fuzzyMatcher')
+        return @_fuzzyFilter(matches, prefix)
       else
-        column = bufferPosition.column
-    else
-      column = bufferPosition.column
+        return matches
     payload =
-      id: @_generateRequestId(editor, bufferPosition)
+      id: requestId
       prefix: prefix
       lookup: 'completions'
       path: editor.getPath()
       source: editor.getText()
       line: bufferPosition.row
-      column: column
+      column: bufferPosition.column
       config: @_generateRequestConfig()
 
     @_sendRequest(@_serialize(payload))
     return new Promise (resolve) =>
       if atom.config.get('autocomplete-python.fuzzyMatcher')
-        @requests[payload.id] = (matches) ->
-          if matches.length isnt 0 and prefix isnt '.'
-            filter ?= require('fuzzaldrin').filter
-            matches = filter(matches, prefix, key: 'text')
-          resolve(matches)
+        @requests[payload.id] = (matches) =>
+          resolve(@_fuzzyFilter(matches, prefix))
       else
         @requests[payload.id] = resolve
 
