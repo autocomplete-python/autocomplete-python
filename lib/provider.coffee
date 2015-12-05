@@ -242,7 +242,7 @@ module.exports =
       column: bufferPosition.column
     lines = editor.getBuffer().getLines()
     if atom.config.get('autocomplete-python.fuzzyMatcher')
-      # we want to do our own filtering, hide any existing prefix from Jedi
+      # we want to do our own filtering, hide any existing suffix from Jedi
       line = lines[bufferPosition.row]
       lastIdentifier = /\.?[a-zA-Z_][a-zA-Z0-9_]*$/.exec(
         line.slice 0, bufferPosition.column)
