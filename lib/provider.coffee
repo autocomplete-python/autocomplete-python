@@ -254,7 +254,10 @@ module.exports =
       log.debug 'Using cached response with ID', requestId
       # We have to parse JSON on each request here to pass only a copy
       matches = JSON.parse(@responses[requestId]['source'])['results']
-      return @_fuzzyFilter(matches, prefix)
+      if atom.config.get('autocomplete-python.fuzzyMatcher')
+        return @_fuzzyFilter(matches, prefix)
+      else
+        return matches
     payload =
       id: requestId
       prefix: prefix

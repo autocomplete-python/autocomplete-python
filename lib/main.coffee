@@ -60,8 +60,7 @@ module.exports =
       default: false
       order: 6
       title: 'Use Fuzzy Matcher For Completions'
-      description: '''Typing `stdr` will match `stderr`. May significantly slow
-      down completions.'''
+      description: '''Typing `stdr` will match `stderr`.'''
     outputProviderErrors:
       type: 'boolean'
       default: false
