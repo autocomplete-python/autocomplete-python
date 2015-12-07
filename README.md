@@ -24,7 +24,7 @@ Python packages, variables, methods and functions with their arguments autocompl
   * Set extra path if package cannot autocomplete external python libraries
   * Select one of autocomplete function parameters if you want function arguments to be completed
 
-  ![image](https://cloud.githubusercontent.com/assets/193864/10657279/540d39f4-78bb-11e5-9bbf-283fb67c9fd4.png)
+  ![image](https://cloud.githubusercontent.com/assets/193864/11631369/aafb34b4-9d3c-11e5-9a06-e8712a21474e.png)
 
 
 # Common problems
