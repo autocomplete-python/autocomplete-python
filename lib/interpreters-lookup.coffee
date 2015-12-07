@@ -60,7 +60,7 @@ module.exports =
         modified = p.replace(/\$PROJECT/i, project)
         if modified not in userDefinedPythonPaths
           userDefinedPythonPaths.push(modified)
-    interpreters = (p for p in userDefinedPythonPaths when @isBinary(p))
+    interpreters = new Set(p for p in userDefinedPythonPaths when @isBinary(p))
     if interpreters.size > 0
       log.debug 'User defined interpreters found', interpreters
       return interpreters.keys().next().value
