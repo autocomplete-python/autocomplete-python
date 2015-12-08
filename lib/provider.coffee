@@ -11,7 +11,7 @@ module.exports =
   disableForSelector: '.source.python .comment, .source.python .string'
   inclusionPriority: 2
   suggestionPriority: 3
-  excludeLowerPriority: true
+  excludeLowerPriority: false
   cacheSize: 10
 
   _addEventListener: (editor, eventName, handler) ->
