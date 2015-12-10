@@ -242,7 +242,7 @@ module.exports =
       @requests[payload.id] = editor
 
   _fuzzyFilter: (candidates, query) ->
-    if candidates.length isnt 0 and query isnt '.'
+    if candidates.length isnt 0 and query not in [' ', '.']
       filter ?= require('fuzzaldrin-plus').filter
       candidates = filter(candidates, query, key: 'text')
     return candidates
