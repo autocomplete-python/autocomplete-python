@@ -64,10 +64,12 @@ module.exports =
       spaces. You will need to restart your editor after changing this.'''
     fuzzyMatcher:
       type: 'boolean'
-      default: false
+      default: true
       order: 7
-      title: 'Use Fuzzy Matcher For Completions'
-      description: '''Typing `stdr` will match `stderr`.'''
+      title: 'Use Fuzzy Matcher For Completions.'
+      description: '''Typing `stdr` will match `stderr`.
+      First character should always match. Uses additional caching thus
+      completions should be faster.'''
     outputProviderErrors:
       type: 'boolean'
       default: false
