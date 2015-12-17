@@ -31,3 +31,8 @@ Python packages, variables, methods and functions with their arguments autocompl
 
 * "Error: spawn UNKNOWN" on Windows
   * Solution: Find your python executable and uncheck the "Run this program as an administrator". See issue [#22](https://github.com/sadovnychyi/autocomplete-python/issues/22)
+* You have a separated folder for virtualenvs (e.g. by using `virtualenvwrapper`) and all your virtualenvs are stored in e.g. `~/.virtualenvs/`
+  * Create symlink to venv from your project root
+    * OR
+  * Add virtualenv folder as additional project root
+  * See issue [#143](https://github.com/sadovnychyi/autocomplete-python/issues/143)
