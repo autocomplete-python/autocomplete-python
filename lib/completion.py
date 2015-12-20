@@ -265,6 +265,7 @@ class JediCompletion(object):
                 self._process_request(self._input.readline())
             except Exception:
                 sys.stderr.write(traceback.format_exc() + '\n')
+                sys.stderr.flush()
 
 if __name__ == '__main__':
     JediCompletion().watch()
