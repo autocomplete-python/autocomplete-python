@@ -69,7 +69,8 @@ module.exports =
       title: 'Use Fuzzy Matcher For Completions.'
       description: '''Typing `stdr` will match `stderr`.
       First character should always match. Uses additional caching thus
-      completions should be faster.'''
+      completions should be faster. Note that this setting does not affect
+      built-in autocomplete-plus provider.'''
     outputProviderErrors:
       type: 'boolean'
       default: false
