@@ -49,7 +49,16 @@ module.exports =
         if data.indexOf('is not recognized as an internal or external') > -1
           return @_noExecutableError(data)
         log.debug "autocomplete-python traceback output: #{data}"
-        if atom.config.get('autocomplete-python.outputProviderErrors')
+        if data.indexOf('jedi') > -1
+          if atom.config.get('autocomplete-python.outputProviderErrors')
+            atom.notifications.addWarning(
+              '''Looks like this error originated from Jedi. Please do not
+              report such issues in autocomplete-python issue tracker. Report
+              them directly to Jedi. Turn off `outputProviderErrors` setting
+              to hide such errors in future. Traceback output:''', {
+              detail: "#{data}",
+              dismissable: true})
+        else
           atom.notifications.addError(
             'autocomplete-python traceback output:', {
               detail: "#{data}",
