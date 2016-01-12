@@ -1,5 +1,5 @@
 provider = require './provider'
-hyperclickProvider = require './hyperclickProvider'
+hyperclickProvider = require './hyperclick-provider'
 
 module.exports =
   config:
