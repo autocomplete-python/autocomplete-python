@@ -2,6 +2,7 @@
 {selectorsMatchScopeChain} = require './scope-helpers'
 {Selector} = require 'selector-kit'
 DefinitionsView = require './definitions-view'
+UsagesView = require './usages-view'
 InterpreterLookup = require './interpreters-lookup'
 log = require './log'
 filter = undefined
@@ -89,6 +90,7 @@ module.exports =
     @disposables = new CompositeDisposable
     @subscriptions = {}
     @definitionsView = null
+    @usagesView = null
     @snippetsManager = null
 
     try
@@ -110,6 +112,15 @@ module.exports =
     atom.commands.add selector, 'autocomplete-python:complete-arguments', =>
       editor = atom.workspace.getActiveTextEditor()
       @_completeArguments(editor, editor.getCursorBufferPosition(), true)
+
+    atom.commands.add selector, 'autocomplete-python:show-usages', =>
+      editor = atom.workspace.getActiveTextEditor()
+      bufferPosition = editor.getCursorBufferPosition()
+      if @usagesView
+        @usagesView.destroy()
+      @usagesView = new UsagesView()
+      @getUsages(editor, bufferPosition).then (results) =>
+        @usagesView.setItems(results)
 
     atom.workspace.observeTextEditors (editor) =>
       # TODO: this should be deprecated in next stable release
@@ -311,6 +322,20 @@ module.exports =
     payload =
       id: @_generateRequestId(editor, bufferPosition)
       lookup: 'definitions'
+      path: editor.getPath()
+      source: editor.getText()
+      line: bufferPosition.row
+      column: bufferPosition.column
+      config: @_generateRequestConfig()
+
+    @_sendRequest(@_serialize(payload))
+    return new Promise (resolve) =>
+      @requests[payload.id] = resolve
+
+  getUsages: (editor, bufferPosition) ->
+    payload =
+      id: @_generateRequestId(editor, bufferPosition)
+      lookup: 'usages'
       path: editor.getPath()
       source: editor.getText()
       line: bufferPosition.row

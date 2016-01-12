@@ -222,6 +222,18 @@ class JediCompletion(object):
                 _definitions.append(_definition)
         return json.dumps({'id': identifier, 'results': _definitions})
 
+    def _serialize_usages(self, usages, identifier=None):
+      _usages = []
+      for usage in usages:
+        _usages.append({
+          'name': usage.name,
+          'moduleName': usage.module_name,
+          'fileName': usage.module_path,
+          'line': usage.line,
+          'column': usage.column,
+        })
+      return json.dumps({'id': identifier, 'results': _usages})
+
     def _deserialize(self, request):
         """Deserialize request from Atom.
 
@@ -275,6 +287,9 @@ class JediCompletion(object):
         elif lookup == 'arguments':
             return self._write_response(self._serialize_arguments(
                 script, request['id']))
+        elif lookup == 'usages':
+            return self._write_response(self._serialize_usages(
+                script.usages(), request['id']))
         else:
             return self._write_response(
                 self._serialize_completions(script, request['id'],
