@@ -1,5 +1,6 @@
 import os
 import io
+import re
 import sys
 import json
 import traceback
@@ -7,6 +8,8 @@ sys.path.append(os.path.dirname(__file__))
 import jedi
 # remove jedi from path after we import it so it will not be completed
 sys.path.pop(0)
+
+WORD_RE = re.compile(r'\w')
 
 
 class JediCompletion(object):
@@ -146,6 +149,7 @@ class JediCompletion(object):
         Returns:
           Serialized string to send to Atom.
         """
+        seen = set()
         arguments = []
         i = 1
         try:
@@ -158,6 +162,8 @@ class JediCompletion(object):
                     continue
                 if param.name == 'self' and pos == 0:
                     continue
+                if WORD_RE.match(param.name) is None:
+                    continue
                 try:
                     name, value = param.description.split('=')
                 except ValueError:
@@ -166,9 +172,14 @@ class JediCompletion(object):
                 if name.startswith('*'):
                     continue
                 if not value:
-                    arguments.append('${%s:%s}' % (i, name))
+                    arg = '${%s:%s}' % (i, name)
                 elif self.use_snippets == 'all':
-                    arguments.append('%s=${%s:%s}' % (name, i, value))
+                    arg = '%s=${%s:%s}' % (name, i, value)
+                else:
+                  continue
+                if name not in seen:
+                  seen.add(name)
+                  arguments.append(arg)
                 i += 1
         snippet = '%s$0' % ', '.join(arguments)
         return json.dumps({'id': identifier, 'results': [],
