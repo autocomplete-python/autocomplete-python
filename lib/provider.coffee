@@ -46,7 +46,7 @@ module.exports =
       stdout: (data) =>
         @_deserialize(data)
       stderr: (data) =>
-        if data.indexOf('is not recognized as an internal or external command, operable program or batch file') > -1
+        if data.indexOf('is not recognized as an internal or external') > -1
           return @_noExecutableError(data)
         log.debug "autocomplete-python traceback output: #{data}"
         if atom.config.get('autocomplete-python.outputProviderErrors')
@@ -228,6 +228,15 @@ module.exports =
     if selectorsMatchScopeChain(disableForSelector, scopeChain)
       log.debug 'Ignoring argument completion inside of', scopeChain
       return
+
+    # we don't want to complete arguments inside of existing code
+    lines = editor.getBuffer().getLines()
+    line = lines[bufferPosition.row]
+    suffix = line.slice bufferPosition.column, line.length
+    if not /^(\)(?:$|\s)|\s|$)/.test(suffix)
+      log.debug 'Ignoring argument completion with suffix', suffix
+      return
+
     payload =
       id: @_generateRequestId(editor, bufferPosition)
       lookup: 'arguments'
