@@ -195,9 +195,23 @@ class JediCompletion(object):
         Returns:
           Serialized string to send to Atom.
         """
+
+        def _top_definition(definition):
+          for d in definition.goto_assignments():
+            if d == definition:
+              continue
+            if d.type == 'import':
+              return _top_definition(d)
+            else:
+              return d
+          return definition
+
         _definitions = []
         for definition in definitions:
             if definition.module_path:
+                if definition.type == 'import':
+                    definition = _top_definition(definition)
+
                 _definition = {
                     'text': definition.name,
                     'type': self._get_definition_type(definition),
