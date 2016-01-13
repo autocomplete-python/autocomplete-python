@@ -4,7 +4,7 @@ Python packages, variables, methods and functions with their arguments autocompl
 
 See [releases](https://github.com/sadovnychyi/autocomplete-python/releases) for release notes.
 
-![Demo](https://cloud.githubusercontent.com/assets/193864/7394244/e6906980-eec4-11e4-9ee2-8749d16ff468.gif)
+![Demo](https://cloud.githubusercontent.com/assets/193864/12288427/61fe2114-ba0f-11e5-9832-98869180d87f.gif)
 
 # Features
 
