@@ -66,56 +66,69 @@ class JediCompletion(object):
             completion.name,
             ', '.join(param.description for param in completion.params))
 
-    def _serialize_completions(self, script, identifier=None, prefix=''):
-        """Serialize response to be read from Atom.
-
-        Args:
-          script: Instance of jedi.api.Script object.
-          identifier: Unique completion identifier to pass back to Atom.
-          prefix: String with prefix to filter function arguments.
-            Used only when fuzzy matcher turned off.
+    def _get_call_signatures(self, script):
+        """Extract call signatures from jedi.api.Script object in failsafe way.
 
         Returns:
-          Serialized string to send to Atom.
+            Tuple with original signature object, name and value.
         """
-        _completions = []
-
+        _signatures = []
         try:
             call_signatures = script.call_signatures()
         except KeyError:
             call_signatures = []
-        for call_signature in call_signatures:
-            for pos, param in enumerate(call_signature.params):
+        for signature in call_signatures:
+            for pos, param in enumerate(signature.params):
                 if not param.name:
                     continue
                 if param.name == 'self' and pos == 0:
+                    continue
+                if WORD_RE.match(param.name) is None:
                     continue
                 try:
                     name, value = param.description.split('=')
                 except ValueError:
                     name = param.description
                     value = None
-                if not self.fuzzy_matcher and not name.lower().startswith(
-                  prefix.lower()):
-                    continue
-                _completion = {
-                    'type': 'property',
-                    'rightLabel': self._additional_info(call_signature)
-                }
-                # we pass 'text' here only for fuzzy matcher
-                if value:
-                    _completion['snippet'] = '%s=${1:%s}$0' % (name, value)
-                    _completion['text'] = '%s=%s' % (name, value)
-                else:
-                    _completion['snippet'] = '%s=$1$0' % name
-                    _completion['text'] = name
-                    _completion['displayText'] = name
-                if self.show_doc_strings:
-                    _completion['description'] = call_signature.docstring()
-                else:
-                    _completion['description'] = self._generate_signature(
-                        call_signature)
-                _completions.append(_completion)
+                _signatures.append((signature, name, value))
+        return _signatures
+
+    def _serialize_completions(self, script, identifier=None, prefix=''):
+        """Serialize response to be read from Atom.
+
+        Args:
+            script: Instance of jedi.api.Script object.
+            identifier: Unique completion identifier to pass back to Atom.
+            prefix: String with prefix to filter function arguments.
+                Used only when fuzzy matcher turned off.
+
+        Returns:
+            Serialized string to send to Atom.
+        """
+        _completions = []
+
+        for signature, name, value in self._get_call_signatures(script):
+            if not self.fuzzy_matcher and not name.lower().startswith(
+              prefix.lower()):
+                continue
+            _completion = {
+                'type': 'property',
+                'rightLabel': self._additional_info(signature)
+            }
+            # we pass 'text' here only for fuzzy matcher
+            if value:
+                _completion['snippet'] = '%s=${1:%s}$0' % (name, value)
+                _completion['text'] = '%s=%s' % (name, value)
+            else:
+                _completion['snippet'] = '%s=$1$0' % name
+                _completion['text'] = name
+                _completion['displayText'] = name
+            if self.show_doc_strings:
+                _completion['description'] = signature.docstring()
+            else:
+                _completion['description'] = self._generate_signature(
+                    signature)
+            _completions.append(_completion)
 
         try:
             completions = script.completions()
@@ -143,44 +156,26 @@ class JediCompletion(object):
         """Serialize response to be read from Atom.
 
         Args:
-          script: Instance of jedi.api.Script object.
-          identifier: Unique completion identifier to pass back to Atom.
+            script: Instance of jedi.api.Script object.
+            identifier: Unique completion identifier to pass back to Atom.
 
         Returns:
-          Serialized string to send to Atom.
+            Serialized string to send to Atom.
         """
         seen = set()
         arguments = []
         i = 1
-        try:
-            call_signatures = script.call_signatures()
-        except KeyError:
-            call_signatures = []
-        for call_signature in call_signatures:
-            for pos, param in enumerate(call_signature.params):
-                if not param.name:
-                    continue
-                if param.name == 'self' and pos == 0:
-                    continue
-                if WORD_RE.match(param.name) is None:
-                    continue
-                try:
-                    name, value = param.description.split('=')
-                except ValueError:
-                    name = param.description
-                    value = None
-                if name.startswith('*'):
-                    continue
-                if not value:
-                    arg = '${%s:%s}' % (i, name)
-                elif self.use_snippets == 'all':
-                    arg = '%s=${%s:%s}' % (name, i, value)
-                else:
-                  continue
-                if name not in seen:
-                  seen.add(name)
-                  arguments.append(arg)
-                i += 1
+        for _, name, value in self._get_call_signatures(script):
+            if not value:
+                arg = '${%s:%s}' % (i, name)
+            elif self.use_snippets == 'all':
+                arg = '%s=${%s:%s}' % (name, i, value)
+            else:
+              continue
+            if name not in seen:
+              seen.add(name)
+              arguments.append(arg)
+            i += 1
         snippet = '%s$0' % ', '.join(arguments)
         return json.dumps({'id': identifier, 'results': [],
                            'arguments': snippet})
@@ -189,11 +184,11 @@ class JediCompletion(object):
         """Serialize response to be read from Atom.
 
         Args:
-          definitions: List of jedi.api.classes.Definition objects.
-          identifier: Unique completion identifier to pass back to Atom.
+            definitions: List of jedi.api.classes.Definition objects.
+            identifier: Unique completion identifier to pass back to Atom.
 
         Returns:
-          Serialized string to send to Atom.
+            Serialized string to send to Atom.
         """
 
         def _top_definition(definition):
@@ -238,22 +233,22 @@ class JediCompletion(object):
         """Deserialize request from Atom.
 
         Args:
-          request: String with raw request from Atom.
+            request: String with raw request from Atom.
 
         Returns:
-          Python dictionary with request data.
+            Python dictionary with request data.
         """
         return json.loads(request)
 
     def _set_request_config(self, config):
-        """Sets config values for current request including sys.path
-        modifications.
+        """Sets config values for current request.
 
-        The sys.path is getting restored to default value on each request
-        so each project should be isolated from each other.
+        This includes sys.path modifications which is getting restored to
+        default value on each request so each project should be isolated
+        from each other.
 
         Args:
-          config: Dictionary with config values.
+            config: Dictionary with config values.
         """
         sys.path = self.default_sys_path
         self.use_snippets = config.get('useSnippets')
