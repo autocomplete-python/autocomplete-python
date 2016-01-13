@@ -7,14 +7,27 @@ Python packages, variables, methods and functions with their arguments autocompl
 # Features
 
 * Works with :apple: Mac OSX, :penguin: Linux and :checkered_flag: Windows
+
 * Works with both :snake: Python 2 and 3
+
 * Automatic lookup of virtual environments inside of your projects
+
 * Configurable additional packages to include for completions
+
 * Prints first N characters of statement value while completing variables
+
 * Prints function arguments while completing functions
+
 * Go-to-definition functionality, by default on `Alt+Cmd+G`/`Ctrl+Alt+G` (thanks to [@patrys](https://github.com/patrys))
+
 * If you have [Hyperclick](https://atom.io/packages/hyperclick) installed – you can click on anything to go-to-definition
-![sample](https://cloud.githubusercontent.com/assets/193864/10814177/17fb8bce-7e5f-11e5-8285-6b0100b3a0f8.gif)
+  ![sample](https://cloud.githubusercontent.com/assets/193864/10814177/17fb8bce-7e5f-11e5-8285-6b0100b3a0f8.gif)
+
+* Show usages of selected object
+  ![sample](https://cloud.githubusercontent.com/assets/193864/12263525/aff07ad4-b96a-11e5-949e-598e943b0190.gif)
+
+* Rename across multiple files. It will not touch files outside of your project, but it will change VCS ignored files. I'm not responsible for any broken projects without VCS because of this.
+  ![sample](https://cloud.githubusercontent.com/assets/193864/12288191/f448b55a-ba0c-11e5-81d7-31289ef5dbba.gif)
 
 # Configuration
 

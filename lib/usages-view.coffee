@@ -25,6 +25,15 @@ class UsagesView extends SelectListView
 
   getFilterKey: -> 'fileName'
 
+  scrollToItemView: ->
+    super
+    {name, moduleName, fileName, line, column} = @getSelectedItem()
+    editor = atom.workspace.getActiveTextEditor()
+    if editor.getBuffer().file.path is fileName
+      editor.setSelectedBufferRange([
+        [line - 1, column], [line - 1, column + name.length]])
+      editor.scrollToBufferPosition([line - 1, column], center: true)
+
   getEmptyMessage: (itemCount) ->
     if itemCount is 0
       'No usages found'
