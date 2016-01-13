@@ -3,8 +3,10 @@
 {Selector} = require 'selector-kit'
 DefinitionsView = require './definitions-view'
 UsagesView = require './usages-view'
+RenameView = require './rename-view'
 InterpreterLookup = require './interpreters-lookup'
 log = require './log'
+_ = require 'underscore'
 filter = undefined
 
 module.exports =
@@ -91,6 +93,7 @@ module.exports =
     @subscriptions = {}
     @definitionsView = null
     @usagesView = null
+    @renameView = null
     @snippetsManager = null
 
     try
@@ -119,8 +122,36 @@ module.exports =
       if @usagesView
         @usagesView.destroy()
       @usagesView = new UsagesView()
-      @getUsages(editor, bufferPosition).then (results) =>
-        @usagesView.setItems(results)
+      @getUsages(editor, bufferPosition).then (usages) =>
+        @usagesView.setItems(usages)
+
+    atom.commands.add selector, 'autocomplete-python:rename', =>
+      editor = atom.workspace.getActiveTextEditor()
+      bufferPosition = editor.getCursorBufferPosition()
+      @getUsages(editor, bufferPosition).then (usages) =>
+        if @renameView
+          @renameView.destroy()
+        if usages.length > 0
+          @renameView = new RenameView(usages)
+          @renameView.onInput (newName) ->
+            for fileName, usages of _.groupBy(usages, 'fileName')
+              columnOffset = {}
+              #  TODO: ignore files OUTSIDE of project
+              atom.workspace.open(fileName).then (editor) ->
+                for usage in usages
+                  {name, line, column} = usage
+                  columnOffset[line] ?= 0
+                  log.debug 'Replacing', usage, 'with', newName
+                  editor.setTextInBufferRange([
+                    [line - 1, column + columnOffset[line]],
+                    [line - 1, column + name.length + columnOffset[line]],
+                    ], newName)
+                  columnOffset[line] += newName.length - name.length
+        else
+          if @usagesView
+            @usagesView.destroy()
+          @usagesView = new UsagesView()
+          @usagesView.setItems(usages)
 
     atom.workspace.observeTextEditors (editor) =>
       # TODO: this should be deprecated in next stable release
