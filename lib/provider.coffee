@@ -133,20 +133,13 @@ module.exports =
           @renameView.destroy()
         if usages.length > 0
           @renameView = new RenameView(usages)
-          @renameView.onInput (newName) ->
+          @renameView.onInput (newName) =>
             for fileName, usages of _.groupBy(usages, 'fileName')
-              columnOffset = {}
-              #  TODO: ignore files OUTSIDE of project
-              atom.workspace.open(fileName).then (editor) ->
-                for usage in usages
-                  {name, line, column} = usage
-                  columnOffset[line] ?= 0
-                  log.debug 'Replacing', usage, 'with', newName
-                  editor.setTextInBufferRange([
-                    [line - 1, column + columnOffset[line]],
-                    [line - 1, column + name.length + columnOffset[line]],
-                    ], newName)
-                  columnOffset[line] += newName.length - name.length
+              [project, _relative] = atom.project.relativizePath(fileName)
+              if project
+                @_updateUsagesInFile(fileName, usages, newName)
+              else
+                log.debug 'Ignoring file outside of project', fileName
         else
           if @usagesView
             @usagesView.destroy()
@@ -158,6 +151,20 @@ module.exports =
       @_handleGrammarChangeEvent(editor, editor.getGrammar())
       editor.displayBuffer.onDidChangeGrammar (grammar) =>
         @_handleGrammarChangeEvent(editor, grammar)
+
+  _updateUsagesInFile: (fileName, usages, newName) ->
+    columnOffset = {}
+    atom.workspace.open(fileName, activateItem: false).then (editor) ->
+      for usage in usages
+        {name, line, column} = usage
+        columnOffset[line] ?= 0
+        log.debug 'Replacing', usage, 'with', newName, 'in', editor.id
+        log.debug 'Offset for line', line, 'is', columnOffset[line]
+        editor.setTextInBufferRange([
+          [line - 1, column + columnOffset[line]],
+          [line - 1, column + name.length + columnOffset[line]],
+          ], newName)
+        columnOffset[line] += newName.length - name.length
 
   _handleGrammarChangeEvent: (editor, grammar) ->
     eventName = 'keyup'
