@@ -2,6 +2,8 @@
 
 Python packages, variables, methods and functions with their arguments autocompletion in [Atom](http://atom.io) powered by [Jedi](https://github.com/davidhalter/jedi).
 
+See [releases](https://github.com/sadovnychyi/autocomplete-python/releases) for release notes.
+
 ![Demo](https://cloud.githubusercontent.com/assets/193864/7394244/e6906980-eec4-11e4-9ee2-8749d16ff468.gif)
 
 # Features
