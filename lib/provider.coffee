@@ -155,16 +155,18 @@ module.exports =
   _updateUsagesInFile: (fileName, usages, newName) ->
     columnOffset = {}
     atom.workspace.open(fileName, activateItem: false).then (editor) ->
+      buffer = editor.getBuffer()
       for usage in usages
         {name, line, column} = usage
         columnOffset[line] ?= 0
         log.debug 'Replacing', usage, 'with', newName, 'in', editor.id
         log.debug 'Offset for line', line, 'is', columnOffset[line]
-        editor.setTextInBufferRange([
+        buffer.setTextInRange([
           [line - 1, column + columnOffset[line]],
           [line - 1, column + name.length + columnOffset[line]],
           ], newName)
         columnOffset[line] += newName.length - name.length
+      buffer.save()
 
   _handleGrammarChangeEvent: (editor, grammar) ->
     eventName = 'keyup'
