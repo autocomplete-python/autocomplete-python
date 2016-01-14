@@ -172,8 +172,10 @@ module.exports =
     eventName = 'keyup'
     eventId = "#{editor.displayBuffer.id}.#{eventName}"
     if grammar.scopeName == 'source.python'
-      disposable = @_addEventListener editor, eventName, (event) =>
-        if event.keyIdentifier == 'U+0028'
+      disposable = @_addEventListener editor, eventName, (e) =>
+        if e.keyIdentifier == 'U+0028' or (e.keyIdentifier == 'U+0039' and
+                                           e.shiftKey)
+          log.debug 'Trying to complete arguments on keyup event', e
           @_completeArguments(editor, editor.getCursorBufferPosition())
       @disposables.add disposable
       @subscriptions[eventId] = disposable
@@ -281,7 +283,6 @@ module.exports =
     useSnippets = atom.config.get('autocomplete-python.useSnippets')
     if not force and useSnippets == 'none'
       return
-    log.debug 'Trying to complete arguments after left parenthesis...'
     scopeDescriptor = editor.scopeDescriptorForBufferPosition(bufferPosition)
     scopeChain = scopeDescriptor.getScopeChain()
     disableForSelector = Selector.create(@disableForSelector)
