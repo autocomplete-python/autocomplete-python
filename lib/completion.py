@@ -90,6 +90,8 @@ class JediCompletion(object):
                 except ValueError:
                     name = param.description
                     value = None
+                if name.startswith('*'):
+                    continue
                 _signatures.append((signature, name, value))
         return _signatures
 
