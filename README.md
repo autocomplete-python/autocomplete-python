@@ -51,3 +51,8 @@ See [releases](https://github.com/sadovnychyi/autocomplete-python/releases) for 
     * OR
   * Add virtualenv folder as additional project root
   * See issue [#143](https://github.com/sadovnychyi/autocomplete-python/issues/143)
+* No argument completion after I type left parenthesis character
+  * Likely this is because you have non standard keyboard layout.
+  Try to install the keyboard-localization package from: https://atom.io/packages/keyboard-localization
+  and use keymap generator to check what unicode character being generated after you type `(`.
+  Currently we trigger argument completion only on `U+0028`, `U+0038` and `U+0039`.

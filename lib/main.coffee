@@ -18,7 +18,8 @@ module.exports =
       description: '''Automatically complete function arguments after typing
       left parenthesis character. Use completion key to jump between
       arguments. See `autocomplete-python:complete-arguments` command if you
-      want to trigger argument completions manually.'''
+      want to trigger argument completions manually. See README if it does not
+      work for you.'''
     pythonPaths:
       type: 'string'
       default: ''
