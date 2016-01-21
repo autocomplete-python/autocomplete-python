@@ -31,10 +31,10 @@ module.exports =
       automatically look for virtual environments inside of your project and
       try to use them as well as try to find global python executable. If you
       use this config, automatic lookup will have lowest priority.
-      Use `$PROJECT` or `$PROJECT_NAME` substitution for project-specific
+      Use `$PROJECT` or `$FOLDER_NAME` substitution for project-specific
       paths to point on executables in virtual environments.
       For example:
-      `~/virtualenv/$PROJECT_NAME/bin/python;/usr/bin/python`.
+      `/Users/name/.virtualenvs/$FOLDER_NAME/bin/python;/usr/bin/python`.
       or
       `$PROJECT/venv/bin/python3;/usr/bin/python`
       Such config will fall back on `/usr/bin/python` for projects without
@@ -47,14 +47,14 @@ module.exports =
       order: 4
       title: 'Extra Paths For Packages'
       description: '''Semicolon separated list of modules to additionally
-      include for autocomplete. You can use `$PROJECT` or `$PROJECT_NAME`
+      include for autocomplete. You can use `$PROJECT` or `$FOLDER_NAME`
       substitution here to include project specific folders like
       virtual environment.
       Note that it still should be valid python package.
       For example:
       `$PROJECT/env/lib/python2.7/site-packages`.
       or
-      `~/virtualenv/$PROJECT_NAME/lib/python2.7/site-packages`
+      `/User/name/.virtualenvs/$FOLDER_NAME/lib/python2.7/site-packages`
       You don't need to specify extra paths for libraries installed with python
       executable you use.'''
     caseInsensitiveCompletion:

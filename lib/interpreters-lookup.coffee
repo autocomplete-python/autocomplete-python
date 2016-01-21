@@ -58,8 +58,9 @@ module.exports =
     for p in atom.config.get('autocomplete-python.pythonPaths').split(';')
       for project in atom.project.getPaths()
         modified = p.replace(/\$PROJECT/i, project)
-        project_folder_name = project.match(/([^\/]*)\/*$/)[1]
-        modified = modified.replace(/\$PROJECT_NAME/i, project_folder_name)
+        splittedFolders = project.split(path.sep)
+        projectFolderName = splittedFolders[splittedFolders.length - 1]
+        modified = modified.replace(/\$FOLDER_NAME/i, projectFolderName)
         if modified not in userDefinedPythonPaths
           userDefinedPythonPaths.push(modified)
     interpreters = new Set(p for p in userDefinedPythonPaths when @isBinary(p))

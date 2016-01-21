@@ -51,8 +51,8 @@ See [releases](https://github.com/sadovnychyi/autocomplete-python/releases) for 
     * OR
   * Add virtualenv folder as additional project root
     * OR
-  * Use a virtualenv with the same name as the folder name of your project and use $PROJECT_NAME variable such as
-  `/.virtualenvs/$PROJECT_NAME/lib/python3.4/site-packages/`
+  * Use a virtualenv with the same name as the folder name of your project and use $FOLDER_NAME variable such as
+  `/Users/name/.virtualenvs/$FOLDER_NAME/lib/python3.4/site-packages/`
   * See issue [#143](https://github.com/sadovnychyi/autocomplete-python/issues/143)
 * No argument completion after I type left parenthesis character
   * Likely this is because you have non standard keyboard layout.
