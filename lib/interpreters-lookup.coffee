@@ -53,16 +53,20 @@ module.exports =
         interpreters.add(potentialInterpreter)
     return interpreters
 
-  getInterpreter: ->
-    userDefinedPythonPaths = []
-    for p in atom.config.get('autocomplete-python.pythonPaths').split(';')
+  applySubstitutions: (paths) ->
+    modPaths = []
+    for p in paths
       for project in atom.project.getPaths()
-        modified = p.replace(/\$PROJECT/i, project)
-        splittedFolders = project.split(path.sep)
-        projectFolderName = splittedFolders[splittedFolders.length - 1]
-        modified = modified.replace(/\$FOLDER_NAME/i, projectFolderName)
-        if modified not in userDefinedPythonPaths
-          userDefinedPythonPaths.push(modified)
+        [..., projectName] = project.split(path.sep)
+        p = p.replace(/\$PROJECT_NAME/i, projectName)
+        p = p.replace(/\$PROJECT/i, project)
+        if p not in modPaths
+          modPaths.push p
+    return modPaths
+
+  getInterpreter: ->
+    userDefinedPythonPaths = @applySubstitutions(
+      atom.config.get('autocomplete-python.pythonPaths').split(';'))
     interpreters = new Set(p for p in userDefinedPythonPaths when @isBinary(p))
     if interpreters.size > 0
       log.debug 'User defined interpreters found', interpreters

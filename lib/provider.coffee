@@ -263,12 +263,8 @@ module.exports =
       bufferPosition.column].join()).digest('hex')
 
   _generateRequestConfig: ->
-    extraPaths = []
-    for p in atom.config.get('autocomplete-python.extraPaths').split(';')
-      for project in atom.project.getPaths()
-        modified = p.replace(/\$PROJECT/i, project)
-        if modified not in extraPaths
-          extraPaths.push(modified)
+    extraPaths = InterpreterLookup.applySubstitutions(
+      atom.config.get('autocomplete-python.extraPaths').split(';'))
     args =
       'extraPaths': extraPaths
       'useSnippets': atom.config.get('autocomplete-python.useSnippets')
