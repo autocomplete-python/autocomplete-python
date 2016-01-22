@@ -400,4 +400,5 @@ module.exports =
 
   dispose: ->
     @disposables.dispose()
-    @provider.kill()
+    if @provider
+      @provider.kill()
