@@ -282,6 +282,8 @@ module.exports =
   _completeArguments: (editor, bufferPosition, force) ->
     useSnippets = atom.config.get('autocomplete-python.useSnippets')
     if not force and useSnippets == 'none'
+      atom.commands.dispatch(document.querySelector('atom-text-editor'),
+                             'autocomplete-plus:activate')
       return
     scopeDescriptor = editor.scopeDescriptorForBufferPosition(bufferPosition)
     scopeChain = scopeDescriptor.getScopeChain()
@@ -312,7 +314,7 @@ module.exports =
       @requests[payload.id] = editor
 
   _fuzzyFilter: (candidates, query) ->
-    if candidates.length isnt 0 and query not in [' ', '.']
+    if candidates.length isnt 0 and query not in [' ', '.', '(']
       filter ?= require('fuzzaldrin-plus').filter
       candidates = filter(candidates, query, key: 'text')
     return candidates

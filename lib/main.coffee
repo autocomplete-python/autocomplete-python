@@ -63,11 +63,12 @@ module.exports =
       description: 'The completion is by default case insensitive.'
     triggerCompletionRegex:
       type: 'string'
-      default: '([\.\ ]|[a-zA-Z_][a-zA-Z0-9_]*)'
+      default: '([\.\ (]|[a-zA-Z_][a-zA-Z0-9_]*)'
       order: 6
       title: 'Regex To Trigger Autocompletions'
-      description: '''By default completions triggered after words, dots and
-      spaces. You will need to restart your editor after changing this.'''
+      description: '''By default completions triggered after words, dots, spaces
+      and left parenthesis. You will need to restart your editor after changing
+      this.'''
     fuzzyMatcher:
       type: 'boolean'
       default: true
