@@ -295,6 +295,10 @@ module.exports =
     # we don't want to complete arguments inside of existing code
     lines = editor.getBuffer().getLines()
     line = lines[bufferPosition.row]
+    prefix = line.slice(bufferPosition.column - 1, bufferPosition.column)
+    if prefix isnt '('
+      log.debug 'Ignoring argument completion with prefix', prefix
+      return
     suffix = line.slice bufferPosition.column, line.length
     if not /^(\)(?:$|\s)|\s|$)/.test(suffix)
       log.debug 'Ignoring argument completion with suffix', suffix
