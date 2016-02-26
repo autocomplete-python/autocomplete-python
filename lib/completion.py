@@ -154,6 +154,23 @@ class JediCompletion(object):
             _completions.append(_completion)
         return json.dumps({'id': identifier, 'results': _completions})
 
+    def _serialize_methods(self, script, identifier=None, prefix=''):
+        _methods = []
+        try:
+            completions = script.completions()
+        except KeyError:
+            return []
+        for completion in completions:
+            if completion.parent().type == 'class':
+              _methods.append({
+                'name': completion.name,
+                'moduleName': completion.module_name,
+                'fileName': completion.module_path,
+                'line': completion.line,
+                'column': completion.column,
+              })
+        return json.dumps({'id': identifier, 'results': _methods})
+
     def _serialize_arguments(self, script, identifier=None):
         """Serialize response to be read from Atom.
 
@@ -287,6 +304,10 @@ class JediCompletion(object):
         elif lookup == 'usages':
             return self._write_response(self._serialize_usages(
                 script.usages(), request['id']))
+        elif lookup == 'methods':
+          return self._write_response(
+              self._serialize_methods(script, request['id'],
+                                      request.get('prefix', '')))
         else:
             return self._write_response(
                 self._serialize_completions(script, request['id'],
