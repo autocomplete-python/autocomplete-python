@@ -77,7 +77,7 @@ module.exports =
       else
         throw error
 
-    @provider.process.stdin.on 'error', (err) ->
+    @provider.process?.stdin.on 'error', (err) ->
       log.debug 'stdin', err
 
     setTimeout =>
@@ -159,10 +159,13 @@ module.exports =
           @usagesView.setItems(usages)
 
     atom.workspace.observeTextEditors (editor) =>
-      # TODO: this should be deprecated in next stable release
       @_handleGrammarChangeEvent(editor, editor.getGrammar())
       editor.displayBuffer.onDidChangeGrammar (grammar) =>
         @_handleGrammarChangeEvent(editor, grammar)
+
+    atom.config.onDidChange 'autocomplete-plus.enableAutoActivation', =>
+      atom.workspace.observeTextEditors (editor) =>
+        @_handleGrammarChangeEvent(editor, editor.getGrammar())
 
   _updateUsagesInFile: (fileName, usages, newName) ->
     columnOffset = {}
