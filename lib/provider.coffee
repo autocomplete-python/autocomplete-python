@@ -8,6 +8,7 @@ RenameView = require './rename-view'
 InterpreterLookup = require './interpreters-lookup'
 log = require './log'
 _ = require 'underscore'
+{MessagePanelView, LineMessageView} = require 'atom-message-panel'
 filter = undefined
 
 module.exports =
@@ -166,6 +167,14 @@ module.exports =
     atom.config.onDidChange 'autocomplete-plus.enableAutoActivation', =>
       atom.workspace.observeTextEditors (editor) =>
         @_handleGrammarChangeEvent(editor, editor.getGrammar())
+
+    messages = new MessagePanelView
+      title: 'Remember your Coffee!'
+    messages.attach()
+    messages.add new LineMessageView
+      line: 1
+      character: 4
+      message: 'You haven\'t had a single drop of coffee since this character'
 
   _updateUsagesInFile: (fileName, usages, newName) ->
     columnOffset = {}
