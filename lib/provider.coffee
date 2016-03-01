@@ -184,6 +184,9 @@ module.exports =
     eventName = 'keyup'
     eventId = "#{editor.displayBuffer.id}.#{eventName}"
     if grammar.scopeName == 'source.python'
+      if not atom.config.get('autocomplete-plus.enableAutoActivation')
+        log.debug 'Ignoring keyup events due to autocomplete-plus settings.'
+        return
       disposable = @_addEventListener editor, eventName, (e) =>
         bracketIdentifiers =
           'U+0028': 'qwerty'
