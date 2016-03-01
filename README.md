@@ -9,19 +9,13 @@ See [releases](https://github.com/sadovnychyi/autocomplete-python/releases) for 
 # Features
 
 * Works with :apple: Mac OSX, :penguin: Linux and :checkered_flag: Windows
-
 * Works with both :snake: Python 2 and 3
-
 * Automatic lookup of virtual environments inside of your projects
-
 * Configurable additional packages to include for completions
-
 * Prints first N characters of statement value while completing variables
-
 * Prints function arguments while completing functions
-
-* Go-to-definition functionality, by default on `Alt+Cmd+G`/`Ctrl+Alt+G` (thanks to [@patrys](https://github.com/patrys))
-
+* Go-to-definition functionality, by default on `Alt+Cmd+G`/`Ctrl+Alt+G`. Thanks to [@patrys](https://github.com/patrys) for idea and implementation.
+* Method override functionality. Available as `override-method` command. Thanks to [@pchomik](https://github.com/pchomik) for idea and help.
 * If you have [Hyperclick](https://atom.io/packages/hyperclick) installed – you can click on anything to go-to-definition
   ![sample](https://cloud.githubusercontent.com/assets/193864/10814177/17fb8bce-7e5f-11e5-8285-6b0100b3a0f8.gif)
 
