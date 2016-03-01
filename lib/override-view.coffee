@@ -39,14 +39,14 @@ class OverrideView extends SelectListView
     else
       super
 
-  confirmed: ({parent, name, params, moduleName, fileName, line, column}) ->
+  confirmed: ({parent, instance, name, params, line, column}) ->
     @cancelPosition = null
     @cancel()
     editor = atom.workspace.getActiveTextEditor()
     tabLength = editor.getTabLength()
 
     line1 = "def #{name}(#{['self'].concat(params).join(', ')}):"
-    superCall = "super(self.__class__, self).#{name}(#{params.join(', ')})"
+    superCall = "super(#{instance}, self).#{name}(#{params.join(', ')})"
     if name in ['__init__']
       line2 = "#{superCall}"
     else

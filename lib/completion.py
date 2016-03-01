@@ -160,6 +160,14 @@ class JediCompletion(object):
             completions = script.completions()
         except KeyError:
             return []
+
+        for completion in completions:
+            if completion.name == '__autocomplete_python':
+              instance = completion.parent().name
+              break
+        else:
+            instance = 'self.__class__'
+
         for completion in completions:
             params = []
             if hasattr(completion, 'params'):
@@ -167,6 +175,7 @@ class JediCompletion(object):
             if completion.parent().type == 'class':
               _methods.append({
                 'parent': completion.parent().name,
+                'instance': instance,
                 'name': completion.name,
                 'params': params,
                 'moduleName': completion.module_name,
