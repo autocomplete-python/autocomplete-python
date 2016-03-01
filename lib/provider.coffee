@@ -132,7 +132,9 @@ module.exports =
       if @overrideView
         @overrideView.destroy()
       @overrideView = new OverrideView()
-      @getMethods(editor, bufferPosition).then (methods) =>
+      @getMethods(editor, bufferPosition).then ({methods, indent, bufferPosition}) =>
+        @overrideView.indent = indent
+        @overrideView.bufferPosition = bufferPosition
         @overrideView.setItems(methods)
 
     atom.commands.add selector, 'autocomplete-python:rename', =>
@@ -404,14 +406,10 @@ module.exports =
       @requests[payload.id] = resolve
 
   getMethods: (editor, bufferPosition) ->
+    indent = bufferPosition.column
     lines = editor.getBuffer().getLines()
-    console.log lines
     lines.splice(bufferPosition.row + 1, 0, "  def _(s):")
     lines.splice(bufferPosition.row + 2, 0, "    s.")
-    console.log lines
-    # line = lines[bufferPosition.row]
-    # lastIdentifier = /\.?[a-zA-Z_][a-zA-Z0-9_]*$/.exec(
-    #   line.slice 0, bufferPosition.column)
     payload =
       id: @_generateRequestId(editor, bufferPosition)
       lookup: 'methods'
@@ -423,7 +421,8 @@ module.exports =
 
     @_sendRequest(@_serialize(payload))
     return new Promise (resolve) =>
-      @requests[payload.id] = resolve
+      @requests[payload.id] = (methods) ->
+        resolve({methods, indent, bufferPosition})
 
   goToDefinition: (editor, bufferPosition) ->
     if not editor

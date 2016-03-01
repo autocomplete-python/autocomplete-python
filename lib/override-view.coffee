@@ -11,6 +11,8 @@ class OverrideView extends SelectListView
     @panel.show()
     @setLoading('Looking for methods')
     @focusFilterEditor()
+    @indent = 0
+    @bufferPosition = null
 
   destroy: ->
     @cancel()
@@ -23,16 +25,7 @@ class OverrideView extends SelectListView
         @div "#{parent}.#{name}", class: 'primary-line'
         @div "#{relativePath}, line #{line}", class: 'secondary-line'
 
-  getFilterKey: -> 'fileName'
-
-  # scrollToItemView: ->
-  #   super
-  #   {name, moduleName, fileName, line, column} = @getSelectedItem()
-  #   editor = atom.workspace.getActiveTextEditor()
-  #   if editor.getBuffer().file.path is fileName
-  #     editor.setSelectedBufferRange([
-  #       [line - 1, column], [line - 1, column + name.length]])
-  #     editor.scrollToBufferPosition([line - 1, column], center: true)
+  getFilterKey: -> 'name'
 
   getEmptyMessage: (itemCount) ->
     if itemCount is 0
@@ -44,15 +37,14 @@ class OverrideView extends SelectListView
     @cancelPosition = null
     @cancel()
     editor = atom.workspace.getActiveTextEditor()
-    # def test(self):
-    # return super(Bar, self).test()
-    editor.insertText("def #{name}(#{params}):\n    return super(#{parent}, self).#{name}.(#{params})")
-    # promise = atom.workspace.open(fileName)
-    # promise.then (editor) ->
-    #   editor.setCursorBufferPosition([line - 1, column])
-    #   editor.setSelectedBufferRange([
-    #     [line - 1, column], [line - 1, column + name.length]])
-    #   editor.scrollToCursorPosition()
+    tabText = editor.getTabText()
+    if @indent < 1
+      @indent = editor.getTabLength()
+    indent = (n) -> Array(n + 1).join(tabText)
+    editor.setTextInBufferRange(
+      [[@bufferPosition.row, 0], [@bufferPosition.row + 1, 0]],
+      "#{indent(1)}def #{name}(#{params}):\n#{indent(2)}return super(#{parent}, self).#{name}(#{params})"
+    )
 
   cancelled: ->
     @panel?.hide()
