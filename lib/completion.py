@@ -10,6 +10,7 @@ import jedi
 sys.path.pop(0)
 
 WORD_RE = re.compile(r'\w')
+ARGUMENT_RE = re.compile(r'[a-zA-Z0-9_=\*"\']+')
 
 
 class JediCompletion(object):
@@ -172,7 +173,7 @@ class JediCompletion(object):
             params = []
             if hasattr(completion, 'params'):
                 params = [p.description for p in completion.params
-                          if p.description]
+                          if ARGUMENT_RE.match(p.description)]
             if completion.parent().type == 'class':
               _methods.append({
                 'parent': completion.parent().name,
