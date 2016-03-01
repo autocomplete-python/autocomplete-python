@@ -49,7 +49,7 @@ class OverrideView extends SelectListView
     indent = (n) -> Array(n + 1).join(tabText)
 
     line1 = "#{indent(1)}def #{name}(#{['self'].concat(params).join(', ')}):"
-    superCall = "super(#{parent}, self).#{name}(#{params.join(', ')})"
+    superCall = "super(self.__class__, self).#{name}(#{params.join(', ')})"
     if name in ['__init__']
       line2 = "#{indent(2)}#{superCall}"
     else
