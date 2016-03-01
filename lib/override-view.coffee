@@ -19,11 +19,17 @@ class OverrideView extends SelectListView
     @panel.destroy()
 
   viewForItem: ({parent, name, params, moduleName, fileName, line, column}) ->
-    [_, relativePath] = atom.project.relativizePath(fileName)
-    return $$ ->
-      @li class: 'two-lines', =>
-        @div "#{parent}.#{name}", class: 'primary-line'
-        @div "#{relativePath}, line #{line}", class: 'secondary-line'
+    if not line
+      return $$ ->
+        @li class: 'two-lines', =>
+          @div "#{parent}.#{name}", class: 'primary-line'
+          @div 'builtin', class: 'secondary-line'
+    else
+      [_, relativePath] = atom.project.relativizePath(fileName)
+      return $$ ->
+        @li class: 'two-lines', =>
+          @div "#{parent}.#{name}", class: 'primary-line'
+          @div "#{relativePath}, line #{line}", class: 'secondary-line'
 
   getFilterKey: -> 'name'
 
