@@ -43,22 +43,37 @@ class OverrideView extends SelectListView
     @cancelPosition = null
     @cancel()
     editor = atom.workspace.getActiveTextEditor()
-    tabText = editor.getTabText()
-    if @indent < 1
-      @indent = editor.getTabLength()
-    indent = (n) -> Array(n + 1).join(tabText)
+    tabLength = editor.getTabLength()
 
-    line1 = "#{indent(1)}def #{name}(#{['self'].concat(params).join(', ')}):"
+    line1 = "def #{name}(#{['self'].concat(params).join(', ')}):"
     superCall = "super(self.__class__, self).#{name}(#{params.join(', ')})"
     if name in ['__init__']
-      line2 = "#{indent(2)}#{superCall}"
+      line2 = "#{superCall}"
     else
-      line2 = "#{indent(2)}return #{superCall}"
+      line2 = "return #{superCall}"
 
-    editor.setTextInBufferRange(
-      [[@bufferPosition.row, 0], [@bufferPosition.row + 1, 0]],
-      [line1, line2].join('\n')
-    )
+    if @indent < 1
+      tabText = editor.getTabText()
+      editor.insertText("#{tabText}#{line1}")
+      editor.insertNewlineBelow()
+      editor.setTextInBufferRange [
+          [@bufferPosition.row + 1, 0],
+          [@bufferPosition.row + 1, tabLength * 2]
+        ],
+        "#{tabText}#{tabText}#{line2}"
+
+    else
+      userIndent = editor.getTextInRange([
+        [@bufferPosition.row, 0],
+        [@bufferPosition.row, @bufferPosition.column]
+      ])
+      editor.insertText("#{line1}")
+      editor.insertNewlineBelow()
+      editor.setTextInBufferRange [
+          [@bufferPosition.row + 1, 0],
+          [@bufferPosition.row + 1, tabLength * 2]
+        ],
+        "#{userIndent}#{userIndent}#{line2}"
 
   cancelled: ->
     @panel?.hide()
