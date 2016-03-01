@@ -76,7 +76,7 @@ module.exports =
       else
         throw error
 
-    @provider.process.stdin.on 'error', (err) ->
+    @provider.process?.stdin.on 'error', (err) ->
       log.debug 'stdin', err
 
     setTimeout =>
