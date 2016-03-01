@@ -171,7 +171,8 @@ class JediCompletion(object):
         for completion in completions:
             params = []
             if hasattr(completion, 'params'):
-                params = [p.description for p in completion.params]
+                params = [p.description for p in completion.params
+                          if p.description]
             if completion.parent().type == 'class':
               _methods.append({
                 'parent': completion.parent().name,
