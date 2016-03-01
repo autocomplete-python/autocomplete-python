@@ -126,7 +126,7 @@ module.exports =
       @getUsages(editor, bufferPosition).then (usages) =>
         @usagesView.setItems(usages)
 
-    atom.commands.add selector, 'autocomplete-python:method-override', =>
+    atom.commands.add selector, 'autocomplete-python:override-method', =>
       editor = atom.workspace.getActiveTextEditor()
       bufferPosition = editor.getCursorBufferPosition()
       if @overrideView
@@ -414,7 +414,7 @@ module.exports =
   getMethods: (editor, bufferPosition) ->
     indent = bufferPosition.column
     lines = editor.getBuffer().getLines()
-    lines.splice(bufferPosition.row + 1, 0, "  def _(s):")
+    lines.splice(bufferPosition.row + 1, 0, "  def __autocomplete_python(s):")
     lines.splice(bufferPosition.row + 2, 0, "    s.")
     payload =
       id: @_generateRequestId(editor, bufferPosition)
