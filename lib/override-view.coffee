@@ -16,11 +16,11 @@ class OverrideView extends SelectListView
     @cancel()
     @panel.destroy()
 
-  viewForItem: ({name, moduleName, fileName, line, column}) ->
+  viewForItem: ({parent, name, params, moduleName, fileName, line, column}) ->
     [_, relativePath] = atom.project.relativizePath(fileName)
     return $$ ->
       @li class: 'two-lines', =>
-        @div "#{name}", class: 'primary-line'
+        @div "#{parent}.#{name}", class: 'primary-line'
         @div "#{relativePath}, line #{line}", class: 'secondary-line'
 
   getFilterKey: -> 'fileName'
@@ -40,13 +40,13 @@ class OverrideView extends SelectListView
     else
       super
 
-  confirmed: ({name, moduleName, fileName, line, column}) ->
+  confirmed: ({parent, name, params, moduleName, fileName, line, column}) ->
     @cancelPosition = null
     @cancel()
     editor = atom.workspace.getActiveTextEditor()
     # def test(self):
     # return super(Bar, self).test()
-    editor.insertText("def #{name}(self):\n    return super(Bar, self).#{name}")
+    editor.insertText("def #{name}(#{params}):\n    return super(#{parent}, self).#{name}.(#{params})")
     # promise = atom.workspace.open(fileName)
     # promise.then (editor) ->
     #   editor.setCursorBufferPosition([line - 1, column])

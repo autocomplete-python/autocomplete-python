@@ -161,9 +161,14 @@ class JediCompletion(object):
         except KeyError:
             return []
         for completion in completions:
+            params = ''
+            if hasattr(completion, 'params'):
+                params = ', '.join(p.description for p in completion.params)
             if completion.parent().type == 'class':
               _methods.append({
+                'parent': completion.parent().name,
                 'name': completion.name,
+                'params': params,
                 'moduleName': completion.module_name,
                 'fileName': completion.module_path,
                 'line': completion.line,
