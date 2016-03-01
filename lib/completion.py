@@ -161,9 +161,9 @@ class JediCompletion(object):
         except KeyError:
             return []
         for completion in completions:
-            params = ''
+            params = []
             if hasattr(completion, 'params'):
-                params = ', '.join(p.description for p in completion.params)
+                params = [p.description for p in completion.params]
             if completion.parent().type == 'class':
               _methods.append({
                 'parent': completion.parent().name,

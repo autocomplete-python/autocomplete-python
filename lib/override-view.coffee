@@ -48,11 +48,12 @@ class OverrideView extends SelectListView
       @indent = editor.getTabLength()
     indent = (n) -> Array(n + 1).join(tabText)
 
-    line1 = "#{indent(1)}def #{name}(#{params}):"
+    line1 = "#{indent(1)}def #{name}(#{['self'].concat(params).join(', ')}):"
+    superCall = "super(#{parent}, self).#{name}(#{params.join(', ')})"
     if name in ['__init__']
-      line2 = "#{indent(2)}super(#{parent}, self).#{name}(#{params})"
+      line2 = "#{indent(2)}#{superCall}"
     else
-      line2 = "#{indent(2)}return super(#{parent}, self).#{name}(#{params})"
+      line2 = "#{indent(2)}return #{superCall}"
 
     editor.setTextInBufferRange(
       [[@bufferPosition.row, 0], [@bufferPosition.row + 1, 0]],
