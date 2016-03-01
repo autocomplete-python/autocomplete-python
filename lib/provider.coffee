@@ -3,6 +3,7 @@
 {Selector} = require 'selector-kit'
 DefinitionsView = require './definitions-view'
 UsagesView = require './usages-view'
+OverrideView = require './override-view'
 RenameView = require './rename-view'
 InterpreterLookup = require './interpreters-lookup'
 log = require './log'
@@ -124,6 +125,17 @@ module.exports =
       @usagesView = new UsagesView()
       @getUsages(editor, bufferPosition).then (usages) =>
         @usagesView.setItems(usages)
+
+    atom.commands.add selector, 'autocomplete-python:override-method', =>
+      editor = atom.workspace.getActiveTextEditor()
+      bufferPosition = editor.getCursorBufferPosition()
+      if @overrideView
+        @overrideView.destroy()
+      @overrideView = new OverrideView()
+      @getMethods(editor, bufferPosition).then ({methods, indent, bufferPosition}) =>
+        @overrideView.indent = indent
+        @overrideView.bufferPosition = bufferPosition
+        @overrideView.setItems(methods)
 
     atom.commands.add selector, 'autocomplete-python:rename', =>
       editor = atom.workspace.getActiveTextEditor()
@@ -398,6 +410,25 @@ module.exports =
     @_sendRequest(@_serialize(payload))
     return new Promise (resolve) =>
       @requests[payload.id] = resolve
+
+  getMethods: (editor, bufferPosition) ->
+    indent = bufferPosition.column
+    lines = editor.getBuffer().getLines()
+    lines.splice(bufferPosition.row + 1, 0, "  def __autocomplete_python(s):")
+    lines.splice(bufferPosition.row + 2, 0, "    s.")
+    payload =
+      id: @_generateRequestId(editor, bufferPosition)
+      lookup: 'methods'
+      path: editor.getPath()
+      source: lines.join('\n')
+      line: bufferPosition.row + 2
+      column: 6
+      config: @_generateRequestConfig()
+
+    @_sendRequest(@_serialize(payload))
+    return new Promise (resolve) =>
+      @requests[payload.id] = (methods) ->
+        resolve({methods, indent, bufferPosition})
 
   goToDefinition: (editor, bufferPosition) ->
     if not editor
