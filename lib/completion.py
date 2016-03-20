@@ -241,7 +241,8 @@ class JediCompletion(object):
             if definition.module_path:
                 if definition.type == 'import':
                     definition = _top_definition(definition)
-
+                if not definition.module_path:
+                  continue
                 _definition = {
                     'text': definition.name,
                     'type': self._get_definition_type(definition),
