@@ -250,7 +250,10 @@ module.exports =
     log.debug 'Deserealizing response from Jedi', response
     log.debug "Got #{response.trim().split('\n').length} lines"
     for responseSource in response.trim().split('\n')
-      response = JSON.parse(responseSource)
+      try
+        response = JSON.parse(responseSource)
+      catch e
+        response = {}
       if response['arguments']
         editor = @requests[response['id']]
         if typeof editor == 'object'
