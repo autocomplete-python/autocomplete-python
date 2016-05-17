@@ -1,7 +1,7 @@
 {
   "name": "autocomplete-python",
   "main": "./lib/main",
-  "version": "1.7.2",
+  "version": "1.7.3",
   "description": "Python packages, variables, methods and functions with their arguments autocompletion powered by Jedi",
   "activationCommands": {},
   "repository": "https://github.com/sadovnychyi/autocomplete-python",
