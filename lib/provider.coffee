@@ -176,27 +176,27 @@ module.exports =
         @_handleGrammarChangeEvent(editor, editor.getGrammar())
 
     # docs
-    editor = atom.workspace.getActiveTextEditor()
-
-    marker = editor.markBufferRange(
-      [[0, 0], [0, 10]], {persistent: false, invalidate: 'never'})
-
-    log.debug('marker', marker)
-
-    el = document.createElement('div')
-    el.setAttribute('style', 'background-color: green;')
-    newContent = document.createTextNode('Hi there and greetings!')
-    el.appendChild(newContent)
-
-    log.debug('el', el)
-
-    editor.decorateMarker(
-      marker, {
-        type: 'overlay',
-        class: 'signature-help',
-        item: el,
-        position: 'head'
-    })
+    # editor = atom.workspace.getActiveTextEditor()
+    #
+    # marker = editor.markBufferRange(
+    #   [[0, 0], [0, 10]], {persistent: false, invalidate: 'never'})
+    #
+    # log.debug('marker', marker)
+    #
+    # el = document.createElement('div')
+    # el.setAttribute('style', 'background-color: green;')
+    # newContent = document.createTextNode('Hi there and greetings!')
+    # el.appendChild(newContent)
+    #
+    # log.debug('el', el)
+    #
+    # editor.decorateMarker(
+    #   marker, {
+    #     type: 'overlay',
+    #     class: 'signature-help',
+    #     item: el,
+    #     position: 'head'
+    # })
 
     # messages = new MessagePanelView
     #   title: "_serialize_completions(self, script, identifier=None, prefix='')"
@@ -237,10 +237,19 @@ module.exports =
   _showSignatureOverlay: (event) ->
     log.debug('cursor pos changed in python scope', event)
 
+    if @markers
+      for marker in @markers
+        log.debug 'destroying old marker', marker
+        marker.destroy()
+    else
+      @markers = []
+
     {selectorsMatchScopeChain} = require './scope-helpers'
     {Selector} = require 'selector-kit'
 
+    cursor = event.cursor
     editor = event.cursor.editor
+    wordBufferRange = cursor.getCurrentWordBufferRange()
     scopeDescriptor = editor.scopeDescriptorForBufferPosition(
       event.newBufferPosition)
     scopeChain = scopeDescriptor.getScopeChain()
@@ -248,44 +257,73 @@ module.exports =
     log.debug 'scopeDescriptor', scopeDescriptor
     disableForSelector = "#{@disableForSelector}, .source.python .numeric, .source.python .integer, .source.python .decimal, .source.python .punctuation, .source.python .keyword, .source.python .storage, .source.python .variable.parameter, .source.python .entity.name"
     disableForSelector = Selector.create(disableForSelector)
+
     if selectorsMatchScopeChain(disableForSelector, scopeChain)
       log.debug 'do nothing for this selector'
-      # if @signatureView
-      #   @signatureView.remove()
-      #   log.debug 'removed signature view'
-      # if @signatureDecoration
-      #   log.debug 'destroyed decoration', @signatureDecoration
-      #   @signatureDecoration.destroy()
-      # if @marker
-      #   log.debug 'destroing marker', @marker
-      #   @marker.destroy()
       return
 
-    # marker = editor.markBufferRange(
-    #   [event.newBufferPosition, event.newBufferPosition],
-    #   {persistent: false, invalidate: 'never'})
-    marker = event.cursor.marker
-    @marker = marker
+    marker = editor.markBufferRange(
+      wordBufferRange,
+      {persistent: false, invalidate: 'never'})
+
+    @markers.push(marker)
 
     log.debug('marker', marker)
+
+    view = document.createElement('autocomplete-suggestion-list')
 
     @getDefinitions(editor, event.newBufferPosition).then (results) =>
       if results.length > 0
         {text, fileName, line, column, type, description} = results[0]
 
-        @signatureView = document.createElement('div')
-        @signatureView.setAttribute('style', 'background-color: green; white-space: pre;')
-        newContent = document.createTextNode("#{description}\nbuffer position: #{event.newBufferPosition}")
-        @signatureView.appendChild(newContent)
-        log.debug('@signatureView', @signatureView)
-        @signatureDecoration = editor.decorateMarker(
-          marker, {
+        # view.setAttribute('class', 'popover-list select-list autocomplete-suggestion-list')
+        #
+        # desc = document.createElement('div')
+        # desc.setAttribute('class', 'suggestion-description')
+        # desc.setAttribute('style', 'display: block;')
+        #
+        # span = document.createElement('span')
+        # span.setAttribute('class', 'suggestion-description-content')
+        # span.appendChild(document.createTextNode('test!'))
+        #
+        # desc.appendChild(span)
+        # view.appendChild(desc)
+
+        view.maxItems = 1
+
+        log.debug('newView1', view)
+        log.debug('newView2', view.maxItems)
+        log.debug('newView7', view.descriptionContent)
+
+        view.createdCallback = -> log.debug 'created callback!!!!1111111111'
+
+        view.attachedCallback = -> log.debug 'attachedCallback'
+
+        # view.createdCallback()
+
+        # view.onload ->
+        #   log.debug 'ON LOAD', view.querySelector('.suggestion-description-content')
+        #
+        # view.onshow ->
+        #   log.debug 'ON show', view.querySelector('.suggestion-description-content')
+
+        # log.debug 'selector', view.querySelector('.suggestion-description-content')
+
+        setTimeout(->
+          console.log('wake up')
+          view.querySelector('.suggestion-description-content').appendChild(document.createTextNode(description))
+        , 100)
+
+        decoration = editor.decorateMarker(marker, {
             type: 'overlay',
-            class: 'signature-help',
-            item: @signatureView,
+            class: 'autocomplete-plus',
+            item: view,
             position: 'head'
         })
         log.debug('decorated marker', marker)
+        # bla = view.querySelector('.suggestion-description-content')
+        # bla.appendChild(document.createTextNode('appended child2'))
+        # log.debug 'selector', view.querySelector('.suggestion-description-content')
       else
         log.debug('no definition found')
 
