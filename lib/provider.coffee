@@ -233,10 +233,70 @@ module.exports =
         columnOffset[line] += newName.length - name.length
       buffer.save()
 
+
+  _showSignatureOverlay: (event) ->
+    log.debug('cursor pos changed in python scope', event)
+
+    {selectorsMatchScopeChain} = require './scope-helpers'
+    {Selector} = require 'selector-kit'
+
+    editor = event.cursor.editor
+    scopeDescriptor = editor.scopeDescriptorForBufferPosition(
+      event.newBufferPosition)
+    scopeChain = scopeDescriptor.getScopeChain()
+
+    log.debug 'scopeDescriptor', scopeDescriptor
+    disableForSelector = "#{@disableForSelector}, .source.python .numeric, .source.python .integer, .source.python .decimal, .source.python .punctuation, .source.python .keyword, .source.python .storage, .source.python .variable.parameter, .source.python .entity.name"
+    disableForSelector = Selector.create(disableForSelector)
+    if selectorsMatchScopeChain(disableForSelector, scopeChain)
+      log.debug 'do nothing for this selector'
+      # if @signatureView
+      #   @signatureView.remove()
+      #   log.debug 'removed signature view'
+      # if @signatureDecoration
+      #   log.debug 'destroyed decoration', @signatureDecoration
+      #   @signatureDecoration.destroy()
+      # if @marker
+      #   log.debug 'destroing marker', @marker
+      #   @marker.destroy()
+      return
+
+    # marker = editor.markBufferRange(
+    #   [event.newBufferPosition, event.newBufferPosition],
+    #   {persistent: false, invalidate: 'never'})
+    marker = event.cursor.marker
+    @marker = marker
+
+    log.debug('marker', marker)
+
+    @getDefinitions(editor, event.newBufferPosition).then (results) =>
+      if results.length > 0
+        {text, fileName, line, column, type, description} = results[0]
+
+        @signatureView = document.createElement('div')
+        @signatureView.setAttribute('style', 'background-color: green; white-space: pre;')
+        newContent = document.createTextNode("#{description}\nbuffer position: #{event.newBufferPosition}")
+        @signatureView.appendChild(newContent)
+        log.debug('@signatureView', @signatureView)
+        @signatureDecoration = editor.decorateMarker(
+          marker, {
+            type: 'overlay',
+            class: 'signature-help',
+            item: @signatureView,
+            position: 'head'
+        })
+        log.debug('decorated marker', marker)
+      else
+        log.debug('no definition found')
+
   _handleGrammarChangeEvent: (editor, grammar) ->
     eventName = 'keyup'
     eventId = "#{editor.displayBuffer.id}.#{eventName}"
     if grammar.scopeName == 'source.python'
+
+      editor.onDidChangeCursorPosition (event) =>
+        @_showSignatureOverlay(event)
+
       if not atom.config.get('autocomplete-plus.enableAutoActivation')
         log.debug 'Ignoring keyup events due to autocomplete-plus settings.'
         return

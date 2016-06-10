@@ -247,6 +247,7 @@ class JediCompletion(object):
                     'text': definition.name,
                     'type': self._get_definition_type(definition),
                     'fileName': definition.module_path,
+                    'description': definition.docstring(),
                     'line': definition.line - 1,
                     'column': definition.column
                 }
