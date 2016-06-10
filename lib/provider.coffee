@@ -8,7 +8,7 @@ RenameView = require './rename-view'
 InterpreterLookup = require './interpreters-lookup'
 log = require './log'
 _ = require 'underscore'
-{MessagePanelView, LineMessageView} = require 'atom-message-panel'
+{MessagePanelView, LineMessageView, PlainMessageView} = require 'atom-message-panel'
 filter = undefined
 
 module.exports =
@@ -169,12 +169,23 @@ module.exports =
         @_handleGrammarChangeEvent(editor, editor.getGrammar())
 
     messages = new MessagePanelView
-      title: 'Remember your Coffee!'
+      title: "_serialize_completions(self, script, identifier=None, prefix='')"
     messages.attach()
+    # messages.add new PlainMessageView
     messages.add new LineMessageView
       line: 1
       character: 4
-      message: 'You haven\'t had a single drop of coffee since this character'
+      message: 'Serialize response to be read from Atom.'
+      preview: '''Serialize response to be read from Atom.
+
+      Args:
+          script: Instance of jedi.api.Script object.
+          identifier: Unique completion identifier to pass back to Atom.
+          prefix: String with prefix to filter function arguments.
+              Used only when fuzzy matcher turned off.
+
+      Returns:
+          Serialized string to send to Atom.'''
 
   _updateUsagesInFile: (fileName, usages, newName) ->
     columnOffset = {}
