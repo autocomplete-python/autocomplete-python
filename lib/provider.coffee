@@ -68,6 +68,13 @@ module.exports =
             'autocomplete-python traceback output:', {
               detail: "#{data}",
               dismissable: true})
+
+        log.debug "Forcing to resolve #{Object.keys(@requests).length} promises"
+        for requestId, resolve of @requests
+          if typeof resolve == 'function'
+            resolve([])
+          delete @requests[requestId]
+
       exit: (code) =>
         log.warning 'Process exit with', code, @provider
     @provider.onWillThrowError ({error, handle}) =>

@@ -65,7 +65,7 @@ class JediCompletion(object):
             return ''
         return '%s(%s)' % (
             completion.name,
-            ', '.join(param.description for param in completion.params))
+            ', '.join(p.description for p in completion.params if p))
 
     def _get_call_signatures(self, script):
         """Extract call signatures from jedi.api.Script object in failsafe way.
@@ -241,7 +241,8 @@ class JediCompletion(object):
             if definition.module_path:
                 if definition.type == 'import':
                     definition = _top_definition(definition)
-
+                if not definition.module_path:
+                  continue
                 _definition = {
                     'text': definition.name,
                     'type': self._get_definition_type(definition),
