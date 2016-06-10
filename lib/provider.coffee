@@ -175,24 +175,47 @@ module.exports =
       atom.workspace.observeTextEditors (editor) =>
         @_handleGrammarChangeEvent(editor, editor.getGrammar())
 
-    messages = new MessagePanelView
-      title: "_serialize_completions(self, script, identifier=None, prefix='')"
-    messages.attach()
-    # messages.add new PlainMessageView
-    messages.add new LineMessageView
-      line: 1
-      character: 4
-      message: 'Serialize response to be read from Atom.'
-      preview: '''Serialize response to be read from Atom.
+    # docs
+    editor = atom.workspace.getActiveTextEditor()
 
-      Args:
-          script: Instance of jedi.api.Script object.
-          identifier: Unique completion identifier to pass back to Atom.
-          prefix: String with prefix to filter function arguments.
-              Used only when fuzzy matcher turned off.
+    marker = editor.markBufferRange(
+      [[0, 0], [0, 10]], {persistent: false, invalidate: 'never'})
 
-      Returns:
-          Serialized string to send to Atom.'''
+    log.debug('marker', marker)
+
+    el = document.createElement('div')
+    el.setAttribute('style', 'background-color: green;')
+    newContent = document.createTextNode('Hi there and greetings!')
+    el.appendChild(newContent)
+
+    log.debug('el', el)
+
+    editor.decorateMarker(
+      marker, {
+        type: 'overlay',
+        class: 'signature-help',
+        item: el,
+        position: 'head'
+    })
+
+    # messages = new MessagePanelView
+    #   title: "_serialize_completions(self, script, identifier=None, prefix='')"
+    # messages.attach()
+    # # messages.add new PlainMessageView
+    # messages.add new LineMessageView
+    #   line: 1
+    #   character: 4
+    #   message: 'Serialize response to be read from Atom.'
+    #   preview: '''Serialize response to be read from Atom.
+    #
+    #   Args:
+    #       script: Instance of jedi.api.Script object.
+    #       identifier: Unique completion identifier to pass back to Atom.
+    #       prefix: String with prefix to filter function arguments.
+    #           Used only when fuzzy matcher turned off.
+    #
+    #   Returns:
+    #       Serialized string to send to Atom.'''
 
   _updateUsagesInFile: (fileName, usages, newName) ->
     columnOffset = {}
