@@ -93,6 +93,13 @@ module.exports =
       title: 'Output Debug Logs'
       description: '''Select if you would like to see debug information in
       developer tools logs. May slow down your editor.'''
+    showTooltips:
+      type: 'boolean'
+      default: false
+      order: 10
+      title: 'Show Tooltips with information about the object under the cursor'
+      description: '''EXPERIMENTAL FEATURE WHICH IS NOT FINISHED YET.
+      Feedback and ideas are welcome on github.'''
 
   activate: (state) -> provider.constructor()
 
