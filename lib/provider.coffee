@@ -270,60 +270,24 @@ module.exports =
 
     log.debug('marker', marker)
 
-    view = document.createElement('autocomplete-suggestion-list')
-
     @getDefinitions(editor, event.newBufferPosition).then (results) =>
       if results.length > 0
         {text, fileName, line, column, type, description} = results[0]
 
-        # view.setAttribute('class', 'popover-list select-list autocomplete-suggestion-list')
-        #
-        # desc = document.createElement('div')
-        # desc.setAttribute('class', 'suggestion-description')
-        # desc.setAttribute('style', 'display: block;')
-        #
-        # span = document.createElement('span')
-        # span.setAttribute('class', 'suggestion-description-content')
-        # span.appendChild(document.createTextNode('test!'))
-        #
-        # desc.appendChild(span)
-        # view.appendChild(desc)
+        description = description.trim()
+        if not description
+          log.debug 'empty description content'
+          return
 
-        view.maxItems = 1
-
-        log.debug('newView1', view)
-        log.debug('newView2', view.maxItems)
-        log.debug('newView7', view.descriptionContent)
-
-        view.createdCallback = -> log.debug 'created callback!!!!1111111111'
-
-        view.attachedCallback = -> log.debug 'attachedCallback'
-
-        # view.createdCallback()
-
-        # view.onload ->
-        #   log.debug 'ON LOAD', view.querySelector('.suggestion-description-content')
-        #
-        # view.onshow ->
-        #   log.debug 'ON show', view.querySelector('.suggestion-description-content')
-
-        # log.debug 'selector', view.querySelector('.suggestion-description-content')
-
-        setTimeout(->
-          console.log('wake up')
-          view.querySelector('.suggestion-description-content').appendChild(document.createTextNode(description))
-        , 100)
+        view = document.createElement('autocomplete-python-suggestion')
+        view.appendChild(document.createTextNode(description))
 
         decoration = editor.decorateMarker(marker, {
             type: 'overlay',
-            class: 'autocomplete-plus',
             item: view,
             position: 'head'
         })
         log.debug('decorated marker', marker)
-        # bla = view.querySelector('.suggestion-description-content')
-        # bla.appendChild(document.createTextNode('appended child2'))
-        # log.debug 'selector', view.querySelector('.suggestion-description-content')
       else
         log.debug('no definition found')
 
