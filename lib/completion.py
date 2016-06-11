@@ -243,11 +243,17 @@ class JediCompletion(object):
                     definition = _top_definition(definition)
                 if not definition.module_path:
                   continue
+
+                description = definition.docstring()
+                if description is not None:
+                  description = description.strip()
+                if not description:
+                  description = self._additional_info(definition)
                 _definition = {
                     'text': definition.name,
                     'type': self._get_definition_type(definition),
                     'fileName': definition.module_path,
-                    'description': definition.docstring(),
+                    'description': description,
                     'line': definition.line - 1,
                     'column': definition.column
                 }
@@ -288,7 +294,7 @@ class JediCompletion(object):
             config: Dictionary with config values.
         """
         sys.path = self.default_sys_path
-        self.use_snippets = config.get('useSnippets')
+        self.use_snippet = config.get('useSnippets')
         self.show_doc_strings = config.get('showDescriptions', True)
         self.fuzzy_matcher = config.get('fuzzyMatcher', False)
         jedi.settings.case_insensitive_completion = config.get(

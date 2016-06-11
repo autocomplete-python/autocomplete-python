@@ -368,7 +368,7 @@ module.exports =
         if typeof editor == 'object'
           bufferPosition = editor.getCursorBufferPosition()
           # Compare response ID with current state to avoid stale completions
-          if response['id'] == @_generateRequestId(editor, bufferPosition)
+          if response['id'] == @_generateRequestId('arguments', editor, bufferPosition)
             @snippetsManager?.insertSnippet(response['arguments'], editor)
       else
         resolve = @requests[response['id']]
@@ -387,12 +387,14 @@ module.exports =
       log.debug 'Cached request with ID', response['id']
       delete @requests[response['id']]
 
-  _generateRequestId: (editor, bufferPosition, text) ->
+  _generateRequestId: (type, editor, bufferPosition, text) ->
     if not text
+      if not editor.getText
+        console.log 'if not editor.getText!!!!', editor
       text = editor.getText()
     return require('crypto').createHash('md5').update([
       editor.getPath(), text, bufferPosition.row,
-      bufferPosition.column].join()).digest('hex')
+      bufferPosition.column, type].join()).digest('hex')
 
   _generateRequestConfig: ->
     extraPaths = InterpreterLookup.applySubstitutions(
@@ -435,7 +437,7 @@ module.exports =
       return
 
     payload =
-      id: @_generateRequestId(editor, bufferPosition)
+      id: @_generateRequestId('arguments', editor, bufferPosition)
       lookup: 'arguments'
       path: editor.getPath()
       source: editor.getText()
@@ -468,7 +470,8 @@ module.exports =
       if lastIdentifier
         bufferPosition.column = lastIdentifier.index + 1
         lines[bufferPosition.row] = line.slice(0, bufferPosition.column)
-    requestId = @_generateRequestId(editor, bufferPosition, lines.join('\n'))
+    requestId = @_generateRequestId(
+      'completions', editor, bufferPosition, lines.join('\n'))
     if requestId of @responses
       log.debug 'Using cached response with ID', requestId
       # We have to parse JSON on each request here to pass only a copy
@@ -497,7 +500,7 @@ module.exports =
 
   getDefinitions: (editor, bufferPosition) ->
     payload =
-      id: @_generateRequestId(editor, bufferPosition)
+      id: @_generateRequestId('definitions', editor, bufferPosition)
       lookup: 'definitions'
       path: editor.getPath()
       source: editor.getText()
@@ -511,7 +514,7 @@ module.exports =
 
   getUsages: (editor, bufferPosition) ->
     payload =
-      id: @_generateRequestId(editor, bufferPosition)
+      id: @_generateRequestId('usages', editor, bufferPosition)
       lookup: 'usages'
       path: editor.getPath()
       source: editor.getText()
@@ -529,7 +532,7 @@ module.exports =
     lines.splice(bufferPosition.row + 1, 0, "  def __autocomplete_python(s):")
     lines.splice(bufferPosition.row + 2, 0, "    s.")
     payload =
-      id: @_generateRequestId(editor, bufferPosition)
+      id: @_generateRequestId('methods', editor, bufferPosition)
       lookup: 'methods'
       path: editor.getPath()
       source: lines.join('\n')
