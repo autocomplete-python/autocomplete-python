@@ -294,7 +294,7 @@ class JediCompletion(object):
             config: Dictionary with config values.
         """
         sys.path = self.default_sys_path
-        self.use_snippet = config.get('useSnippets')
+        self.use_snippets = config.get('useSnippets')
         self.show_doc_strings = config.get('showDescriptions', True)
         self.fuzzy_matcher = config.get('fuzzyMatcher', False)
         jedi.settings.case_insensitive_completion = config.get(
