@@ -209,7 +209,6 @@ module.exports =
       event.newBufferPosition)
     scopeChain = scopeDescriptor.getScopeChain()
 
-    log.debug 'scopeDescriptor', scopeDescriptor
     disableForSelector = "#{@disableForSelector}, .source.python .numeric, .source.python .integer, .source.python .decimal, .source.python .punctuation, .source.python .keyword, .source.python .storage, .source.python .variable.parameter, .source.python .entity.name"
     disableForSelector = Selector.create(disableForSelector)
 
@@ -222,7 +221,6 @@ module.exports =
       {persistent: false, invalidate: 'never'})
 
     @markers.push(marker)
-    log.debug('marker', marker)
 
     getTooltip = (editor, bufferPosition) =>
       payload =
@@ -243,7 +241,6 @@ module.exports =
 
         description = description.trim()
         if not description
-          log.debug 'empty description content'
           return
         view = document.createElement('autocomplete-python-suggestion')
         view.appendChild(document.createTextNode(description))
@@ -253,8 +250,6 @@ module.exports =
             position: 'head'
         })
         log.debug('decorated marker', marker)
-      else
-        log.debug('no definition found')
 
   _handleGrammarChangeEvent: (editor, grammar) ->
     eventName = 'keyup'
@@ -355,8 +350,6 @@ module.exports =
 
   _generateRequestId: (type, editor, bufferPosition, text) ->
     if not text
-      if not editor.getText
-        console.log 'if not editor.getText!!!!', editor
       text = editor.getText()
     return require('crypto').createHash('md5').update([
       editor.getPath(), text, bufferPosition.row,
