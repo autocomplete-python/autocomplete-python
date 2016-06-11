@@ -215,6 +215,17 @@ class JediCompletion(object):
         return json.dumps({'id': identifier, 'results': [],
                            'arguments': snippet})
 
+    @staticmethod
+    def _top_definition(definition):
+        for d in definition.goto_assignments():
+            if d == definition:
+                continue
+            if d.type == 'import':
+                return _top_definition(d)
+            else:
+                return d
+        return definition
+
     def _serialize_definitions(self, definitions, identifier=None):
         """Serialize response to be read from Atom.
 
@@ -225,22 +236,30 @@ class JediCompletion(object):
         Returns:
             Serialized string to send to Atom.
         """
-
-        def _top_definition(definition):
-          for d in definition.goto_assignments():
-            if d == definition:
-              continue
-            if d.type == 'import':
-              return _top_definition(d)
-            else:
-              return d
-          return definition
-
         _definitions = []
         for definition in definitions:
             if definition.module_path:
                 if definition.type == 'import':
-                    definition = _top_definition(definition)
+                    definition = self._top_definition(definition)
+                if not definition.module_path:
+                  continue
+                _definition = {
+                    'text': definition.name,
+                    'type': self._get_definition_type(definition),
+                    'fileName': definition.module_path,
+                    'line': definition.line - 1,
+                    'column': definition.column
+                }
+                _definitions.append(_definition)
+        return json.dumps({'id': identifier, 'results': _definitions})
+
+
+    def _serialize_tooltip(self, definitions, identifier=None):
+        _definitions = []
+        for definition in definitions:
+            if definition.module_path:
+                if definition.type == 'import':
+                    definition = self._top_definition(definition)
                 if not definition.module_path:
                   continue
 
@@ -258,6 +277,7 @@ class JediCompletion(object):
                     'column': definition.column
                 }
                 _definitions.append(_definition)
+                break
         return json.dumps({'id': identifier, 'results': _definitions})
 
     def _serialize_usages(self, usages, identifier=None):
@@ -321,6 +341,9 @@ class JediCompletion(object):
 
         if lookup == 'definitions':
             return self._write_response(self._serialize_definitions(
+                script.goto_assignments(), request['id']))
+        if lookup == 'tooltip':
+            return self._write_response(self._serialize_tooltip(
                 script.goto_assignments(), request['id']))
         elif lookup == 'arguments':
             return self._write_response(self._serialize_arguments(

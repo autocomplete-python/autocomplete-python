@@ -224,7 +224,20 @@ module.exports =
     @markers.push(marker)
     log.debug('marker', marker)
 
-    @getDefinitions(editor, event.newBufferPosition).then (results) =>
+    getTooltip = (editor, bufferPosition) =>
+      payload =
+        id: @_generateRequestId('tooltip', editor, bufferPosition)
+        lookup: 'tooltip'
+        path: editor.getPath()
+        source: editor.getText()
+        line: bufferPosition.row
+        column: bufferPosition.column
+        config: @_generateRequestConfig()
+      @_sendRequest(@_serialize(payload))
+      return new Promise (resolve) =>
+        @requests[payload.id] = resolve
+
+    getTooltip(editor, event.newBufferPosition).then (results) =>
       if results.length > 0
         {text, fileName, line, column, type, description} = results[0]
 
