@@ -10,7 +10,6 @@
     "atom": ">=0.194.0 <2.0.0"
   },
   "dependencies": {
-    "atom-message-panel": "^1.2.4",
     "atom-slick": "^2.0.0",
     "atom-space-pen-views": "~2.1.0",
     "fuzzaldrin-plus": "^0.3.1",

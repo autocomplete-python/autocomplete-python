@@ -8,7 +8,6 @@ RenameView = require './rename-view'
 InterpreterLookup = require './interpreters-lookup'
 log = require './log'
 _ = require 'underscore'
-{MessagePanelView, LineMessageView, PlainMessageView} = require 'atom-message-panel'
 filter = undefined
 
 module.exports =
@@ -175,48 +174,6 @@ module.exports =
       atom.workspace.observeTextEditors (editor) =>
         @_handleGrammarChangeEvent(editor, editor.getGrammar())
 
-    # docs
-    # editor = atom.workspace.getActiveTextEditor()
-    #
-    # marker = editor.markBufferRange(
-    #   [[0, 0], [0, 10]], {persistent: false, invalidate: 'never'})
-    #
-    # log.debug('marker', marker)
-    #
-    # el = document.createElement('div')
-    # el.setAttribute('style', 'background-color: green;')
-    # newContent = document.createTextNode('Hi there and greetings!')
-    # el.appendChild(newContent)
-    #
-    # log.debug('el', el)
-    #
-    # editor.decorateMarker(
-    #   marker, {
-    #     type: 'overlay',
-    #     class: 'signature-help',
-    #     item: el,
-    #     position: 'head'
-    # })
-
-    # messages = new MessagePanelView
-    #   title: "_serialize_completions(self, script, identifier=None, prefix='')"
-    # messages.attach()
-    # # messages.add new PlainMessageView
-    # messages.add new LineMessageView
-    #   line: 1
-    #   character: 4
-    #   message: 'Serialize response to be read from Atom.'
-    #   preview: '''Serialize response to be read from Atom.
-    #
-    #   Args:
-    #       script: Instance of jedi.api.Script object.
-    #       identifier: Unique completion identifier to pass back to Atom.
-    #       prefix: String with prefix to filter function arguments.
-    #           Used only when fuzzy matcher turned off.
-    #
-    #   Returns:
-    #       Serialized string to send to Atom.'''
-
   _updateUsagesInFile: (fileName, usages, newName) ->
     columnOffset = {}
     atom.workspace.open(fileName, activateItem: false).then (editor) ->
@@ -235,8 +192,6 @@ module.exports =
 
 
   _showSignatureOverlay: (event) ->
-    log.debug('cursor pos changed in python scope', event)
-
     if @markers
       for marker in @markers
         log.debug 'destroying old marker', marker
@@ -267,7 +222,6 @@ module.exports =
       {persistent: false, invalidate: 'never'})
 
     @markers.push(marker)
-
     log.debug('marker', marker)
 
     @getDefinitions(editor, event.newBufferPosition).then (results) =>
@@ -278,10 +232,8 @@ module.exports =
         if not description
           log.debug 'empty description content'
           return
-
         view = document.createElement('autocomplete-python-suggestion')
         view.appendChild(document.createTextNode(description))
-
         decoration = editor.decorateMarker(marker, {
             type: 'overlay',
             item: view,
@@ -296,8 +248,9 @@ module.exports =
     eventId = "#{editor.displayBuffer.id}.#{eventName}"
     if grammar.scopeName == 'source.python'
 
-      editor.onDidChangeCursorPosition (event) =>
-        @_showSignatureOverlay(event)
+      if atom.config.get('autocomplete-python.showTooltips') is true
+        editor.onDidChangeCursorPosition (event) =>
+          @_showSignatureOverlay(event)
 
       if not atom.config.get('autocomplete-plus.enableAutoActivation')
         log.debug 'Ignoring keyup events due to autocomplete-plus settings.'
