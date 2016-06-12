@@ -215,13 +215,12 @@ class JediCompletion(object):
         return json.dumps({'id': identifier, 'results': [],
                            'arguments': snippet})
 
-    @staticmethod
-    def _top_definition(definition):
+    def _top_definition(self, definition):
         for d in definition.goto_assignments():
             if d == definition:
                 continue
             if d.type == 'import':
-                return _top_definition(d)
+                return self._top_definition(d)
             else:
                 return d
         return definition
