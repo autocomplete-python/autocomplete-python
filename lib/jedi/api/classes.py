@@ -16,6 +16,7 @@ from jedi.evaluate import representation as er
 from jedi.evaluate import iterable
 from jedi.evaluate import imports
 from jedi.evaluate import compiled
+from jedi.evaluate.compiled import mixed
 from jedi.api import keywords
 from jedi.evaluate.finder import filter_definition_names
 
@@ -148,7 +149,7 @@ class BaseDefinition(object):
         if isinstance(stripped, er.InstanceElement):
             stripped = stripped.var
 
-        if isinstance(stripped, compiled.CompiledObject):
+        if isinstance(stripped, (compiled.CompiledObject, mixed.MixedObject)):
             return stripped.api_type()
         elif isinstance(stripped, iterable.Array):
             return 'instance'
@@ -322,7 +323,7 @@ class BaseDefinition(object):
         elif self._definition.isinstance(tree.Import):
             return imports.ImportWrapper(self._evaluator, self._name).follow()
         else:
-            return [self._definition]
+            return set([self._definition])
 
     @property
     @memoize_default()
@@ -331,12 +332,12 @@ class BaseDefinition(object):
         Raises an ``AttributeError``if the definition is not callable.
         Otherwise returns a list of `Definition` that represents the params.
         """
-        followed = self._follow_statements_imports()
+        followed = list(self._follow_statements_imports())
         if not followed or not hasattr(followed[0], 'py__call__'):
             raise AttributeError()
         followed = followed[0]  # only check the first one.
 
-        if followed.type == 'funcdef':
+        if followed.type in ('funcdef', 'lambda'):
             if isinstance(followed, er.InstanceElement):
                 params = followed.params[1:]
             else:
@@ -365,10 +366,9 @@ class Completion(BaseDefinition):
     `Completion` objects are returned from :meth:`api.Script.completions`. They
     provide additional information about a completion.
     """
-    def __init__(self, evaluator, name, needs_dot, like_name_length):
+    def __init__(self, evaluator, name, like_name_length):
         super(Completion, self).__init__(evaluator, name)
 
-        self._needs_dot = needs_dot
         self._like_name_length = like_name_length
 
         # Completion objects with the same Completion name (which means
@@ -376,22 +376,18 @@ class Completion(BaseDefinition):
         self._same_name_completions = []
 
     def _complete(self, like_name):
-        dot = '.' if self._needs_dot else ''
         append = ''
         if settings.add_bracket_after_function \
                 and self.type == 'Function':
             append = '('
 
-        if settings.add_dot_after_module:
-            if isinstance(self._definition, tree.Module):
-                append += '.'
         if isinstance(self._definition, tree.Param):
             append += '='
 
         name = str(self._name)
         if like_name:
             name = name[self._like_name_length:]
-        return dot + name + append
+        return name + append
 
     @property
     def complete(self):
@@ -449,7 +445,7 @@ class Completion(BaseDefinition):
                 followed = self._follow_statements_imports()
                 if followed:
                     # TODO: Use all of the followed objects as input to Documentation.
-                    definition = followed[0]
+                    definition = list(followed)[0]
 
         if raw:
             return _Help(definition).raw()
@@ -629,11 +625,11 @@ class CallSignature(Definition):
     It knows what functions you are currently in. e.g. `isinstance(` would
     return the `isinstance` function. without `(` it would return nothing.
     """
-    def __init__(self, evaluator, executable_name, call_stmt, index, key_name):
+    def __init__(self, evaluator, executable_name, bracket_start_pos, index, key_name_str):
         super(CallSignature, self).__init__(evaluator, executable_name)
         self._index = index
-        self._key_name = key_name
-        self._call_stmt = call_stmt
+        self._key_name_str = key_name_str
+        self._bracket_start_pos = bracket_start_pos
 
     @property
     def index(self):
@@ -641,9 +637,9 @@ class CallSignature(Definition):
         The Param index of the current call.
         Returns None if the index cannot be found in the curent call.
         """
-        if self._key_name is not None:
+        if self._key_name_str is not None:
             for i, param in enumerate(self.params):
-                if self._key_name == param.name:
+                if self._key_name_str == param.name:
                     return i
             if self.params and self.params[-1]._name.get_definition().stars == 2:
                 return i
@@ -665,7 +661,7 @@ class CallSignature(Definition):
         The indent of the bracket that is responsible for the last function
         call.
         """
-        return self._call_stmt.end_pos
+        return self._bracket_start_pos
 
     @property
     def call_name(self):

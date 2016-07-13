@@ -55,13 +55,13 @@ def search_params(evaluator, param):
         return []
 
     func = param.get_parent_until(tree.Function)
-    debug.dbg('Dynamic param search for %s in %s.', param, str(func.name))
+    debug.dbg('Dynamic param search for %s in %s.', param, str(func.name), color='MAGENTA')
     # Compare the param names.
     names = [n for n in search_function_call(evaluator, func)
              if n.value == param.name.value]
     # Evaluate the ExecutedParams to types.
-    result = list(chain.from_iterable(n.parent.eval(evaluator) for n in names))
-    debug.dbg('Dynamic param result %s', result)
+    result = set(chain.from_iterable(n.parent.eval(evaluator) for n in names))
+    debug.dbg('Dynamic param result %s', result, color='MAGENTA')
     return result
 
 
@@ -89,7 +89,7 @@ def search_function_call(evaluator, func):
                     parent = parent.parent
 
                 trailer = None
-                if tree.is_node(parent, 'power'):
+                if tree.is_node(parent, 'power', 'atom_expr'):
                     for t in parent.children[1:]:
                         if t == '**':
                             break
@@ -97,7 +97,7 @@ def search_function_call(evaluator, func):
                             trailer = t
                             break
                 if trailer is not None:
-                    types = evaluator.goto_definition(name)
+                    types = evaluator.goto_definitions(name)
 
                     # We have to remove decorators, because they are not the
                     # "original" functions, this way we can easily compare.
