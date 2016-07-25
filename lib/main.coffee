@@ -1,6 +1,3 @@
-provider = require './provider'
-hyperclickProvider = require './hyperclick-provider'
-
 module.exports =
   config:
     showDescriptions:
@@ -100,14 +97,24 @@ module.exports =
       title: 'Show Tooltips with information about the object under the cursor'
       description: '''EXPERIMENTAL FEATURE WHICH IS NOT FINISHED YET.
       Feedback and ideas are welcome on github.'''
+    suggestionPriority:
+      type: 'integer'
+      default: 3
+      minimum: 0
+      maximum: 99
+      order: 11
+      title: 'Suggestion Priority'
+      description: '''You can use this to set the priority for autocomplete-python
+      suggestions. For example, you can use lower value to give higher priority
+      for snippets completions which has priority of 2.'''
 
-  activate: (state) -> provider.constructor()
+  activate: (state) -> require('./provider').constructor()
 
-  deactivate: -> provider.dispose()
+  deactivate: -> require('./provider').dispose()
 
-  getProvider: -> provider
+  getProvider: -> require('./provider')
 
-  getHyperclickProvider: -> hyperclickProvider
+  getHyperclickProvider: -> require('./hyperclick-provider')
 
   consumeSnippets: (snippetsManager) ->
-    provider.setSnippetsManager snippetsManager
+    require('./provider').setSnippetsManager snippetsManager

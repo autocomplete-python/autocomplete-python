@@ -14,7 +14,7 @@ module.exports =
   selector: '.source.python'
   disableForSelector: '.source.python .comment, .source.python .string'
   inclusionPriority: 2
-  suggestionPriority: 3
+  suggestionPriority: atom.config.get('autocomplete-python.suggestionPriority')
   excludeLowerPriority: false
   cacheSize: 10
 
@@ -103,6 +103,8 @@ module.exports =
     @usagesView = null
     @renameView = null
     @snippetsManager = null
+
+    log.debug "Init autocomplete-python with priority #{@suggestionPriority}"
 
     try
       @triggerCompletionRegex = RegExp atom.config.get(
