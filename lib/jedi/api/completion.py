@@ -28,7 +28,7 @@ def get_call_signature_param_names(call_signatures):
                     yield p._name
 
 
-def filter_names(evaluator, completion_names, like_name):
+def filter_names(evaluator, completion_names, stack, like_name):
     comp_dct = {}
     for name in set(completion_names):
         if settings.case_insensitive_completion \
@@ -42,6 +42,7 @@ def filter_names(evaluator, completion_names, like_name):
             new = classes.Completion(
                 evaluator,
                 name,
+                stack,
                 len(like_name)
             )
             k = (new.name, new.complete)  # key
@@ -79,7 +80,7 @@ class Completion:
         self._code_lines = code_lines
 
         # The first step of completions is to get the name
-        self._like_name = helpers.get_on_completion_name(code_lines, position)
+        self._like_name = helpers.get_on_completion_name(module, code_lines, position)
         # The actual cursor position is not what we need to calculate
         # everything. We want the start of the name we're on.
         self._position = position[0], position[1] - len(self._like_name)
@@ -89,7 +90,7 @@ class Completion:
         completion_names = self._get_context_completions()
 
         completions = filter_names(self._evaluator, completion_names,
-                                   self._like_name)
+                                   self.stack, self._like_name)
 
         return sorted(completions, key=lambda x: (x.name.startswith('__'),
                                                   x.name.startswith('_'),
@@ -113,28 +114,30 @@ class Completion:
         grammar = self._evaluator.grammar
 
         try:
-            stack = helpers.get_stack_at_position(
+            self.stack = helpers.get_stack_at_position(
                 grammar, self._code_lines, self._module, self._position
             )
         except helpers.OnErrorLeaf as e:
+            self.stack = None
             if e.error_leaf.value == '.':
                 # After ErrorLeaf's that are dots, we will not do any
                 # completions since this probably just confuses the user.
                 return []
             # If we don't have a context, just use global completion.
+
             return self._global_completions()
 
         allowed_keywords, allowed_tokens = \
-            helpers.get_possible_completion_types(grammar, stack)
+            helpers.get_possible_completion_types(grammar, self.stack)
 
         completion_names = list(self._get_keyword_completion_names(allowed_keywords))
 
         if token.NAME in allowed_tokens:
             # This means that we actually have to do type inference.
 
-            symbol_names = list(stack.get_node_names(grammar))
+            symbol_names = list(self.stack.get_node_names(grammar))
 
-            nodes = list(stack.get_nodes())
+            nodes = list(self.stack.get_nodes())
 
             if "import_stmt" in symbol_names:
                 level = 0

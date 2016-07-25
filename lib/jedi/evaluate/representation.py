@@ -538,7 +538,6 @@ class Function(use_metaclass(CachedMetaClass, Wrapper)):
                 if trailer:
                     # Create a trailer and evaluate it.
                     trailer = tree.Node('trailer', trailer)
-                    # TODO WTF WHY IS THIS CHANGING PARENTS
                     trailer.parent = dec
                     dec_results = self._evaluator.eval_trailer(dec_results, trailer)
 
@@ -553,8 +552,10 @@ class Function(use_metaclass(CachedMetaClass, Wrapper)):
                 # Create param array.
                 if isinstance(f, Function):
                     old_func = f  # TODO this is just hacky. change.
-                else:
+                elif f.type == 'funcdef':
                     old_func = Function(self._evaluator, f, is_decorated=True)
+                else:
+                    old_func = f
 
                 wrappers = self._evaluator.execute_evaluated(decorator, old_func)
                 if not len(wrappers):
@@ -696,7 +697,7 @@ class FunctionExecution(Executed):
         else:
             yield self._evaluator.eval_element(element)
 
-    # TODO add execution_recursion_decorator?!
+    @recursion.execution_recursion_decorator
     def get_yield_types(self):
         yields = self.yields
         stopAt = tree.ForStmt, tree.WhileStmt, FunctionExecution, tree.IfStmt

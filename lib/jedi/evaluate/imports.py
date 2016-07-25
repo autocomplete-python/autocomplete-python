@@ -337,12 +337,15 @@ class Importer(object):
         if is_pkg:
             # In this case, we don't have a file yet. Search for the
             # __init__ file.
-            module_path = get_init_path(module_path)
+            if module_path.endswith(('.zip', '.egg')):
+                source = module_file.loader.get_source(module_name)
+            else:
+                module_path = get_init_path(module_path)
         elif module_file:
             source = module_file.read()
             module_file.close()
 
-        if module_file is None and not module_path.endswith('.py'):
+        if module_file is None and not module_path.endswith(('.py', '.zip', '.egg')):
             module = compiled.load_module(self._evaluator, module_path)
         else:
             module = _load_module(self._evaluator, module_path, source, sys_path)
@@ -444,7 +447,7 @@ class Importer(object):
 def _load_module(evaluator, path=None, source=None, sys_path=None):
     def load(source):
         dotted_path = path and compiled.dotted_from_fs_path(path, sys_path)
-        if path is not None and path.endswith('.py') \
+        if path is not None and path.endswith(('.py', '.zip', '.egg')) \
                 and dotted_path not in settings.auto_import_modules:
             if source is None:
                 with open(path, 'rb') as f:
@@ -507,7 +510,9 @@ def get_modules_containing_name(evaluator, mods, name):
         paths = set(settings.additional_dynamic_modules)
         for p in mod_paths:
             if p is not None:
-                d = os.path.dirname(p)
+                # We need abspath, because the seetings paths might not already
+                # have been converted to absolute paths.
+                d = os.path.dirname(os.path.abspath(p))
                 for entry in os.listdir(d):
                     if entry not in mod_paths:
                         if entry.endswith('.py'):

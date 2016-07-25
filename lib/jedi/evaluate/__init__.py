@@ -89,6 +89,7 @@ class Evaluator(object):
         self.mixed_cache = {}  # see `evaluate.compiled.mixed.create()`
         self.analysis = []
         self.predefined_if_name_dict_dict = {}
+        self.dynamic_params_depth = 0
         self.is_analysis = False
 
         if sys_path is None:
@@ -139,7 +140,7 @@ class Evaluator(object):
         scopes = f.scopes(search_global)
         if is_goto:
             return f.filter_name(scopes)
-        return f.find(scopes, search_global)
+        return f.find(scopes, attribute_lookup=not search_global)
 
     #@memoize_default(default=[], evaluator_is_first_arg=True)
     #@recursion.recursion_decorator
@@ -378,7 +379,7 @@ class Evaluator(object):
                 pass
             else:
                 if comp_for == ':':
-                    # Dict comprehensions have it at the 3rd index.
+                    # Dict comprehensions have a colon at the 3rd index.
                     try:
                         comp_for = c[1].children[3]
                     except IndexError:
@@ -516,7 +517,7 @@ class Evaluator(object):
                 ))
 
         scope = name.get_parent_scope()
-        if tree.is_node(name.parent, 'trailer'):
+        if tree.is_node(par, 'trailer') and par.children[0] == '.':
             call = helpers.call_of_leaf(name, cut_own_trailer=True)
             types = self.eval_element(call)
             return resolve_implicit_imports(iterable.unite(
