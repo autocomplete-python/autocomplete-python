@@ -5,9 +5,16 @@ import sys
 import json
 import traceback
 sys.path.append(os.path.dirname(__file__))
+import tempfile
 import jedi
 # remove jedi from path after we import it so it will not be completed
 sys.path.pop(0)
+
+# Set jedi temp dir so plugin jedi cache does not interfere with system
+# installed jedi cache
+jedi.settings.cache_directory = os.path.join(tempfile.gettempdir(), 'atom',
+                                             'autocomplete-python', 'jedi',
+                                             '0.10', 'cache')
 
 WORD_RE = re.compile(r'\w')
 ARGUMENT_RE = re.compile(r'[a-zA-Z0-9_=\*"\']+')
