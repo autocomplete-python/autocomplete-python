@@ -169,7 +169,7 @@ module.exports =
 
     atom.workspace.observeTextEditors (editor) =>
       @_handleGrammarChangeEvent(editor, editor.getGrammar())
-      editor.displayBuffer.onDidChangeGrammar (grammar) =>
+      editor.onDidChangeGrammar (grammar) =>
         @_handleGrammarChangeEvent(editor, grammar)
 
     atom.config.onDidChange 'autocomplete-plus.enableAutoActivation', =>
@@ -255,7 +255,7 @@ module.exports =
 
   _handleGrammarChangeEvent: (editor, grammar) ->
     eventName = 'keyup'
-    eventId = "#{editor.displayBuffer.id}.#{eventName}"
+    eventId = "#{editor.id}.#{eventName}"
     if grammar.scopeName == 'source.python'
 
       if atom.config.get('autocomplete-python.showTooltips') is true
