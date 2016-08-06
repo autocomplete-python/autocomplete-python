@@ -123,8 +123,8 @@ class CompiledObject(Base):
             return 'classdef'
         elif inspect.ismodule(cls):
             return 'file_input'
-        elif inspect.isbuiltin(cls) or inspect.ismethod(cls) \
-                or inspect.ismethoddescriptor(cls):
+        elif inspect.isbuiltin(cls) or inspect.ismethod(cls) or \
+                inspect.ismethoddescriptor(cls):
             return 'funcdef'
 
     @underscore_memoization
@@ -137,7 +137,8 @@ class CompiledObject(Base):
         return self
 
     def _get_class(self):
-        if not fake.is_class_instance(self.obj):
+        if not fake.is_class_instance(self.obj) or \
+                inspect.ismethoddescriptor(self.obj):  # slots
             return self.obj
 
         try:
@@ -222,10 +223,12 @@ class CompiledObject(Base):
         module = self.get_parent_until()
         faked_subscopes = []
         for name in dir(self.obj):
-            f = fake.get_faked(module.obj, self.obj, name)
-            if f:
-                f.parent = self
-                faked_subscopes.append(f)
+            try:
+                faked_subscopes.append(
+                    fake.get_faked(module.obj, self.obj, parent=self, name=name)
+                )
+            except fake.FakeDoesNotExist:
+                pass
         return faked_subscopes
 
     def is_scope(self):
@@ -337,7 +340,13 @@ def dotted_from_fs_path(fs_path, sys_path):
     for s in sys_path:
         if (fs_path.startswith(s) and len(path) < len(s)):
             path = s
-    return _path_re.sub('', fs_path[len(path):].lstrip(os.path.sep)).replace(os.path.sep, '.')
+
+    # - Window
+    # X:\path\to\lib-dynload/datetime.pyd => datetime
+    module_path = fs_path[len(path):].lstrip(os.path.sep).lstrip('/')
+    # - Window
+    # Replace like X:\path\to\something/foo/bar.py
+    return _path_re.sub('', module_path).replace(os.path.sep, '.').replace('/', '.')
 
 
 def load_module(evaluator, path=None, name=None):
@@ -445,16 +454,15 @@ def _parse_function_doc(doc):
 
 
 def _create_from_name(evaluator, module, parent, name):
-    faked = fake.get_faked(module.obj, parent.obj, name)
-    # only functions are necessary.
-    if faked is not None:
-        faked.parent = parent
-        return faked
+    try:
+        return fake.get_faked(module.obj, parent.obj, parent=parent, name=name)
+    except fake.FakeDoesNotExist:
+        pass
 
     try:
         obj = getattr(parent.obj, name)
     except AttributeError:
-        # happens e.g. in properties of
+        # Happens e.g. in properties of
         # PyQt4.QtGui.QStyleOptionComboBox.currentText
         # -> just set it to None
         obj = None
@@ -474,6 +482,7 @@ def _a_generator(foo):
 
 _SPECIAL_OBJECTS = {
     'FUNCTION_CLASS': type(load_module),
+    'METHOD_CLASS': type(CompiledObject.is_class),
     'MODULE_CLASS': type(os),
     'GENERATOR_OBJECT': _a_generator(1.0),
     'BUILTINS': _builtins,
@@ -527,9 +536,9 @@ def create(evaluator, obj, parent=None, module=None):
         if parent is None and obj != _builtins:
             return create(evaluator, obj, create(evaluator, _builtins))
 
-        faked = fake.get_faked(module and module.obj, obj)
-        if faked is not None:
-            faked.parent = parent
-            return faked
+        try:
+            return fake.get_faked(module and module.obj, obj, parent=parent)
+        except fake.FakeDoesNotExist:
+            pass
 
     return CompiledObject(evaluator, obj, parent)

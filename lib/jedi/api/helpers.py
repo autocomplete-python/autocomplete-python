@@ -3,13 +3,13 @@ Helpers for the API
 """
 import re
 from collections import namedtuple
-from textwrap import dedent
 
 from jedi._compatibility import u
 from jedi.evaluate.helpers import call_of_leaf
 from jedi import parser
-from jedi.parser import tokenize, token
+from jedi.parser import tokenize
 from jedi.cache import time_cache
+from jedi import common
 
 
 CompletionParts = namedtuple('CompletionParts', ['path', 'has_dot', 'name'])
@@ -22,11 +22,9 @@ def sorted_definitions(defs):
 
 def get_on_completion_name(module, lines, position):
     leaf = module.get_leaf_for_position(position)
-    if leaf is None:
-        return ''
-    elif leaf.type in ('string', 'error_leaf'):
+    if leaf is None or leaf.type in ('string', 'error_leaf'):
         # Completions inside strings are a bit special, we need to parse the
-        # string.
+        # string. The same is true for comments and error_leafs.
         line = lines[position[0] - 1]
         # The first step of completions is to get the name
         return re.search(r'(?!\d)\w+$|$', line[:position[1]]).group(0)
@@ -52,15 +50,47 @@ class OnErrorLeaf(Exception):
         return self.args[0]
 
 
+def _is_on_comment(leaf, position):
+    # We might be on a comment.
+    if leaf.type == 'endmarker':
+        try:
+            dedent = leaf.get_previous_leaf()
+            if dedent.type == 'dedent' and dedent.prefix:
+                # TODO This is needed because the fast parser uses multiple
+                # endmarker tokens within a file which is obviously ugly.
+                # This is so ugly that I'm not even commenting how it exactly
+                # happens, but let me tell you that I want to get rid of it.
+                leaf = dedent
+        except IndexError:
+            pass
+
+    comment_lines = common.splitlines(leaf.prefix)
+    difference = leaf.start_pos[0] - position[0]
+    prefix_start_pos = leaf.get_start_pos_of_prefix()
+    if difference == 0:
+        indent = leaf.start_pos[1]
+    elif position[0] == prefix_start_pos[0]:
+        indent = prefix_start_pos[1]
+    else:
+        indent = 0
+    line = comment_lines[-difference - 1][:position[1] - indent]
+    return '#' in line
+
+
 def _get_code_for_stack(code_lines, module, position):
     leaf = module.get_leaf_for_position(position, include_prefixes=True)
     # It might happen that we're on whitespace or on a comment. This means
     # that we would not get the right leaf.
     if leaf.start_pos >= position:
+        if _is_on_comment(leaf, position):
+            return u('')
+
+        # If we're not on a comment simply get the previous leaf and proceed.
         try:
             leaf = leaf.get_previous_leaf()
         except IndexError:
             return u('')  # At the beginning of the file.
+
     is_after_newline = leaf.type == 'newline'
     while leaf.type == 'newline':
         try:
@@ -89,11 +119,7 @@ def _get_code_for_stack(code_lines, module, position):
                 return u('')
 
         # This is basically getting the relevant lines.
-        code = _get_code(code_lines, user_stmt.get_start_pos_of_prefix(), position)
-        if code.startswith('pass'):
-            import pdb; pdb.set_trace()
-
-        return code
+        return _get_code(code_lines, user_stmt.get_start_pos_of_prefix(), position)
 
 
 def get_stack_at_position(grammar, code_lines, module, pos):
@@ -108,22 +134,18 @@ def get_stack_at_position(grammar, code_lines, module, pos):
         for token_ in tokens:
             if token_.string == safeword:
                 raise EndMarkerReached()
-            elif token_.type == token.DEDENT and False:
-                # Ignore those. Error statements should not contain them, if
-                # they do it's for cases where an indentation happens and
-                # before the endmarker we still see them.
-                pass
             else:
                 yield token_
 
     code = _get_code_for_stack(code_lines, module, pos)
     # We use a word to tell Jedi when we have reached the start of the
     # completion.
-    safeword = 'XXX_USER_WANTS_TO_COMPLETE_HERE_WITH_JEDI'
+    # Use Z as a prefix because it's not part of a number suffix.
+    safeword = 'ZZZ_USER_WANTS_TO_COMPLETE_HERE_WITH_JEDI'
     # Remove as many indents from **all** code lines as possible.
-    code = dedent(code + safeword)
+    code = code + safeword
 
-    p = parser.Parser(grammar, code, start_parsing=False)
+    p = parser.ParserWithRecovery(grammar, code, start_parsing=False)
     try:
         p.parse(tokenizer=tokenize_without_endmarker(code))
     except EndMarkerReached:
@@ -256,7 +278,7 @@ def get_call_signature_details(module, position):
             # makes it feel strange to have a call signature.
             return None
 
-        for n in node.children:
+        for n in node.children[::-1]:
             if n.start_pos < position and n.type == 'error_node':
                 result = _get_call_signature_details_from_error_node(n, position)
                 if result is not None:

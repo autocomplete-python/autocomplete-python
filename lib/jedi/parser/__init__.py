@@ -113,6 +113,7 @@ class Parser(object):
             source += '\n'
             self._added_newline = True
 
+        self.source = source
         self._start_symbol = start_symbol
         self._grammar = grammar
 
@@ -289,7 +290,8 @@ class ParserWithRecovery(Parser):
     :param module_path: The path of the module in the file system, may be None.
     :type module_path: str
     """
-    def __init__(self, grammar, source, module_path=None, tokenizer=None):
+    def __init__(self, grammar, source, module_path=None, tokenizer=None,
+                 start_parsing=True):
         self.syntax_errors = []
 
         self._omit_dedent_list = []
@@ -304,12 +306,16 @@ class ParserWithRecovery(Parser):
         # if self.options["print_function"]:
         #     python_grammar = pygram.python_grammar_no_print_statement
         # else:
-        super(ParserWithRecovery, self).__init__(grammar, source, tokenizer=tokenizer)
-
-        self.module = self._parsed
-        self.module.used_names = self._used_names
-        self.module.path = module_path
-        self.module.global_names = self._global_names
+        super(ParserWithRecovery, self).__init__(
+            grammar, source,
+            tokenizer=tokenizer,
+            start_parsing=start_parsing
+        )
+        if start_parsing:
+            self.module = self._parsed
+            self.module.used_names = self._used_names
+            self.module.path = module_path
+            self.module.global_names = self._global_names
 
     def parse(self, tokenizer):
         return super(ParserWithRecovery, self).parse(self._tokenize(self._tokenize(tokenizer)))

@@ -43,6 +43,10 @@ if is_py3:
         NOT_CLASS_TYPES += (types.DynamicClassAttribute,)
 
 
+class FakeDoesNotExist(Exception):
+    pass
+
+
 def _load_faked_module(module):
     module_name = module.__name__
     if module_name == '__builtin__' and not is_py3:
@@ -142,12 +146,35 @@ def _faked(module, obj, name):
             return search_scope(cls, name)
 
 
-def get_faked(module, obj, name=None):
+def memoize_faked(obj):
+    """
+    A typical memoize function that ignores issues with non hashable results.
+    """
+    cache = obj.cache = {}
+
+    def memoizer(*args, **kwargs):
+        key = (obj, args, frozenset(kwargs.items()))
+        try:
+            result = cache[key]
+        except TypeError:
+            return obj(*args, **kwargs)
+        except KeyError:
+            result = obj(*args, **kwargs)
+            if result is not None:
+                cache[key] = obj(*args, **kwargs)
+            return result
+        else:
+            return result
+    return memoizer
+
+
+@memoize_faked
+def _get_faked(module, obj, name=None):
     obj = type(obj) if is_class_instance(obj) else obj
     result = _faked(module, obj, name)
     if result is None or isinstance(result, pt.Class):
         # We're not interested in classes. What we want is functions.
-        return None
+        raise FakeDoesNotExist
     else:
         # Set the docstr which was previously not set (faked modules don't
         # contain it).
@@ -158,6 +185,12 @@ def get_faked(module, obj, name=None):
         docstr_node = pt.Node('simple_stmt', [string, new_line])
         suite.children.insert(2, docstr_node)
         return result
+
+
+def get_faked(module, obj, name=None, parent=None):
+    faked = _get_faked(module, obj, name)
+    faked.parent = parent
+    return faked
 
 
 def is_class_instance(obj):
