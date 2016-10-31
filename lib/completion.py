@@ -252,7 +252,6 @@ class JediCompletion(object):
                 _definitions.append(_definition)
         return json.dumps({'id': identifier, 'results': _definitions})
 
-
     def _serialize_tooltip(self, definitions, identifier=None):
         _definitions = []
         for definition in definitions:
