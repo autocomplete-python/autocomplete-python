@@ -24,6 +24,8 @@ class JediCompletion(object):
     def __init__(self):
         self.default_sys_path = sys.path
         self._input = io.open(sys.stdin.fileno(), encoding='utf-8')
+        self.devnull = open(os.devnull, 'w')
+        self.stdout, self.stderr = sys.stdout, sys.stderr
 
     def _get_definition_type(self, definition):
         is_built_in = definition.in_builtin_module
@@ -359,14 +361,17 @@ class JediCompletion(object):
                                             request.get('prefix', '')))
 
     def _write_response(self, response):
+        sys.stdout = self.stdout
         sys.stdout.write(response + '\n')
         sys.stdout.flush()
 
     def watch(self):
         while True:
             try:
+                sys.stdout, sys.stderr = self.devnull, self.devnull
                 self._process_request(self._input.readline())
             except Exception:
+                sys.stderr = self.stderr
                 sys.stderr.write(traceback.format_exc() + '\n')
                 sys.stderr.flush()
 
