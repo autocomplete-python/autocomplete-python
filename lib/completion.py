@@ -63,7 +63,7 @@ class JediCompletion(object):
     def _generate_signature(self, completion):
         """Generate signature with function arguments.
         """
-        if not hasattr(completion, 'params'):
+        if completion.type in ['module'] or not hasattr(completion, 'params'):
             return ''
         return '%s(%s)' % (
             completion.name,
@@ -326,6 +326,8 @@ class JediCompletion(object):
     def _process_request(self, request):
         """Accept serialized request from Atom and write response.
         """
+        if not request:
+          return
         request = self._deserialize(request)
 
         self._set_request_config(request.get('config', {}))
@@ -376,4 +378,8 @@ class JediCompletion(object):
                 sys.stderr.flush()
 
 if __name__ == '__main__':
-    JediCompletion().watch()
+    if sys.argv[1:]:
+      for s in sys.argv[1:]:
+        JediCompletion()._process_request(s)
+    else:
+      JediCompletion().watch()
