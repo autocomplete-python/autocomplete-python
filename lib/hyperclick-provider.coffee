@@ -16,7 +16,7 @@ module.exports =
   getSuggestionForWord: (editor, text, range) ->
     if text in ['.', ':']
       return
-    if editor.getGrammar().scopeName == 'source.python'
+    if editor.getGrammar().scopeName.indexOf('source.python') > -1
       bufferPosition = range.start
       scopeDescriptor = editor.scopeDescriptorForBufferPosition(
         bufferPosition)
