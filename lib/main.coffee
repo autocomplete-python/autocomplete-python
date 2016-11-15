@@ -115,6 +115,8 @@ module.exports =
     { Installer, InstallFlow, StateController } = require 'kite-installer'
     StateController.canInstallKite().then(() =>
       flow = new InstallFlow
+      installer = new Installer
+      installer.init flow
       @installView = atom.workspace.addRightPanel
         item: flow.element
         visible: true
