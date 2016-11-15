@@ -3,7 +3,11 @@
   "main": "./lib/main",
   "version": "1.8.11",
   "description": "Python packages, variables, methods and functions with their arguments autocompletion powered by Jedi",
-  "activationHooks": ["language-python:grammar-used"],
+  "activationHooks": [
+    "language-python:grammar-used",
+    "MagicPython:grammar-used",
+    "atom-django:grammar-used"
+  ],
   "repository": "https://github.com/sadovnychyi/autocomplete-python",
   "license": "GPL",
   "engines": {
