@@ -107,6 +107,12 @@ module.exports =
       description: '''You can use this to set the priority for autocomplete-python
       suggestions. For example, you can use lower value to give higher priority
       for snippets completions which has priority of 2.'''
+    useKite:
+      type: 'boolean'
+      default: true
+      title: 'Use Kite-powered Completions'
+      description: '''Kite is a cloud powered autocomplete engine. It provides
+      significantly more autocomplete suggestions than the legacy engine.'''
 
   installation: null
 
@@ -117,15 +123,23 @@ module.exports =
     AccountManager.initClient 'alpha.kite.com', -1, true
     atom.views.addViewProvider Installation, (m) => m.element
 
-    StateController.canInstallKite().then(() =>
-      @installation = new Installation
-      installer = new Installer atom.project.getPaths()
-      installer.init @installation.flow
-      pane = atom.workspace.getActivePane()
-      @installation.flow.onSkipInstall () => pane.destroyActiveItem()
-      pane.addItem @installation, index: 0
-      pane.activateItemAtIndex 0
-    )
+    checkKiteInstallation = () =>
+      StateController.canInstallKite().then(() =>
+        @installation = new Installation
+        installer = new Installer atom.project.getPaths()
+        installer.init @installation.flow
+        pane = atom.workspace.getActivePane()
+        @installation.flow.onSkipInstall () =>
+          atom.config.set 'autocomplete-python.useKite', false
+          pane.destroyActiveItem()
+        pane.addItem @installation, index: 0
+        pane.activateItemAtIndex 0
+      ) if atom.config.get 'autocomplete-python.useKite'
+
+    checkKiteInstallation()
+
+    atom.config.onDidChange 'autocomplete-python.useKite', () =>
+      checkKiteInstallation()
 
   deactivate: ->
     require('./provider').dispose()
