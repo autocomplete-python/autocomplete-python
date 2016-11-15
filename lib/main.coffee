@@ -108,9 +108,21 @@ module.exports =
       suggestions. For example, you can use lower value to give higher priority
       for snippets completions which has priority of 2.'''
 
-  activate: (state) -> require('./provider').constructor()
+  installView: null
 
-  deactivate: -> require('./provider').dispose()
+  activate: (state) ->
+    require('./provider').constructor()
+    { Installer, InstallFlow, StateController } = require 'kite-installer'
+    StateController.canInstallKite().then(() =>
+      flow = new InstallFlow
+      @installView = atom.workspace.addRightPanel
+        item: flow.element
+        visible: true
+    )
+
+  deactivate: ->
+    require('./provider').dispose()
+    @installView.destroy() if @installView
 
   getProvider: -> require('./provider')
 
