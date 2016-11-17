@@ -1,5 +1,12 @@
 module.exports =
   config:
+    useKite:
+      type: 'boolean'
+      default: true
+      order: 0
+      title: 'Use Kite-powered Completions'
+      description: '''Kite is a cloud powered autocomplete engine. It provides
+      significantly more autocomplete suggestions than the legacy engine.'''
     showDescriptions:
       type: 'boolean'
       default: true
@@ -107,12 +114,6 @@ module.exports =
       description: '''You can use this to set the priority for autocomplete-python
       suggestions. For example, you can use lower value to give higher priority
       for snippets completions which has priority of 2.'''
-    useKite:
-      type: 'boolean'
-      default: true
-      title: 'Use Kite-powered Completions'
-      description: '''Kite is a cloud powered autocomplete engine. It provides
-      significantly more autocomplete suggestions than the legacy engine.'''
 
   installation: null
 
@@ -138,8 +139,12 @@ module.exports =
 
     checkKiteInstallation()
 
-    atom.config.onDidChange 'autocomplete-python.useKite', () =>
+    atom.config.onDidChange 'autocomplete-python.useKite', ({ newValue, oldValue }) =>
       checkKiteInstallation()
+      if newValue
+        StateController.enableAtomPackage()
+      else
+        StateController.disableAtomPackage()
 
   deactivate: ->
     require('./provider').dispose()
