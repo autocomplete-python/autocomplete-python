@@ -1,14 +1,14 @@
 {
-  "name": "autocomplete-python",
+  "name": "pluggy-mcpluginface",
   "main": "./lib/main",
-  "version": "1.8.12",
+  "version": "0.0.0",
   "description": "Python packages, variables, methods and functions with their arguments autocompletion powered by Jedi",
   "activationHooks": [
     "language-python:grammar-used",
     "MagicPython:grammar-used",
     "atom-django:grammar-used"
   ],
-  "repository": "https://github.com/sadovnychyi/autocomplete-python",
+  "repository": "https://github.com/kiteco/autocomplete-python",
   "license": "GPL",
   "engines": {
     "atom": ">=0.194.0 <2.0.0"
@@ -44,16 +44,12 @@
   },
   "contributors": [
     {
-      "name": "Dmitry Sadovnychyi",
-      "email": "autocomplete-python@dmit.ro"
+      "name": "Daniel Hung",
+      "email": "daniel@kite.com"
     }
   ],
   "bugs": {
-    "url": "https://github.com/sadovnychyi/autocomplete-python/issues"
+    "url": "https://github.com/kiteco/autocomplete-python/issues"
   },
-  "keywords": [
-    "python",
-    "autocomplete",
-    "jedi"
-  ]
+  "keywords": []
 }

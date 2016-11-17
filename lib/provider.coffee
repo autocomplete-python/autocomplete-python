@@ -14,7 +14,7 @@ module.exports =
   selector: '.source.python'
   disableForSelector: '.source.python .comment, .source.python .string'
   inclusionPriority: 2
-  suggestionPriority: atom.config.get('autocomplete-python.suggestionPriority')
+  suggestionPriority: atom.config.get('pluggy-mcpluginface.suggestionPriority')
   excludeLowerPriority: false
   cacheSize: 10
 
@@ -31,13 +31,13 @@ module.exports =
       return
     log.warning 'No python executable found', error
     atom.notifications.addWarning(
-      'autocomplete-python unable to find python binary.', {
+      'pluggy-mcpluginface unable to find python binary.', {
       detail: """Please set path to python executable manually in package
       settings and restart your editor. Be sure to migrate on new settings
       if everything worked on previous version.
       Detailed error message: #{error}
 
-      Current config: #{atom.config.get('autocomplete-python.pythonPaths')}"""
+      Current config: #{atom.config.get('pluggy-mcpluginface.pythonPaths')}"""
       dismissable: true})
     @providerNoExecutable = true
 
@@ -52,19 +52,19 @@ module.exports =
       stderr: (data) =>
         if data.indexOf('is not recognized as an internal or external') > -1
           return @_noExecutableError(data)
-        log.debug "autocomplete-python traceback output: #{data}"
+        log.debug "pluggy-mcpluginface traceback output: #{data}"
         if data.indexOf('jedi') > -1
-          if atom.config.get('autocomplete-python.outputProviderErrors')
+          if atom.config.get('pluggy-mcpluginface.outputProviderErrors')
             atom.notifications.addWarning(
               '''Looks like this error originated from Jedi. Please do not
-              report such issues in autocomplete-python issue tracker. Report
+              report such issues in pluggy-mcpluginface issue tracker. Report
               them directly to Jedi. Turn off `outputProviderErrors` setting
               to hide such errors in future. Traceback output:''', {
               detail: "#{data}",
               dismissable: true})
         else
           atom.notifications.addError(
-            'autocomplete-python traceback output:', {
+            'pluggy-mcpluginface traceback output:', {
               detail: "#{data}",
               dismissable: true})
 
@@ -104,29 +104,29 @@ module.exports =
     @renameView = null
     @snippetsManager = null
 
-    log.debug "Init autocomplete-python with priority #{@suggestionPriority}"
+    log.debug "Init pluggy-mcpluginface with priority #{@suggestionPriority}"
 
     try
       @triggerCompletionRegex = RegExp atom.config.get(
-        'autocomplete-python.triggerCompletionRegex')
+        'pluggy-mcpluginface.triggerCompletionRegex')
     catch err
       atom.notifications.addWarning(
-        '''autocomplete-python invalid regexp to trigger autocompletions.
+        '''pluggy-mcpluginface invalid regexp to trigger autocompletions.
         Falling back to default value.''', {
         detail: "Original exception: #{err}"
         dismissable: true})
-      atom.config.set('autocomplete-python.triggerCompletionRegex',
+      atom.config.set('pluggy-mcpluginface.triggerCompletionRegex',
                       '([\.\ ]|[a-zA-Z_][a-zA-Z0-9_]*)')
       @triggerCompletionRegex = /([\.\ ]|[a-zA-Z_][a-zA-Z0-9_]*)/
 
     selector = 'atom-text-editor[data-grammar~=python]'
-    atom.commands.add selector, 'autocomplete-python:go-to-definition', =>
+    atom.commands.add selector, 'pluggy-mcpluginface:go-to-definition', =>
       @goToDefinition()
-    atom.commands.add selector, 'autocomplete-python:complete-arguments', =>
+    atom.commands.add selector, 'pluggy-mcpluginface:complete-arguments', =>
       editor = atom.workspace.getActiveTextEditor()
       @_completeArguments(editor, editor.getCursorBufferPosition(), true)
 
-    atom.commands.add selector, 'autocomplete-python:show-usages', =>
+    atom.commands.add selector, 'pluggy-mcpluginface:show-usages', =>
       editor = atom.workspace.getActiveTextEditor()
       bufferPosition = editor.getCursorBufferPosition()
       if @usagesView
@@ -135,7 +135,7 @@ module.exports =
       @getUsages(editor, bufferPosition).then (usages) =>
         @usagesView.setItems(usages)
 
-    atom.commands.add selector, 'autocomplete-python:override-method', =>
+    atom.commands.add selector, 'pluggy-mcpluginface:override-method', =>
       editor = atom.workspace.getActiveTextEditor()
       bufferPosition = editor.getCursorBufferPosition()
       if @overrideView
@@ -146,7 +146,7 @@ module.exports =
         @overrideView.bufferPosition = bufferPosition
         @overrideView.setItems(methods)
 
-    atom.commands.add selector, 'autocomplete-python:rename', =>
+    atom.commands.add selector, 'pluggy-mcpluginface:rename', =>
       editor = atom.workspace.getActiveTextEditor()
       bufferPosition = editor.getCursorBufferPosition()
       @getUsages(editor, bufferPosition).then (usages) =>
@@ -244,7 +244,7 @@ module.exports =
         description = description.trim()
         if not description
           return
-        view = document.createElement('autocomplete-python-suggestion')
+        view = document.createElement('pluggy-mcpluginface-suggestion')
         view.appendChild(document.createTextNode(description))
         decoration = editor.decorateMarker(marker, {
             type: 'overlay',
@@ -258,7 +258,7 @@ module.exports =
     eventId = "#{editor.id}.#{eventName}"
     if grammar.scopeName == 'source.python'
 
-      if atom.config.get('autocomplete-python.showTooltips') is true
+      if atom.config.get('pluggy-mcpluginface.showTooltips') is true
         editor.onDidChangeCursorPosition (event) =>
           @_showSignatureOverlay(event)
 
@@ -305,7 +305,7 @@ module.exports =
           log.debug 'Attempt to communicate with terminated process', @provider
       else if respawned
         atom.notifications.addWarning(
-          ["Failed to spawn daemon for autocomplete-python."
+          ["Failed to spawn daemon for pluggy-mcpluginface."
            "Completions will not work anymore"
            "unless you restart your editor."].join(' '), {
           detail: ["exitCode: #{process.exitCode}"
@@ -364,21 +364,21 @@ module.exports =
 
   _generateRequestConfig: ->
     extraPaths = InterpreterLookup.applySubstitutions(
-      atom.config.get('autocomplete-python.extraPaths').split(';'))
+      atom.config.get('pluggy-mcpluginface.extraPaths').split(';'))
     args =
       'extraPaths': extraPaths
-      'useSnippets': atom.config.get('autocomplete-python.useSnippets')
+      'useSnippets': atom.config.get('pluggy-mcpluginface.useSnippets')
       'caseInsensitiveCompletion': atom.config.get(
-        'autocomplete-python.caseInsensitiveCompletion')
+        'pluggy-mcpluginface.caseInsensitiveCompletion')
       'showDescriptions': atom.config.get(
-        'autocomplete-python.showDescriptions')
-      'fuzzyMatcher': atom.config.get('autocomplete-python.fuzzyMatcher')
+        'pluggy-mcpluginface.showDescriptions')
+      'fuzzyMatcher': atom.config.get('pluggy-mcpluginface.fuzzyMatcher')
     return args
 
   setSnippetsManager: (@snippetsManager) ->
 
   _completeArguments: (editor, bufferPosition, force) ->
-    useSnippets = atom.config.get('autocomplete-python.useSnippets')
+    useSnippets = atom.config.get('pluggy-mcpluginface.useSnippets')
     if not force and useSnippets == 'none'
       atom.commands.dispatch(document.querySelector('atom-text-editor'),
                              'autocomplete-plus:activate')
@@ -428,7 +428,7 @@ module.exports =
       row: bufferPosition.row
       column: bufferPosition.column
     lines = editor.getBuffer().getLines()
-    if atom.config.get('autocomplete-python.fuzzyMatcher')
+    if atom.config.get('pluggy-mcpluginface.fuzzyMatcher')
       # we want to do our own filtering, hide any existing suffix from Jedi
       line = lines[bufferPosition.row]
       lastIdentifier = /\.?[a-zA-Z_][a-zA-Z0-9_]*$/.exec(
@@ -442,7 +442,7 @@ module.exports =
       log.debug 'Using cached response with ID', requestId
       # We have to parse JSON on each request here to pass only a copy
       matches = JSON.parse(@responses[requestId]['source'])['results']
-      if atom.config.get('autocomplete-python.fuzzyMatcher')
+      if atom.config.get('pluggy-mcpluginface.fuzzyMatcher')
         return @_fuzzyFilter(matches, prefix)
       else
         return matches
@@ -458,7 +458,7 @@ module.exports =
 
     @_sendRequest(@_serialize(payload))
     return new Promise (resolve) =>
-      if atom.config.get('autocomplete-python.fuzzyMatcher')
+      if atom.config.get('pluggy-mcpluginface.fuzzyMatcher')
         @requests[payload.id] = (matches) =>
           resolve(@_fuzzyFilter(matches, prefix))
       else

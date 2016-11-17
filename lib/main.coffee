@@ -21,7 +21,7 @@ module.exports =
       title: 'Autocomplete Function Parameters'
       description: '''Automatically complete function arguments after typing
       left parenthesis character. Use completion key to jump between
-      arguments. See `autocomplete-python:complete-arguments` command if you
+      arguments. See `pluggy-mcpluginface:complete-arguments` command if you
       want to trigger argument completions manually. See README if it does not
       work for you.'''
     pythonPaths:
@@ -31,7 +31,7 @@ module.exports =
       title: 'Python Executable Paths'
       description: '''Optional semicolon separated list of paths to python
       executables (including executable names), where the first one will take
-      higher priority over the last one. By default autocomplete-python will
+      higher priority over the last one. By default pluggy-mcpluginface will
       automatically look for virtual environments inside of your project and
       try to use them as well as try to find global python executable. If you
       use this config, automatic lookup will have lowest priority.
@@ -111,7 +111,7 @@ module.exports =
       maximum: 99
       order: 11
       title: 'Suggestion Priority'
-      description: '''You can use this to set the priority for autocomplete-python
+      description: '''You can use this to set the priority for pluggy-mcpluginface
       suggestions. For example, you can use lower value to give higher priority
       for snippets completions which has priority of 2.'''
 
@@ -131,15 +131,15 @@ module.exports =
         installer.init @installation.flow
         pane = atom.workspace.getActivePane()
         @installation.flow.onSkipInstall () =>
-          atom.config.set 'autocomplete-python.useKite', false
+          atom.config.set 'pluggy-mcpluginface.useKite', false
           pane.destroyActiveItem()
         pane.addItem @installation, index: 0
         pane.activateItemAtIndex 0
-      ) if atom.config.get 'autocomplete-python.useKite'
+      ) if atom.config.get 'pluggy-mcpluginface.useKite'
 
     checkKiteInstallation()
 
-    atom.config.onDidChange 'autocomplete-python.useKite', ({ newValue, oldValue }) =>
+    atom.config.onDidChange 'pluggy-mcpluginface.useKite', ({ newValue, oldValue }) =>
       checkKiteInstallation()
       if newValue
         StateController.enableAtomPackage()

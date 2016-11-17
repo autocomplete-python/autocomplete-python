@@ -24,10 +24,10 @@ describe 'Python autocompletions', ->
     runs ->
       editor = atom.workspace.getActiveTextEditor()
       editor.setGrammar(atom.grammars.grammarsByScopeName['source.python'])
-      atom.packages.loadPackage('autocomplete-python').activationHooks = []
-    waitsForPromise -> atom.packages.activatePackage('autocomplete-python')
+      atom.packages.loadPackage('pluggy-mcpluginface').activationHooks = []
+    waitsForPromise -> atom.packages.activatePackage('pluggy-mcpluginface')
     runs -> provider = atom.packages.getActivePackage(
-      'autocomplete-python').mainModule.getProvider()
+      'pluggy-mcpluginface').mainModule.getProvider()
 
   it 'autocompletes builtins', ->
     editor.setText 'isinstanc'
