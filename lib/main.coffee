@@ -1,5 +1,12 @@
 module.exports =
   config:
+    useKite:
+      type: 'boolean'
+      default: true
+      order: 0
+      title: 'Use Kite-powered Completions'
+      description: '''Kite is a cloud powered autocomplete engine. It provides
+      significantly more autocomplete suggestions than the legacy engine.'''
     showDescriptions:
       type: 'boolean'
       default: true
@@ -108,9 +115,40 @@ module.exports =
       suggestions. For example, you can use lower value to give higher priority
       for snippets completions which has priority of 2.'''
 
-  activate: (state) -> require('./provider').constructor()
+  installation: null
 
-  deactivate: -> require('./provider').dispose()
+  activate: (state) ->
+    require('./provider').constructor()
+
+    { AccountManager, Installation, Installer, StateController } = require 'kite-installer'
+    AccountManager.initClient 'alpha.kite.com', -1, true
+    atom.views.addViewProvider Installation, (m) => m.element
+
+    checkKiteInstallation = () =>
+      StateController.canInstallKite().then(() =>
+        @installation = new Installation
+        installer = new Installer atom.project.getPaths()
+        installer.init @installation.flow
+        pane = atom.workspace.getActivePane()
+        @installation.flow.onSkipInstall () =>
+          atom.config.set 'autocomplete-python.useKite', false
+          pane.destroyActiveItem()
+        pane.addItem @installation, index: 0
+        pane.activateItemAtIndex 0
+      ) if atom.config.get 'autocomplete-python.useKite'
+
+    checkKiteInstallation()
+
+    atom.config.onDidChange 'autocomplete-python.useKite', ({ newValue, oldValue }) =>
+      checkKiteInstallation()
+      if newValue
+        StateController.enableAtomPackage()
+      else
+        StateController.disableAtomPackage()
+
+  deactivate: ->
+    require('./provider').dispose()
+    @installation.destroy() if @installation
 
   getProvider: -> require('./provider')
 
