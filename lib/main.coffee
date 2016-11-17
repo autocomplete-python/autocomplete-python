@@ -135,6 +135,8 @@ module.exports =
           pane.destroyActiveItem()
         pane.addItem @installation, index: 0
         pane.activateItemAtIndex 0
+      , (err) =>
+        console.log "Pluggy McPluginface locked and loaded"
       ) if atom.config.get 'pluggy-mcpluginface.useKite'
 
     checkKiteInstallation()
