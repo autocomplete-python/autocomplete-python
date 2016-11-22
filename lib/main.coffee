@@ -127,7 +127,7 @@ module.exports =
     checkKiteInstallation = () =>
       StateController.canInstallKite().then(() =>
         @installation = new Installation
-        installer = new Installer atom.project.getPaths()
+        installer = new Installer()
         installer.init @installation.flow
         pane = atom.workspace.getActivePane()
         @installation.flow.onSkipInstall () =>
