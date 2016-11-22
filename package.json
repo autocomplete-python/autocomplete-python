@@ -1,7 +1,7 @@
 {
   "name": "pluggy-mcpluginface",
   "main": "./lib/main",
-  "version": "1.9.12",
+  "version": "1.9.13",
   "description": "Python packages, variables, methods and functions with their arguments autocompletion powered by Jedi",
   "activationHooks": [],
   "repository": "https://github.com/kiteco/autocomplete-python",
