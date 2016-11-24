@@ -3,8 +3,12 @@
   "main": "./lib/main",
   "version": "1.9.13",
   "description": "Python completions for packages, variables, methods, functions, with their arguments. Powered by your choice of Jedi or Kite.",
-  "activationHooks": [],
-  "repository": "https://github.com/kiteco/autocomplete-python",
+  "activationHooks": [
+    "language-python:grammar-used",
+    "MagicPython:grammar-used",
+    "atom-django:grammar-used"
+  ],
+  "repository": "https://github.com/autocomplete-python/autocomplete-python",
   "license": "GPL",
   "engines": {
     "atom": ">=0.194.0 <2.0.0"
@@ -40,12 +44,20 @@
   },
   "contributors": [
     {
+      "name": "Dmitry Sadovnychyi",
+      "email": "autocomplete-python@dmit.ro"
+    },
+    {
       "name": "Daniel Hung",
       "email": "daniel@kite.com"
     }
   ],
   "bugs": {
-    "url": "https://github.com/kiteco/autocomplete-python/issues"
+    "url": "https://github.com/autocomplete-python/autocomplete-python/issues"
   },
-  "keywords": []
+  "keywords": [
+    "python",
+    "autocomplete",
+    "jedi"
+  ]
 }
