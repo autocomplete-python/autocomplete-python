@@ -125,9 +125,9 @@ module.exports =
     AccountManager.initClient 'alpha.kite.com', -1, true
     atom.views.addViewProvider Installation, (m) => m.element
     editorCfg =
-      UUID: 'k' # localStorage.getItem('metrics.userId')
+      UUID: localStorage.getItem('metrics.userId')
       name: 'atom'
-    pluginCfg
+    pluginCfg =
       name: 'autocomplete-python'
     dm = new DecisionMaker editorCfg, pluginCfg
 
