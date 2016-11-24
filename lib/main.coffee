@@ -120,12 +120,21 @@ module.exports =
   activate: (state) ->
     require('./provider').constructor()
 
-    { AccountManager, Installation, Installer, StateController } = require 'kite-installer'
+    { AccountManager, DecisionMaker, Installation, Installer, StateController } =
+      require 'kite-installer'
     AccountManager.initClient 'alpha.kite.com', -1, true
     atom.views.addViewProvider Installation, (m) => m.element
+    editorCfg =
+      UUID: 'k' # localStorage.getItem('metrics.userId')
+      name: 'atom'
+    pluginCfg
+      name: 'autocomplete-python'
+    dm = new DecisionMaker editorCfg, pluginCfg
 
     checkKiteInstallation = () =>
-      StateController.canInstallKite().then(() =>
+      canInstall = StateController.canInstallKite()
+      throttle = dm.canInstallKite()
+      Promise.all([canInstall, throttle]).then(() =>
         @installation = new Installation
         installer = new Installer atom.project.getPaths()
         installer.init @installation.flow
