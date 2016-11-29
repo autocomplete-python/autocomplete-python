@@ -1,13 +1,9 @@
 {
   "name": "pluggy-mcpluginface",
   "main": "./lib/main",
-  "version": "1.9.14",
+  "version": "1.9.15",
   "description": "Python completions for packages, variables, methods, functions, with their arguments. Powered by your choice of Jedi or Kite.",
-  "activationHooks": [
-    "language-python:grammar-used",
-    "MagicPython:grammar-used",
-    "atom-django:grammar-used"
-  ],
+  "activationHooks": [],
   "repository": "https://github.com/autocomplete-python/autocomplete-python",
   "license": "GPL",
   "engines": {

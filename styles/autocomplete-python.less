@@ -35,6 +35,19 @@ pluggy-mcpluginface-suggestion {
   font-family: @font-family;
 }
 
-.install-flow .install-flow-step.install-step .row.cta-row .logo {
-  background-image: url('atom://pluggy-mcpluginface/styles/kite-logo.png');
+.install-flow {
+  .install-flow-step.install-step .row.cta-row .logo {
+    background-image: url('atom://pluggy-mcpluginface/node_modules/kite-installer/styles/logo.png');
+  }
+  .welcome-to-kite {
+    .welcome-title .title-logo {
+      background-image: url('atom://pluggy-mcpluginface/node_modules/kite-installer/styles/smalllogo.png');
+    }
+    .description .description-screenshot {
+      background-image: url('atom://pluggy-mcpluginface/node_modules/kite-installer/styles/plotscreenshot.png');
+    }
+  }
+  .install-flow-step.install-step .screenshot {
+    background-image: url('atom://pluggy-mcpluginface/node_modules/kite-installer/styles/screenshot.png');
+  }
 }
