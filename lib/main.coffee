@@ -120,8 +120,14 @@ module.exports =
   activate: (state) ->
     require('./provider').constructor()
 
-    { AccountManager, DecisionMaker, Installation, Installer, StateController } =
-      require 'kite-installer'
+    {
+      AccountManager,
+      AtomHelper,
+      DecisionMaker,
+      Installation,
+      Installer,
+      StateController
+    } = require 'kite-installer'
     AccountManager.initClient 'alpha.kite.com', -1, true
     atom.views.addViewProvider Installation, (m) => m.element
     editorCfg =
@@ -153,9 +159,9 @@ module.exports =
     atom.config.onDidChange 'pluggy-mcpluginface.useKite', ({ newValue, oldValue }) =>
       checkKiteInstallation()
       if newValue
-        StateController.enableAtomPackage()
+        AtomHelper.enablePackage()
       else
-        StateController.disableAtomPackage()
+        AtomHelper.disablePackage()
 
   deactivate: ->
     require('./provider').dispose()
