@@ -16,7 +16,8 @@
     "kite-installer": "latest",
     "selector-kit": "^0.1",
     "space-pen": "^5.1.2",
-    "underscore": "^1.8.3"
+    "underscore": "^1.8.3",
+    "mixpanel": "^0.5.0"
   },
   "package-dependencies": {},
   "providedServices": {
