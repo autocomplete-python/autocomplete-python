@@ -140,9 +140,12 @@ module.exports =
     dm = new DecisionMaker editorCfg, pluginCfg
 
     checkKiteInstallation = () =>
+      if not atom.config.get 'pluggy-mcpluginface.useKite'
+        return
       canInstall = StateController.canInstallKite()
       throttle = dm.canInstallKite()
       Promise.all([throttle, canInstall]).then((values) =>
+        atom.config.set 'pluggy-mcpluginface.useKite', true
         variant = values[0]
         Metrics.Tracker.name = "atom autocomplete-python install"
         Metrics.Tracker.props = variant
@@ -157,7 +160,10 @@ module.exports =
         pane.addItem @installation, index: 0
         pane.activateItemAtIndex 0
       , (err) =>
-        console.log "Pluggy McPluginface locked and loaded"
+        if err.type == 'denied'
+          atom.config.set 'pluggy-mcpluginface.useKite', false
+        else
+          console.log "Pluggy McPluginface locked and loaded"
       ) if atom.config.get 'pluggy-mcpluginface.useKite'
 
     checkKiteInstallation()
