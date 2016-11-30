@@ -1,4 +1,4 @@
-window.DEBUG = true
+window.DEBUG = false
 module.exports =
   config:
     useKite:
@@ -133,7 +133,7 @@ module.exports =
     AccountManager.initClient 'alpha.kite.com', -1, true
     atom.views.addViewProvider Installation, (m) => m.element
     editorCfg =
-      UUID: 'k' #localStorage.getItem('metrics.userId')
+      UUID: localStorage.getItem('metrics.userId')
       name: 'atom'
     pluginCfg =
       name: 'autocomplete-python'
