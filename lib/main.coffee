@@ -1,3 +1,4 @@
+window.DEBUG = true
 module.exports =
   config:
     useKite:
@@ -126,12 +127,13 @@ module.exports =
       DecisionMaker,
       Installation,
       Installer,
+      Metrics,
       StateController
     } = require 'kite-installer'
     AccountManager.initClient 'alpha.kite.com', -1, true
     atom.views.addViewProvider Installation, (m) => m.element
     editorCfg =
-      UUID: localStorage.getItem('metrics.userId')
+      UUID: 'k' #localStorage.getItem('metrics.userId')
       name: 'atom'
     pluginCfg =
       name: 'autocomplete-python'
@@ -140,13 +142,17 @@ module.exports =
     checkKiteInstallation = () =>
       canInstall = StateController.canInstallKite()
       throttle = dm.canInstallKite()
-      Promise.all([canInstall, throttle]).then(() =>
-        @installation = new Installation
+      Promise.all([throttle, canInstall]).then((values) =>
+        variant = values[0]
+        Metrics.Tracker.name = "atom autocomplete-python install"
+        Metrics.Tracker.props = variant
+        @installation = new Installation variant
         installer = new Installer()
         installer.init @installation.flow
         pane = atom.workspace.getActivePane()
         @installation.flow.onSkipInstall () =>
           atom.config.set 'pluggy-mcpluginface.useKite', false
+          Metrics.Tracker.trackEvent "skipped kite"
           pane.destroyActiveItem()
         pane.addItem @installation, index: 0
         pane.activateItemAtIndex 0
