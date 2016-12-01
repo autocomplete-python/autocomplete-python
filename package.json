@@ -1,14 +1,10 @@
 {
   "name": "autocomplete-python",
   "main": "./lib/main",
-  "version": "1.8.12",
-  "description": "Python packages, variables, methods and functions with their arguments autocompletion powered by Jedi",
-  "activationHooks": [
-    "language-python:grammar-used",
-    "MagicPython:grammar-used",
-    "atom-django:grammar-used"
-  ],
-  "repository": "https://github.com/sadovnychyi/autocomplete-python",
+  "version": "1.10.8",
+  "description": "Python completions for packages, variables, methods, functions, with their arguments. Powered by your choice of Jedi or Kite.",
+  "activationHooks": [],
+  "repository": "https://github.com/autocomplete-python/autocomplete-python",
   "license": "GPL",
   "engines": {
     "atom": ">=0.194.0 <2.0.0"
@@ -17,9 +13,11 @@
     "atom-slick": "^2.0.0",
     "atom-space-pen-views": "~2.1.0",
     "fuzzaldrin-plus": "^0.3.1",
+    "kite-installer": "^0.4.3",
     "selector-kit": "^0.1",
     "space-pen": "^5.1.2",
-    "underscore": "^1.8.3"
+    "underscore": "^1.8.3",
+    "mixpanel": "^0.5.0"
   },
   "package-dependencies": {},
   "providedServices": {
@@ -45,10 +43,14 @@
     {
       "name": "Dmitry Sadovnychyi",
       "email": "autocomplete-python@dmit.ro"
+    },
+    {
+      "name": "Daniel Hung",
+      "email": "daniel@kite.com"
     }
   ],
   "bugs": {
-    "url": "https://github.com/sadovnychyi/autocomplete-python/issues"
+    "url": "https://github.com/autocomplete-python/autocomplete-python/issues"
   },
   "keywords": [
     "python",
