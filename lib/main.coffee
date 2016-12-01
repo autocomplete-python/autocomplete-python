@@ -150,7 +150,7 @@ module.exports =
       if not atom.config.get 'pluggy-mcpluginface.useKite'
         return
       canInstall = StateController.canInstallKite()
-      throttle = dm.canInstallKite(event)
+      throttle = dm.shouldOfferKite(event)
       Promise.all([throttle, canInstall]).then((values) =>
         atom.config.set 'pluggy-mcpluginface.useKite', true
         variant = values[0]
