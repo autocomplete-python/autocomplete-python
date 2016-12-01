@@ -1,5 +1,5 @@
 {
-  "name": "pluggy-mcpluginface",
+  "name": "autocomplete-python",
   "main": "./lib/main",
   "version": "1.10.8",
   "description": "Python completions for packages, variables, methods, functions, with their arguments. Powered by your choice of Jedi or Kite.",
