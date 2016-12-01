@@ -160,13 +160,13 @@ module.exports =
         Metrics.Tracker.name = "atom autocomplete-python install"
         Metrics.Tracker.props = variant
         @installation = new Installation variant
+        @installation.flowSkipped(() =>
+          Metrics.Tracker.trackEvent "flow aborted"
+          AtomHelper.disablePackage()
+          atom.config.set 'pluggy-mcpluginface.useKite', false
+        )
         installer = new Installer()
-        installer.init @installation.flow, () =>
-          StateController.isKiteInstalled().catch((err) =>
-            console.error "kite not installed", err
-            AtomHelper.disablePackage()
-            atom.config.set 'pluggy-mcpluginface.useKite', false
-          )
+        installer.init @installation.flow
         pane = atom.workspace.getActivePane()
         @installation.flow.onSkipInstall () =>
           atom.config.set 'pluggy-mcpluginface.useKite', false
