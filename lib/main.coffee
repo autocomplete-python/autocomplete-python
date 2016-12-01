@@ -160,9 +160,12 @@ module.exports =
         Metrics.Tracker.name = "atom autocomplete-python install"
         Metrics.Tracker.props = variant
         @installation = new Installation variant
+        @installation.accountCreated(() =>
+          Metrics.Tracker.trackEvent "account created"
+          atom.config.set 'pluggy-mcpluginface.useKite', true
+        )
         @installation.flowSkipped(() =>
           Metrics.Tracker.trackEvent "flow aborted"
-          AtomHelper.disablePackage()
           atom.config.set 'pluggy-mcpluginface.useKite', false
         )
         installer = new Installer()
