@@ -121,6 +121,16 @@ module.exports =
   activate: (state) ->
     require('./provider').constructor()
 
+    firstInstall = localStorage.getItem('autocomplete-python.installed') == null
+    localStorage.setItem('autocomplete-python.installed', true)
+    longRunning = require('process').uptime() > 10
+    if firstInstall and longRunning
+      event = "installed"
+    else if firstInstall
+      event = "upgraded"
+    else
+      event = "restarted"
+
     {
       AccountManager,
       AtomHelper,
@@ -143,7 +153,7 @@ module.exports =
       if not atom.config.get 'pluggy-mcpluginface.useKite'
         return
       canInstall = StateController.canInstallKite()
-      throttle = dm.canInstallKite()
+      throttle = dm.shouldOfferKite(event)
       Promise.all([throttle, canInstall]).then((values) =>
         atom.config.set 'pluggy-mcpluginface.useKite', true
         variant = values[0]
