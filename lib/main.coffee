@@ -124,7 +124,7 @@ module.exports =
     firstInstall = localStorage.getItem('autocomplete-python.installed') == null
     localStorage.setItem('autocomplete-python.installed', true)
 
-    longRunning = require('process').uptime() > 60
+    longRunning = require('process').uptime() > 10
     event = if firstInstall then "installed" else (if longRunning then "upgraded" else "restarted")
     console.log event
 
