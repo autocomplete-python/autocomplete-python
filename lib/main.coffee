@@ -181,7 +181,7 @@ module.exports =
         if err.type == 'denied'
           atom.config.set 'autocomplete-python.useKite', false
         else
-          console.log "Pluggy McPluginface locked and loaded"
+          console.log "autocomplete-python ready"
       ) if atom.config.get 'autocomplete-python.useKite'
 
     checkKiteInstallation()
