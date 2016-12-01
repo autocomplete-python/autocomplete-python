@@ -121,7 +121,7 @@ module.exports =
   activate: (state) ->
     require('./provider').constructor()
 
-    firstInstall = localStorage.getItem('autocomplete-python.installed') === null
+    firstInstall = localStorage.getItem('autocomplete-python.installed') == null
     localStorage.setItem('autocomplete-python.installed', true)
     longRunning = require('process').uptime() > 10
     if firstInstall and longRunning
