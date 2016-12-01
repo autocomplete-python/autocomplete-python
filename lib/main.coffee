@@ -1,4 +1,4 @@
-window.DEBUG = false
+window.DEBUG = true
 module.exports =
   config:
     useKite:
@@ -151,7 +151,12 @@ module.exports =
         Metrics.Tracker.props = variant
         @installation = new Installation variant
         installer = new Installer()
-        installer.init @installation.flow
+        installer.init @installation.flow, () =>
+          StateController.isKiteInstalled().catch((err) =>
+            console.error "kite not installed", err
+            AtomHelper.disablePackage()
+            atom.config.set 'pluggy-mcpluginface.useKite', false
+          )
         pane = atom.workspace.getActivePane()
         @installation.flow.onSkipInstall () =>
           atom.config.set 'pluggy-mcpluginface.useKite', false
@@ -169,8 +174,8 @@ module.exports =
     checkKiteInstallation()
 
     atom.config.onDidChange 'pluggy-mcpluginface.useKite', ({ newValue, oldValue }) =>
-      checkKiteInstallation()
       if newValue
+        checkKiteInstallation()
         AtomHelper.enablePackage()
       else
         AtomHelper.disablePackage()
