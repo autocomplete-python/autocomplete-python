@@ -1,7 +1,7 @@
 module.exports =
-  prefix: 'pluggy-mcpluginface:'
+  prefix: 'autocomplete-python:'
   debug: (msg...) ->
-    if atom.config.get('pluggy-mcpluginface.outputDebug')
+    if atom.config.get('autocomplete-python.outputDebug')
       return console.debug @prefix, msg...
 
   warning: (msg...) ->

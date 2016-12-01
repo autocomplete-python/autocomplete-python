@@ -22,7 +22,7 @@ module.exports =
       title: 'Autocomplete Function Parameters'
       description: '''Automatically complete function arguments after typing
       left parenthesis character. Use completion key to jump between
-      arguments. See `pluggy-mcpluginface:complete-arguments` command if you
+      arguments. See `autocomplete-python:complete-arguments` command if you
       want to trigger argument completions manually. See README if it does not
       work for you.'''
     pythonPaths:
@@ -32,7 +32,7 @@ module.exports =
       title: 'Python Executable Paths'
       description: '''Optional semicolon separated list of paths to python
       executables (including executable names), where the first one will take
-      higher priority over the last one. By default pluggy-mcpluginface will
+      higher priority over the last one. By default autocomplete-python will
       automatically look for virtual environments inside of your project and
       try to use them as well as try to find global python executable. If you
       use this config, automatic lookup will have lowest priority.
@@ -112,7 +112,7 @@ module.exports =
       maximum: 99
       order: 11
       title: 'Suggestion Priority'
-      description: '''You can use this to set the priority for pluggy-mcpluginface
+      description: '''You can use this to set the priority for autocomplete-python
       suggestions. For example, you can use lower value to give higher priority
       for snippets completions which has priority of 2.'''
 
@@ -150,43 +150,43 @@ module.exports =
     dm = new DecisionMaker editorCfg, pluginCfg
 
     checkKiteInstallation = () =>
-      if not atom.config.get 'pluggy-mcpluginface.useKite'
+      if not atom.config.get 'autocomplete-python.useKite'
         return
       canInstall = StateController.canInstallKite()
       throttle = dm.shouldOfferKite(event)
       Promise.all([throttle, canInstall]).then((values) =>
-        atom.config.set 'pluggy-mcpluginface.useKite', true
+        atom.config.set 'autocomplete-python.useKite', true
         variant = values[0]
         Metrics.Tracker.name = "atom autocomplete-python install"
         Metrics.Tracker.props = variant
         @installation = new Installation variant
         @installation.accountCreated(() =>
           Metrics.Tracker.trackEvent "account created"
-          atom.config.set 'pluggy-mcpluginface.useKite', true
+          atom.config.set 'autocomplete-python.useKite', true
         )
         @installation.flowSkipped(() =>
           Metrics.Tracker.trackEvent "flow aborted"
-          atom.config.set 'pluggy-mcpluginface.useKite', false
+          atom.config.set 'autocomplete-python.useKite', false
         )
         installer = new Installer()
         installer.init @installation.flow
         pane = atom.workspace.getActivePane()
         @installation.flow.onSkipInstall () =>
-          atom.config.set 'pluggy-mcpluginface.useKite', false
+          atom.config.set 'autocomplete-python.useKite', false
           Metrics.Tracker.trackEvent "skipped kite"
           pane.destroyActiveItem()
         pane.addItem @installation, index: 0
         pane.activateItemAtIndex 0
       , (err) =>
         if err.type == 'denied'
-          atom.config.set 'pluggy-mcpluginface.useKite', false
+          atom.config.set 'autocomplete-python.useKite', false
         else
           console.log "Pluggy McPluginface locked and loaded"
-      ) if atom.config.get 'pluggy-mcpluginface.useKite'
+      ) if atom.config.get 'autocomplete-python.useKite'
 
     checkKiteInstallation()
 
-    atom.config.onDidChange 'pluggy-mcpluginface.useKite', ({ newValue, oldValue }) =>
+    atom.config.onDidChange 'autocomplete-python.useKite', ({ newValue, oldValue }) =>
       if newValue
         checkKiteInstallation()
         AtomHelper.enablePackage()
