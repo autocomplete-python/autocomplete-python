@@ -159,6 +159,7 @@ module.exports =
         variant = values[0]
         Metrics.Tracker.name = "atom autocomplete-python install"
         Metrics.Tracker.props = variant
+        Metrics.Tracker.props.lastEvent = event
         @installation = new Installation variant
         @installation.accountCreated(() =>
           Metrics.Tracker.trackEvent "account created"
