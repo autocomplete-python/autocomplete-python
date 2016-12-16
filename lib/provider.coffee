@@ -94,11 +94,13 @@ module.exports =
     , 60 * 10 * 1000
 
   load: ->
-    if not @constructed
-      e = atom.workspace.getActiveTextEditor()
-      if e and e.getGrammar().name == "Python"
-        @constructor()
+    if not @constructed and @_isPython()
+      @constructor()
     return this
+
+  _isPython: ->
+    e = atom.workspace.getActiveTextEditor()
+    return e and e.getGrammar().name.toLowerCase() == "python"
 
   constructor: ->
     console.log("constructing...")
