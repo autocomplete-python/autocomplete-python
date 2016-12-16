@@ -195,6 +195,9 @@ module.exports =
       else
         AtomHelper.disablePackage()
 
+    atom.workspace.onDidStopChangingActivePaneItem (item) =>
+      require('./provider').load()
+
   deactivate: ->
     console.log("deactivating...")
     require('./provider').load().dispose()
