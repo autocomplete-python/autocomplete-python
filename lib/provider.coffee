@@ -96,9 +96,7 @@ module.exports =
   load: ->
     if not @constructed
       e = atom.workspace.getActiveTextEditor()
-      if not e or e.getGrammar().name != "Python"
-        console.log("skipping construction")
-      else
+      if e and e.getGrammar().name == "Python"
         @constructor()
     return this
 
