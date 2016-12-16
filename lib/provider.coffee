@@ -93,7 +93,18 @@ module.exports =
         @provider.kill()
     , 60 * 10 * 1000
 
+  load: ->
+    if not @constructed
+      e = atom.workspace.getActiveTextEditor()
+      if not e or e.getGrammar().name != "Python"
+        console.log("skipping construction")
+      else
+        @constructor()
+    return this
+
   constructor: ->
+    console.log("constructing...")
+
     @requests = {}
     @responses = {}
     @provider = null
@@ -103,6 +114,7 @@ module.exports =
     @usagesView = null
     @renameView = null
     @snippetsManager = null
+    @constructed = true
 
     log.debug "Init autocomplete-python with priority #{@suggestionPriority}"
 

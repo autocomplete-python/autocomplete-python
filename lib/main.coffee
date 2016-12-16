@@ -119,7 +119,8 @@ module.exports =
   installation: null
 
   activate: (state) ->
-    require('./provider').constructor()
+    console.log("activating...")
+    # require('./provider').constructor()
 
     firstInstall = localStorage.getItem('autocomplete-python.installed') == null
     localStorage.setItem('autocomplete-python.installed', true)
@@ -195,12 +196,16 @@ module.exports =
         AtomHelper.disablePackage()
 
   deactivate: ->
-    require('./provider').dispose()
+    console.log("deactivating...")
+    require('./provider').load().dispose()
     @installation.destroy() if @installation
 
-  getProvider: -> require('./provider')
+  getProvider: ->
+    console.log("getting provider...")
+    require('./provider').load()
 
   getHyperclickProvider: -> require('./hyperclick-provider')
 
   consumeSnippets: (snippetsManager) ->
-    require('./provider').setSnippetsManager snippetsManager
+    console.log("consuming snippets...")
+    require('./provider').load().setSnippetsManager snippetsManager
