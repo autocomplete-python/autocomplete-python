@@ -1,3 +1,5 @@
+{CompositeDisposable} = require 'atom'
+
 window.DEBUG = false
 module.exports =
   config:
@@ -118,9 +120,21 @@ module.exports =
 
   installation: null
 
+  _handleGrammarChangeEvent: (grammar) ->
+    # this should be same with activationHooks names
+    if grammar.packageName in ['language-python', 'MagicPython', 'atom-django']
+      @provider.load()
+      @disposables.dispose()
+
   activate: (state) ->
-    console.log("activating...")
-    # require('./provider').constructor()
+    @provider = require('./provider')
+    @disposables = new CompositeDisposable
+    disposable = atom.workspace.observeTextEditors (editor) =>
+      @_handleGrammarChangeEvent(editor.getGrammar())
+      disposable = editor.onDidChangeGrammar (grammar) =>
+        @_handleGrammarChangeEvent(grammar)
+      @disposables.add disposable
+    @disposables.add disposable
 
     firstInstall = localStorage.getItem('autocomplete-python.installed') == null
     localStorage.setItem('autocomplete-python.installed', true)
@@ -195,20 +209,14 @@ module.exports =
       else
         AtomHelper.disablePackage()
 
-    atom.workspace.onDidStopChangingActivePaneItem (item) =>
-      require('./provider').load()
-
   deactivate: ->
-    console.log("deactivating...")
-    require('./provider').load().dispose()
+    @provider.dispose()
     @installation.destroy() if @installation
 
   getProvider: ->
-    console.log("getting provider...")
-    require('./provider').load()
+    return @provider
 
   getHyperclickProvider: -> require('./hyperclick-provider')
 
   consumeSnippets: (snippetsManager) ->
-    console.log("consuming snippets...")
-    require('./provider').load().setSnippetsManager snippetsManager
+    @provider.setSnippetsManager snippetsManager

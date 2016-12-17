@@ -1,14 +1,4 @@
-{Disposable, CompositeDisposable, BufferedProcess} = require 'atom'
-{selectorsMatchScopeChain} = require './scope-helpers'
-{Selector} = require 'selector-kit'
-DefinitionsView = require './definitions-view'
-UsagesView = require './usages-view'
-OverrideView = require './override-view'
-RenameView = require './rename-view'
-InterpreterLookup = require './interpreters-lookup'
 log = require './log'
-_ = require 'underscore'
-filter = undefined
 
 module.exports =
   selector: '.source.python'
@@ -21,7 +11,7 @@ module.exports =
   _addEventListener: (editor, eventName, handler) ->
     editorView = atom.views.getView editor
     editorView.addEventListener eventName, handler
-    disposable = new Disposable ->
+    disposable = new @Disposable ->
       log.debug 'Unsubscribing from event listener ', eventName, handler
       editorView.removeEventListener eventName, handler
     return disposable
@@ -42,9 +32,9 @@ module.exports =
     @providerNoExecutable = true
 
   _spawnDaemon: ->
-    interpreter = InterpreterLookup.getInterpreter()
+    interpreter = @InterpreterLookup.getInterpreter()
     log.debug 'Using interpreter', interpreter
-    @provider = new BufferedProcess
+    @provider = new @BufferedProcess
       command: interpreter or 'python'
       args: [__dirname + '/completion.py']
       stdout: (data) =>
@@ -94,26 +84,32 @@ module.exports =
     , 60 * 10 * 1000
 
   load: ->
-    if not @constructed and @canConstruct(atom.workspace.getActiveTextEditor())
+    if not @constructed
       @constructor()
     return this
 
-  canConstruct: (editor) ->
-    return editor and editor.getGrammar().name.toLowerCase() == "python"
-
-  constructor: ->
-    console.log("constructing...")
+  constructor: () ->
+    {@Disposable, @CompositeDisposable, @BufferedProcess} = require 'atom'
+    {@selectorsMatchScopeChain} = require './scope-helpers'
+    {@Selector} = require 'selector-kit'
+    @DefinitionsView = require './definitions-view'
+    @UsagesView = require './usages-view'
+    @OverrideView = require './override-view'
+    @RenameView = require './rename-view'
+    @InterpreterLookup = require './interpreters-lookup'
+    @_ = require 'underscore'
+    @filter = require('fuzzaldrin-plus').filter
 
     @requests = {}
     @responses = {}
     @provider = null
-    @disposables = new CompositeDisposable
+    @disposables = new @CompositeDisposable
     @subscriptions = {}
     @definitionsView = null
     @usagesView = null
     @renameView = null
-    @snippetsManager = null
     @constructed = true
+    @snippetsManager = null
 
     log.debug "Init autocomplete-python with priority #{@suggestionPriority}"
 
@@ -142,7 +138,7 @@ module.exports =
       bufferPosition = editor.getCursorBufferPosition()
       if @usagesView
         @usagesView.destroy()
-      @usagesView = new UsagesView()
+      @usagesView = new @UsagesView()
       @getUsages(editor, bufferPosition).then (usages) =>
         @usagesView.setItems(usages)
 
@@ -151,7 +147,7 @@ module.exports =
       bufferPosition = editor.getCursorBufferPosition()
       if @overrideView
         @overrideView.destroy()
-      @overrideView = new OverrideView()
+      @overrideView = new @OverrideView()
       @getMethods(editor, bufferPosition).then ({methods, indent, bufferPosition}) =>
         @overrideView.indent = indent
         @overrideView.bufferPosition = bufferPosition
@@ -164,9 +160,9 @@ module.exports =
         if @renameView
           @renameView.destroy()
         if usages.length > 0
-          @renameView = new RenameView(usages)
+          @renameView = new @RenameView(usages)
           @renameView.onInput (newName) =>
-            for fileName, usages of _.groupBy(usages, 'fileName')
+            for fileName, usages of @_.groupBy(usages, 'fileName')
               [project, _relative] = atom.project.relativizePath(fileName)
               if project
                 @_updateUsagesInFile(fileName, usages, newName)
@@ -175,7 +171,7 @@ module.exports =
         else
           if @usagesView
             @usagesView.destroy()
-          @usagesView = new UsagesView()
+          @usagesView = new @UsagesView()
           @usagesView.setItems(usages)
 
     atom.workspace.observeTextEditors (editor) =>
@@ -212,9 +208,6 @@ module.exports =
     else
       @markers = []
 
-    {selectorsMatchScopeChain} = require './scope-helpers'
-    {Selector} = require 'selector-kit'
-
     cursor = event.cursor
     editor = event.cursor.editor
     wordBufferRange = cursor.getCurrentWordBufferRange()
@@ -223,9 +216,9 @@ module.exports =
     scopeChain = scopeDescriptor.getScopeChain()
 
     disableForSelector = "#{@disableForSelector}, .source.python .numeric, .source.python .integer, .source.python .decimal, .source.python .punctuation, .source.python .keyword, .source.python .storage, .source.python .variable.parameter, .source.python .entity.name"
-    disableForSelector = Selector.create(disableForSelector)
+    disableForSelector = @Selector.create(disableForSelector)
 
-    if selectorsMatchScopeChain(disableForSelector, scopeChain)
+    if @selectorsMatchScopeChain(disableForSelector, scopeChain)
       log.debug 'do nothing for this selector'
       return
 
@@ -374,7 +367,7 @@ module.exports =
       bufferPosition.column, type].join()).digest('hex')
 
   _generateRequestConfig: ->
-    extraPaths = InterpreterLookup.applySubstitutions(
+    extraPaths = @InterpreterLookup.applySubstitutions(
       atom.config.get('autocomplete-python.extraPaths').split(';'))
     args =
       'extraPaths': extraPaths
@@ -396,8 +389,8 @@ module.exports =
       return
     scopeDescriptor = editor.scopeDescriptorForBufferPosition(bufferPosition)
     scopeChain = scopeDescriptor.getScopeChain()
-    disableForSelector = Selector.create(@disableForSelector)
-    if selectorsMatchScopeChain(disableForSelector, scopeChain)
+    disableForSelector = @Selector.create(@disableForSelector)
+    if @selectorsMatchScopeChain(disableForSelector, scopeChain)
       log.debug 'Ignoring argument completion inside of', scopeChain
       return
 
@@ -428,8 +421,7 @@ module.exports =
 
   _fuzzyFilter: (candidates, query) ->
     if candidates.length isnt 0 and query not in [' ', '.', '(']
-      filter ?= require('fuzzaldrin-plus').filter
-      candidates = filter(candidates, query, key: 'text')
+      candidates = @filter(candidates, query, key: 'text')
     return candidates
 
   getSuggestions: ({editor, bufferPosition, scopeDescriptor, prefix}) ->
@@ -529,13 +521,14 @@ module.exports =
       bufferPosition = editor.getCursorBufferPosition()
     if @definitionsView
       @definitionsView.destroy()
-    @definitionsView = new DefinitionsView()
+    @definitionsView = new @DefinitionsView()
     @getDefinitions(editor, bufferPosition).then (results) =>
       @definitionsView.setItems(results)
       if results.length == 1
         @definitionsView.confirmed(results[0])
 
   dispose: ->
-    @disposables.dispose()
+    if @disposables
+      @disposables.dispose()
     if @provider
       @provider.kill()
