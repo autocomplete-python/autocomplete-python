@@ -129,7 +129,6 @@ module.exports =
 
   load: ->
     @disposables = new CompositeDisposable
-    @provider = require('./provider')
     disposable = atom.workspace.observeTextEditors (editor) =>
       @_handleGrammarChangeEvent(editor.getGrammar())
       disposable = editor.onDidChangeGrammar (grammar) =>
@@ -212,6 +211,7 @@ module.exports =
 
   activate: (state) ->
     @emitter = new Emitter
+    @provider = require('./provider')
     if atom.packages.hasActivatedInitialPackages()
       @load()
     else
@@ -220,7 +220,7 @@ module.exports =
         disposable.dispose()
 
   deactivate: ->
-    @provider.dispose()
+    @provider.dispose() if @provider
     @installation.destroy() if @installation
 
   getProvider: ->
