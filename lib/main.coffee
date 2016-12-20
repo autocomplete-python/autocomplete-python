@@ -1,4 +1,4 @@
-{CompositeDisposable} = require 'atom'
+{CompositeDisposable, Emitter} = require 'atom'
 
 window.DEBUG = false
 module.exports =
@@ -124,11 +124,12 @@ module.exports =
     # this should be same with activationHooks names
     if grammar.packageName in ['language-python', 'MagicPython', 'atom-django']
       @provider.load()
+      @emitter.emit 'did-load-provider'
       @disposables.dispose()
 
-  activate: (state) ->
-    @provider = require('./provider')
+  load: ->
     @disposables = new CompositeDisposable
+    @provider = require('./provider')
     disposable = atom.workspace.observeTextEditors (editor) =>
       @_handleGrammarChangeEvent(editor.getGrammar())
       disposable = editor.onDidChangeGrammar (grammar) =>
@@ -156,7 +157,7 @@ module.exports =
       StateController
     } = require 'kite-installer'
     AccountManager.initClient 'alpha.kite.com', -1, true
-    atom.views.addViewProvider Installation, (m) => m.element
+    atom.views.addViewProvider Installation, (m) -> m.element
     editorCfg =
       UUID: localStorage.getItem('metrics.userId')
       name: 'atom'
@@ -202,12 +203,21 @@ module.exports =
 
     checkKiteInstallation()
 
-    atom.config.onDidChange 'autocomplete-python.useKite', ({ newValue, oldValue }) =>
+    atom.config.onDidChange 'autocomplete-python.useKite', ({ newValue, oldValue }) ->
       if newValue
         checkKiteInstallation()
         AtomHelper.enablePackage()
       else
         AtomHelper.disablePackage()
+
+  activate: (state) ->
+    @emitter = new Emitter
+    if atom.packages.hasActivatedInitialPackages()
+      @load()
+    else
+      disposable = atom.packages.onDidActivateInitialPackages =>
+        @load()
+        disposable.dispose()
 
   deactivate: ->
     @provider.dispose()
@@ -216,7 +226,10 @@ module.exports =
   getProvider: ->
     return @provider
 
-  getHyperclickProvider: -> require('./hyperclick-provider')
+  getHyperclickProvider: ->
+    return require('./hyperclick-provider')
 
   consumeSnippets: (snippetsManager) ->
-    @provider.setSnippetsManager snippetsManager
+    disposable = @emitter.on 'did-load-provider', =>
+      @provider.setSnippetsManager snippetsManager
+      disposable.dispose()
