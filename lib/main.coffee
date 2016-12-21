@@ -189,8 +189,6 @@ module.exports =
       , (err) =>
         if err.type == 'denied'
           atom.config.set 'autocomplete-python.useKite', false
-        else
-          console.log "autocomplete-python ready"
       ) if atom.config.get 'autocomplete-python.useKite'
 
     checkKiteInstallation()
