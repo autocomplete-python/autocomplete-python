@@ -9,7 +9,7 @@ module.exports =
       order: 0
       title: 'Use Kite-powered Completions'
       description: '''Kite is a cloud powered autocomplete engine. It provides
-      significantly more autocomplete suggestions than the legacy engine.'''
+      significantly more autocomplete suggestions than the local Jedi engine.'''
     showDescriptions:
       type: 'boolean'
       default: true
@@ -127,15 +127,7 @@ module.exports =
       @emitter.emit 'did-load-provider'
       @disposables.dispose()
 
-  load: ->
-    @disposables = new CompositeDisposable
-    disposable = atom.workspace.observeTextEditors (editor) =>
-      @_handleGrammarChangeEvent(editor.getGrammar())
-      disposable = editor.onDidChangeGrammar (grammar) =>
-        @_handleGrammarChangeEvent(grammar)
-      @disposables.add disposable
-    @disposables.add disposable
-
+  _loadKite: ->
     firstInstall = localStorage.getItem('autocomplete-python.installed') == null
     localStorage.setItem('autocomplete-python.installed', true)
     longRunning = require('process').uptime() > 10
@@ -175,7 +167,8 @@ module.exports =
         Metrics.Tracker.name = "atom autocomplete-python install"
         Metrics.Tracker.props = variant
         Metrics.Tracker.props.lastEvent = event
-        @installation = new Installation variant
+        title = "Choose a autocomplete-python engine"
+        @installation = new Installation variant, title
         @installation.accountCreated(() =>
           Metrics.Tracker.trackEvent "account created"
           atom.config.set 'autocomplete-python.useKite', true
@@ -208,6 +201,16 @@ module.exports =
         AtomHelper.enablePackage()
       else
         AtomHelper.disablePackage()
+
+  load: ->
+    @disposables = new CompositeDisposable
+    disposable = atom.workspace.observeTextEditors (editor) =>
+      @_handleGrammarChangeEvent(editor.getGrammar())
+      disposable = editor.onDidChangeGrammar (grammar) =>
+        @_handleGrammarChangeEvent(grammar)
+      @disposables.add disposable
+    @disposables.add disposable
+    @_loadKite()
 
   activate: (state) ->
     @emitter = new Emitter
