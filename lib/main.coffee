@@ -1,3 +1,5 @@
+{CompositeDisposable, Emitter} = require 'atom'
+
 window.DEBUG = false
 module.exports =
   config:
@@ -7,7 +9,7 @@ module.exports =
       order: 0
       title: 'Use Kite-powered Completions'
       description: '''Kite is a cloud powered autocomplete engine. It provides
-      significantly more autocomplete suggestions than the legacy engine.'''
+      significantly more autocomplete suggestions than the local Jedi engine.'''
     showDescriptions:
       type: 'boolean'
       default: true
@@ -118,9 +120,14 @@ module.exports =
 
   installation: null
 
-  activate: (state) ->
-    require('./provider').constructor()
+  _handleGrammarChangeEvent: (grammar) ->
+    # this should be same with activationHooks names
+    if grammar.packageName in ['language-python', 'MagicPython', 'atom-django']
+      @provider.load()
+      @emitter.emit 'did-load-provider'
+      @disposables.dispose()
 
+  _loadKite: ->
     firstInstall = localStorage.getItem('autocomplete-python.installed') == null
     localStorage.setItem('autocomplete-python.installed', true)
     longRunning = require('process').uptime() > 10
@@ -141,7 +148,7 @@ module.exports =
       StateController
     } = require 'kite-installer'
     AccountManager.initClient 'alpha.kite.com', -1, true
-    atom.views.addViewProvider Installation, (m) => m.element
+    atom.views.addViewProvider Installation, (m) -> m.element
     editorCfg =
       UUID: localStorage.getItem('metrics.userId')
       name: 'atom'
@@ -160,7 +167,8 @@ module.exports =
         Metrics.Tracker.name = "atom autocomplete-python install"
         Metrics.Tracker.props = variant
         Metrics.Tracker.props.lastEvent = event
-        @installation = new Installation variant
+        title = "Choose a autocomplete-python engine"
+        @installation = new Installation variant, title
         @installation.accountCreated(() =>
           Metrics.Tracker.trackEvent "account created"
           atom.config.set 'autocomplete-python.useKite', true
@@ -181,26 +189,48 @@ module.exports =
       , (err) =>
         if err.type == 'denied'
           atom.config.set 'autocomplete-python.useKite', false
-        else
-          console.log "autocomplete-python ready"
       ) if atom.config.get 'autocomplete-python.useKite'
 
     checkKiteInstallation()
 
-    atom.config.onDidChange 'autocomplete-python.useKite', ({ newValue, oldValue }) =>
+    atom.config.onDidChange 'autocomplete-python.useKite', ({ newValue, oldValue }) ->
       if newValue
         checkKiteInstallation()
         AtomHelper.enablePackage()
       else
         AtomHelper.disablePackage()
 
+  load: ->
+    @disposables = new CompositeDisposable
+    disposable = atom.workspace.observeTextEditors (editor) =>
+      @_handleGrammarChangeEvent(editor.getGrammar())
+      disposable = editor.onDidChangeGrammar (grammar) =>
+        @_handleGrammarChangeEvent(grammar)
+      @disposables.add disposable
+    @disposables.add disposable
+    @_loadKite()
+
+  activate: (state) ->
+    @emitter = new Emitter
+    @provider = require('./provider')
+    if atom.packages.hasActivatedInitialPackages()
+      @load()
+    else
+      disposable = atom.packages.onDidActivateInitialPackages =>
+        @load()
+        disposable.dispose()
+
   deactivate: ->
-    require('./provider').dispose()
+    @provider.dispose() if @provider
     @installation.destroy() if @installation
 
-  getProvider: -> require('./provider')
+  getProvider: ->
+    return @provider
 
-  getHyperclickProvider: -> require('./hyperclick-provider')
+  getHyperclickProvider: ->
+    return require('./hyperclick-provider')
 
   consumeSnippets: (snippetsManager) ->
-    require('./provider').setSnippetsManager snippetsManager
+    disposable = @emitter.on 'did-load-provider', =>
+      @provider.setSnippetsManager snippetsManager
+      disposable.dispose()
