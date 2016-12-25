@@ -10,13 +10,13 @@ module.exports =
     {@selectorsMatchScopeChain} = require './scope-helpers'
     {@Selector} = require 'selector-kit'
     @constructed = true
+    @log.debug 'Loading python hyper-click provider...'
 
   _getScopes: (editor, range) ->
     return editor.scopeDescriptorForBufferPosition(range).scopes
 
   getSuggestionForWord: (editor, text, range) ->
     if not @constructed
-      @log.debug 'Loading python hyper-click provider...'
       @constructor()
     if text in ['.', ':']
       return
