@@ -7,7 +7,7 @@ module.exports =
       type: 'boolean'
       default: true
       order: 0
-      title: 'Use Kite-powered Completions'
+      title: 'Use Kite-powered Completions (macOS only)'
       description: '''Kite is a cloud powered autocomplete engine. It provides
       significantly more autocomplete suggestions than the local Jedi engine.'''
     showDescriptions:
@@ -213,7 +213,8 @@ module.exports =
   activate: (state) ->
     @emitter = new Emitter
     @provider = require('./provider')
-    if atom.packages.hasActivatedInitialPackages()
+    if typeof atom.packages.hasActivatedInitialPackages == 'function' and
+        atom.packages.hasActivatedInitialPackages()
       @load()
     else
       disposable = atom.packages.onDidActivateInitialPackages =>
