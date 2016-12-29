@@ -425,6 +425,7 @@ module.exports =
     return candidates
 
   getSuggestions: ({editor, bufferPosition, scopeDescriptor, prefix}) ->
+    @load()
     if not @triggerCompletionRegex.test(prefix)
       return []
     bufferPosition =
