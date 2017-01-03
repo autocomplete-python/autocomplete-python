@@ -87,7 +87,7 @@ def save_parser(path, parser, pickling=True):
 
 class ParserPickling(object):
 
-    version = 2542 # autocomplete-python hot fix
+    version = 26
     """
     Version number (integer) for file system cache.
 
@@ -160,7 +160,6 @@ class ParserPickling(object):
                 # 0 means version is not defined (= always delete cache):
                 if data.get('version', 0) != self.version:
                     self.clear_cache()
-                    self.__index = {}
                 else:
                     self.__index = data['index']
         return self.__index
@@ -180,6 +179,7 @@ class ParserPickling(object):
 
     def clear_cache(self):
         shutil.rmtree(self._cache_directory())
+        self.__index = {}
 
     def _get_hashed_path(self, path):
         return self._get_path('%s.pkl' % hashlib.md5(path.encode("utf-8")).hexdigest())
