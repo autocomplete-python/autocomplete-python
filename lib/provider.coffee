@@ -270,12 +270,7 @@ module.exports =
         log.debug 'Ignoring keyup events due to autocomplete-plus settings.'
         return
       disposable = @_addEventListener editor, eventName, (e) =>
-        bracketIdentifiers =
-          'U+0028': 'qwerty'
-          'U+0038': 'german'
-          'U+0035': 'azerty'
-          'U+0039': 'other'
-        if e.keyIdentifier of bracketIdentifiers
+        if atom.keymaps.keystrokeForKeyboardEvent(e) == '^('
           log.debug 'Trying to complete arguments on keyup event', e
           @_completeArguments(editor, editor.getCursorBufferPosition())
       @disposables.add disposable
