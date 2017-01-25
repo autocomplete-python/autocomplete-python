@@ -1,5 +1,7 @@
 {CompositeDisposable, Emitter} = require 'atom'
 
+Metrics = null
+
 window.DEBUG = false
 module.exports =
   config:
@@ -209,6 +211,7 @@ module.exports =
       @disposables.add disposable
     @disposables.add disposable
     @_loadKite()
+    @trackCompletions()
 
   activate: (state) ->
     @emitter = new Emitter
@@ -235,3 +238,77 @@ module.exports =
     disposable = @emitter.on 'did-load-provider', =>
       @provider.setSnippetsManager snippetsManager
       disposable.dispose()
+
+  trackCompletions: ->
+    promises = [atom.packages.activatePackage('autocomplete-plus')]
+
+    if atom.packages.getLoadedPackage('kite')?
+      promises.push(atom.packages.activatePackage('kite'))
+
+    Promise.all(promises).then ([autocompletePlus, kite]) =>
+      if kite?
+        @kiteProvider = kite.mainModule.completions()
+        getSuggestions = @kiteProvider.getSuggestions
+        @kiteProvider.getSuggestions = (args...) =>
+          getSuggestions.apply(@kiteProvider, args).then (suggestions) =>
+            @lastKiteSuggestions = suggestions
+            suggestions
+
+      autocompleteManager = autocompletePlus.mainModule.getAutocompleteManager()
+
+      return unless autocompleteManager? and autocompleteManager.confirm? and autocompleteManager.displaySuggestions?
+
+      safeConfirm = autocompleteManager.confirm
+      safeDisplaySuggestions = autocompleteManager.displaySuggestions
+      autocompleteManager.displaySuggestions = (suggestions, options) =>
+        @trackSuggestions(suggestions, autocompleteManager.editor)
+        safeDisplaySuggestions.call(autocompleteManager, suggestions, options)
+
+      autocompleteManager.confirm = (suggestion) =>
+        @trackUsedSuggestion(suggestion, autocompleteManager.editor)
+        safeConfirm.call(autocompleteManager, suggestion)
+
+  trackSuggestions: (suggestions, editor) ->
+    if /\.py$/.test editor.getPath()
+      hasKiteSuggestions = if @kiteProvider?
+        suggestions.some (s) => s.provider is @kiteProvider
+      else
+        false
+
+      hasJediSuggestions = suggestions.some (s) => s.provider is @provider
+
+      if hasKiteSuggestions and hasJediSuggestions
+        @track 'Atom shows both Kite and Jedi completions'
+      else if hasKiteSuggestions
+        @track 'Atom shows Kite but not Jedi completions'
+      else if hasJediSuggestions
+        @track 'Atom shows Jedi but not Kite completions'
+      else
+        @track 'Atom shows neither Kite nor Jedi completions'
+
+  trackUsedSuggestion: (suggestion, editor) ->
+    if /\.py$/.test editor.getPath()
+      if @lastKiteSuggestions?
+        if suggestion in @lastKiteSuggestions
+          if @hasSameSuggestion(suggestion, @provider.lastSuggestions)
+            @track 'used completion returned by Kite but also returned by Jedi', suggestion.text
+          else
+            @track 'used completion returned by Kite but not Jedi', suggestion.text
+        else if suggestion in @provider.lastSuggestions
+          if @hasSameSuggestion(suggestion, @lastKiteSuggestions)
+            @track 'used completion returned by Jedi but also returned by Kite', suggestion.text
+          else
+            @track 'used completion returned by Jedi but not Kite', suggestion.text
+        else
+          @track 'used completion from neither Kite nor Jedi', suggestion.text
+      else
+        if suggestion in @provider.lastSuggestions
+          @track 'used completion returned by Jedi', suggestion.text
+        else
+          @track 'used completion not returned by Jedi', suggestion.text
+
+  hasSameSuggestion: (suggestion, suggestions) ->
+    suggestions.some (s) -> s.text is suggestion.text
+
+  track: (msg, data) ->
+    Metrics.Tracker.trackEvent msg, data

@@ -422,7 +422,7 @@ module.exports =
   getSuggestions: ({editor, bufferPosition, scopeDescriptor, prefix}) ->
     @load()
     if not @triggerCompletionRegex.test(prefix)
-      return []
+      return @lastSuggestions = []
     bufferPosition =
       row: bufferPosition.row
       column: bufferPosition.column
@@ -442,9 +442,9 @@ module.exports =
       # We have to parse JSON on each request here to pass only a copy
       matches = JSON.parse(@responses[requestId]['source'])['results']
       if atom.config.get('autocomplete-python.fuzzyMatcher')
-        return @_fuzzyFilter(matches, prefix)
+        return @lastSuggestions = @_fuzzyFilter(matches, prefix)
       else
-        return matches
+        return @lastSuggestions = matches
     payload =
       id: requestId
       prefix: prefix
@@ -459,9 +459,10 @@ module.exports =
     return new Promise (resolve) =>
       if atom.config.get('autocomplete-python.fuzzyMatcher')
         @requests[payload.id] = (matches) =>
-          resolve(@_fuzzyFilter(matches, prefix))
+          resolve(@lastSuggestions = @_fuzzyFilter(matches, prefix))
       else
-        @requests[payload.id] = resolve
+        @requests[payload.id] = (suggestions) =>
+          resolve(@lastSuggestions = suggestions)
 
   getDefinitions: (editor, bufferPosition) ->
     payload =
