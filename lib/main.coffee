@@ -255,6 +255,9 @@ module.exports =
             suggestions
 
       autocompleteManager = autocompletePlus.mainModule.getAutocompleteManager()
+
+      return unless autocompleteManager? and autocompleteManager.confirm? and autocompleteManager.displaySuggestions?
+
       safeConfirm = autocompleteManager.confirm
       safeDisplaySuggestions = autocompleteManager.displaySuggestions
       autocompleteManager.displaySuggestions = (suggestions, options) =>
