@@ -250,9 +250,15 @@ module.exports =
         @kiteProvider = kite.mainModule.completions()
         getSuggestions = @kiteProvider.getSuggestions
         @kiteProvider.getSuggestions = (args...) =>
-          getSuggestions.apply(@kiteProvider, args).then (suggestions) =>
+          getSuggestions.apply(@kiteProvider, args)
+          .then (suggestions) =>
             @lastKiteSuggestions = suggestions
+            @kiteSuggested = true
             suggestions
+          .catch (err) =>
+            @lastKiteSuggestions = []
+            @kiteSuggested = false
+            throw err
 
       autocompleteManager = autocompletePlus.mainModule.getAutocompleteManager()
 
@@ -298,7 +304,10 @@ module.exports =
           if @hasSameSuggestion(suggestion, @lastKiteSuggestions)
             @track 'used completion returned by Jedi but also returned by Kite', suggestion.text
           else
-            @track 'used completion returned by Jedi but not Kite', suggestion.text
+            if @kiteSuggested
+              @track 'used completion returned by Jedi but not Kite (whitelisted filepath)', suggestion.text
+            else
+              @track 'used completion returned by Jedi but not Kite (not-whitelisted filepath)', suggestion.text
         else
           @track 'used completion from neither Kite nor Jedi', suggestion.text
       else
