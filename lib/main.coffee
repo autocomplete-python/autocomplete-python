@@ -158,6 +158,8 @@ module.exports =
       name: 'autocomplete-python'
     dm = new DecisionMaker editorCfg, pluginCfg
 
+    Metrics.Tracker.name = "atom autocomplete-python install"
+
     checkKiteInstallation = () =>
       if not atom.config.get 'autocomplete-python.useKite'
         return
@@ -166,7 +168,6 @@ module.exports =
       Promise.all([throttle, canInstall]).then((values) =>
         atom.config.set 'autocomplete-python.useKite', true
         variant = values[0]
-        Metrics.Tracker.name = "atom autocomplete-python install"
         Metrics.Tracker.props = variant
         Metrics.Tracker.props.lastEvent = event
         title = "Choose a autocomplete-python engine"
