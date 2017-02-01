@@ -158,7 +158,7 @@ module.exports =
       name: 'autocomplete-python'
     dm = new DecisionMaker editorCfg, pluginCfg
 
-    Metrics.Tracker.name = "atom autocomplete-python install"
+    Metrics.Tracker.name = "atom acp"
 
     checkKiteInstallation = () =>
       if not atom.config.get 'autocomplete-python.useKite'
@@ -245,6 +245,7 @@ module.exports =
 
     if atom.packages.getLoadedPackage('kite')?
       promises.push(atom.packages.activatePackage('kite'))
+      Metrics.Tracker.name = "atom kite+acp"
 
     Promise.all(promises).then ([autocompletePlus, kite]) =>
       if kite?
