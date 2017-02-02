@@ -295,24 +295,24 @@ module.exports =
       if @lastKiteSuggestions?
         if suggestion in @lastKiteSuggestions
           if @hasSameSuggestion(suggestion, @provider.lastSuggestions)
-            @track 'used completion returned by Kite but also returned by Jedi', suggestion.text
+            @track 'used completion returned by Kite but also returned by Jedi'
           else
-            @track 'used completion returned by Kite but not Jedi', suggestion.text
+            @track 'used completion returned by Kite but not Jedi'
         else if suggestion in @provider.lastSuggestions
           if @hasSameSuggestion(suggestion, @lastKiteSuggestions)
-            @track 'used completion returned by Jedi but also returned by Kite', suggestion.text
+            @track 'used completion returned by Jedi but also returned by Kite'
           else
             if @kiteSuggested
-              @track 'used completion returned by Jedi but not Kite (whitelisted filepath)', suggestion.text
+              @track 'used completion returned by Jedi but not Kite (whitelisted filepath)'
             else
-              @track 'used completion returned by Jedi but not Kite (not-whitelisted filepath)', suggestion.text
+              @track 'used completion returned by Jedi but not Kite (not-whitelisted filepath)'
         else
-          @track 'used completion from neither Kite nor Jedi', suggestion.text
+          @track 'used completion from neither Kite nor Jedi'
       else
         if suggestion in @provider.lastSuggestions
-          @track 'used completion returned by Jedi', suggestion.text
+          @track 'used completion returned by Jedi'
         else
-          @track 'used completion not returned by Jedi', suggestion.text
+          @track 'used completion not returned by Jedi'
 
   hasSameSuggestion: (suggestion, suggestions) ->
     suggestions.some (s) -> s.text is suggestion.text
