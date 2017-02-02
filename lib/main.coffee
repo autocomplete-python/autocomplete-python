@@ -180,7 +180,7 @@ module.exports =
           Metrics.Tracker.trackEvent "flow aborted"
           atom.config.set 'autocomplete-python.useKite', false
         )
-        installer = new Installer()
+        installer = new Installer(atom.project.getPaths())
         installer.init @installation.flow
         pane = atom.workspace.getActivePane()
         @installation.flow.onSkipInstall () =>
