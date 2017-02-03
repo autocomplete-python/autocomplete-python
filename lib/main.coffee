@@ -277,7 +277,7 @@ module.exports =
         safeConfirm.call(autocompleteManager, suggestion)
 
   trackSuggestions: (suggestions, editor) ->
-    if /\.py$/.test editor.getPath() and @kiteProvider?
+    if /\.py$/.test(editor.getPath()) and @kiteProvider?
       hasKiteSuggestions = suggestions.some (s) => s.provider is @kiteProvider
       hasJediSuggestions = suggestions.some (s) => s.provider is @provider
 
@@ -291,7 +291,7 @@ module.exports =
         @track 'Atom shows neither Kite nor Jedi completions'
 
   trackUsedSuggestion: (suggestion, editor) ->
-    if /\.py$/.test editor.getPath() and @kiteProvider?
+    if /\.py$/.test(editor.getPath()) and @kiteProvider?
       if @lastKiteSuggestions?
         if suggestion in @lastKiteSuggestions
           if @hasSameSuggestion(suggestion, @provider.lastSuggestions)
