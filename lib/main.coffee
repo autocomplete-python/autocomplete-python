@@ -255,7 +255,7 @@ module.exports =
           getSuggestions.apply(@kiteProvider, args)
           .then (suggestions) =>
             @lastKiteSuggestions = suggestions
-            @kiteSuggested = true
+            @kiteSuggested = suggestions?
             suggestions
           .catch (err) =>
             @lastKiteSuggestions = []
@@ -291,23 +291,23 @@ module.exports =
         @track 'Atom shows neither Kite nor Jedi completions'
 
   trackUsedSuggestion: (suggestion, editor) ->
-    if /\.py$/.test(editor.getPath()) and @kiteProvider?
-      if @lastKiteSuggestions?
-        if suggestion in @lastKiteSuggestions
-          if @hasSameSuggestion(suggestion, @provider.lastSuggestions)
-            @track 'used completion returned by Kite but also returned by Jedi'
-          else
-            @track 'used completion returned by Kite but not Jedi'
-        else if suggestion in @provider.lastSuggestions
-          if @hasSameSuggestion(suggestion, @lastKiteSuggestions)
-            @track 'used completion returned by Jedi but also returned by Kite'
-          else
-            if @kiteSuggested
-              @track 'used completion returned by Jedi but not Kite (whitelisted filepath)'
+    if /\.py$/.test(editor.getPath())
+      if @kiteProvider?
+        if @lastKiteSuggestions?
+          if suggestion in @lastKiteSuggestions
+            if @hasSameSuggestion(suggestion, @provider.lastSuggestions)
+              @track 'used completion returned by Kite but also returned by Jedi'
             else
-              @track 'used completion returned by Jedi but not Kite (not-whitelisted filepath)'
+              @track 'used completion returned by Kite but not Jedi'
+          else if suggestion in @provider.lastSuggestions
+            if @hasSameSuggestion(suggestion, @lastKiteSuggestions)
+              @track 'used completion returned by Jedi but also returned by Kite'
+            else
+              @track 'used completion returned by Jedi but not Kite (whitelisted filepath)'
+          else
+            @track 'used completion from neither Kite nor Jedi'
         else
-          @track 'used completion from neither Kite nor Jedi'
+          @track 'used completion returned by Jedi but not Kite (not-whitelisted filepath)'
       else
         if suggestion in @provider.lastSuggestions
           @track 'used completion returned by Jedi'
@@ -318,4 +318,5 @@ module.exports =
     suggestions.some (s) -> s.text is suggestion.text
 
   track: (msg, data) ->
+    console.log(msg)
     Metrics.Tracker.trackEvent msg, data
