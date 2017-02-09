@@ -162,7 +162,7 @@ module.exports =
     Metrics.Tracker.name = "atom acp"
 
     @disposables.add atom.config.observe 'kite.loggingLevel', (level) ->
-      Logger.LEVEL = Logger.LEVELS[level.toUpperCase()]
+      Logger.LEVEL = Logger.LEVELS[(level ? 'info').toUpperCase()]
 
     checkKiteInstallation = () =>
       if not atom.config.get 'autocomplete-python.useKite'
