@@ -161,9 +161,6 @@ module.exports =
 
     Metrics.Tracker.name = "atom acp"
 
-    @disposables.add atom.config.observe 'kite.loggingLevel', (level) ->
-      Logger.LEVEL = Logger.LEVELS[(level ? 'info').toUpperCase()]
-
     checkKiteInstallation = () =>
       if not atom.config.get 'autocomplete-python.useKite'
         return
@@ -248,6 +245,10 @@ module.exports =
     promises = [atom.packages.activatePackage('autocomplete-plus')]
 
     if atom.packages.getLoadedPackage('kite')?
+
+      @disposables.add atom.config.observe 'kite.loggingLevel', (level) ->
+        Logger.LEVEL = Logger.LEVELS[(level ? 'info').toUpperCase()]
+
       promises.push(atom.packages.activatePackage('kite'))
       Metrics.Tracker.name = "atom kite+acp"
 
