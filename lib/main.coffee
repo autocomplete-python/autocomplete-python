@@ -299,27 +299,47 @@ module.exports =
       if @kiteProvider?
         if @lastKiteSuggestions?
           if suggestion in @lastKiteSuggestions
-            if @hasSameSuggestion(suggestion, @provider.lastSuggestions)
-              @track 'used completion returned by Kite but also returned by Jedi'
+            altSuggestion = @hasSameSuggestion(suggestion, @provider.lastSuggestions)
+            if altSuggestion?
+              @track 'used completion returned by Kite but also returned by Jedi', {
+                kiteHasDocumentation: @hasDocumentation(suggestion)
+                jediHasDocumentation: @hasDocumentation(altSuggestion)
+              }
             else
-              @track 'used completion returned by Kite but not Jedi'
+              @track 'used completion returned by Kite but not Jedi', {
+                kiteHasDocumentation: @hasDocumentation(suggestion)
+              }
           else if suggestion in @provider.lastSuggestions
-            if @hasSameSuggestion(suggestion, @lastKiteSuggestions)
-              @track 'used completion returned by Jedi but also returned by Kite'
+            altSuggestion = @hasSameSuggestion(suggestion, @lastKiteSuggestions)
+            if altSuggestion?
+              @track 'used completion returned by Jedi but also returned by Kite', {
+                kiteHasDocumentation: @hasDocumentation(altSuggestion)
+                jediHasDocumentation: @hasDocumentation(suggestion)
+              }
             else
-              @track 'used completion returned by Jedi but not Kite (whitelisted filepath)'
+              @track 'used completion returned by Jedi but not Kite (whitelisted filepath)', {
+                jediHasDocumentation: @hasDocumentation(suggestion)
+              }
           else
             @track 'used completion from neither Kite nor Jedi'
         else
-          @track 'used completion returned by Jedi but not Kite (not-whitelisted filepath)'
+          @track 'used completion returned by Jedi but not Kite (not-whitelisted filepath)', {
+            jediHasDocumentation: @hasDocumentation(suggestion)
+          }
       else
         if suggestion in @provider.lastSuggestions
-          @track 'used completion returned by Jedi'
+          @track 'used completion returned by Jedi', {
+            jediHasDocumentation: @hasDocumentation(suggestion)
+          }
         else
           @track 'used completion not returned by Jedi'
 
   hasSameSuggestion: (suggestion, suggestions) ->
-    suggestions.some (s) -> s.text is suggestion.text
+    suggestions.filter((s) -> s.text is suggestion.text)[0]
+
+  hasDocumentation: (suggestion) ->
+    (suggestion.description? and suggestion.description isnt '') or
+    (suggestion.descriptionMarkdown? and suggestion.descriptionMarkdown isnt '')
 
   track: (msg, data) ->
     Metrics.Tracker.trackEvent msg, data
