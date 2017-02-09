@@ -147,6 +147,7 @@ module.exports =
       Installation,
       Installer,
       Metrics,
+      Logger,
       StateController
     } = require 'kite-installer'
     AccountManager.initClient 'alpha.kite.com', -1, true
@@ -159,6 +160,9 @@ module.exports =
     dm = new DecisionMaker editorCfg, pluginCfg
 
     Metrics.Tracker.name = "atom acp"
+
+    @disposables.add atom.config.observe 'kite.loggingLevel', (level) ->
+      Logger.LEVEL = Logger.LEVELS[level.toUpperCase()]
 
     checkKiteInstallation = () =>
       if not atom.config.get 'autocomplete-python.useKite'
@@ -318,5 +322,4 @@ module.exports =
     suggestions.some (s) -> s.text is suggestion.text
 
   track: (msg, data) ->
-    console.log(msg)
     Metrics.Tracker.trackEvent msg, data
