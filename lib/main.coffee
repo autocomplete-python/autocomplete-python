@@ -254,7 +254,8 @@ module.exports =
 
     Promise.all(promises).then ([autocompletePlus, kite]) =>
       if kite?
-        @kiteProvider = kite.mainModule.completions()
+        @kitePackage = kite.mainModule
+        @kiteProvider = @kitePackage.completions()
         getSuggestions = @kiteProvider.getSuggestions
         @kiteProvider.getSuggestions = (args...) =>
           getSuggestions.apply(@kiteProvider, args)
@@ -318,15 +319,35 @@ module.exports =
                 jediHasDocumentation: @hasDocumentation(suggestion)
               }
             else
-              @track 'used completion returned by Jedi but not Kite (whitelisted filepath)', {
-                jediHasDocumentation: @hasDocumentation(suggestion)
-              }
+              if @kitePackage.isEditorWhitelisted?
+                if @kitePackage.isEditorWhitelisted(editor)
+                  @track 'used completion returned by Jedi but not Kite (whitelisted filepath)', {
+                    jediHasDocumentation: @hasDocumentation(suggestion)
+                  }
+                else
+                  @track 'used completion returned by Jedi but not Kite (non-whitelisted filepath)', {
+                    jediHasDocumentation: @hasDocumentation(suggestion)
+                  }
+              else
+                @track 'used completion returned by Jedi but not Kite (whitelisted filepath)', {
+                  jediHasDocumentation: @hasDocumentation(suggestion)
+                }
           else
             @track 'used completion from neither Kite nor Jedi'
         else
-          @track 'used completion returned by Jedi but not Kite (not-whitelisted filepath)', {
-            jediHasDocumentation: @hasDocumentation(suggestion)
-          }
+          if @kitePackage.isEditorWhitelisted?
+            if @kitePackage.isEditorWhitelisted(editor)
+              @track 'used completion returned by Jedi but not Kite (whitelisted filepath)', {
+                jediHasDocumentation: @hasDocumentation(suggestion)
+              }
+            else
+              @track 'used completion returned by Jedi but not Kite (non-whitelisted filepath)', {
+                jediHasDocumentation: @hasDocumentation(suggestion)
+              }
+          else
+            @track 'used completion returned by Jedi but not Kite (not-whitelisted filepath)', {
+              jediHasDocumentation: @hasDocumentation(suggestion)
+            }
       else
         if suggestion in @provider.lastSuggestions
           @track 'used completion returned by Jedi', {
