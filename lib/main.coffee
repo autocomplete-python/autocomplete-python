@@ -161,6 +161,10 @@ module.exports =
 
     Metrics.Tracker.name = "atom acp"
 
+    atom.packages.onDidActivatePackage (pkg) ->
+      if pkg.name is 'kite'
+        Metrics.Tracker.name = "atom kite+acp"
+
     checkKiteInstallation = () =>
       if not atom.config.get 'autocomplete-python.useKite'
         return
