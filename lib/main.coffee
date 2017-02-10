@@ -1,6 +1,6 @@
 {CompositeDisposable, Emitter} = require 'atom'
 
-Metrics = null
+[Metrics, Logger] = []
 
 window.DEBUG = false
 module.exports =
