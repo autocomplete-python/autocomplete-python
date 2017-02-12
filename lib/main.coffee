@@ -353,7 +353,7 @@ module.exports =
               jediHasDocumentation: @hasDocumentation(suggestion)
             }
       else
-        if suggestion in @provider.lastSuggestions
+        if @provider.lastSuggestions and suggestion in @provider.lastSuggestions
           @track 'used completion returned by Jedi', {
             jediHasDocumentation: @hasDocumentation(suggestion)
           }
