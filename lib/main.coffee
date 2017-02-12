@@ -315,7 +315,7 @@ module.exports =
               @track 'used completion returned by Kite but not Jedi', {
                 kiteHasDocumentation: @hasDocumentation(suggestion)
               }
-          else if suggestion in @provider.lastSuggestions
+          else if @provider.lastSuggestions and  suggestion in @provider.lastSuggestions
             altSuggestion = @hasSameSuggestion(suggestion, @lastKiteSuggestions)
             if altSuggestion?
               @track 'used completion returned by Jedi but also returned by Kite', {
