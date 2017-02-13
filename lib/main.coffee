@@ -178,11 +178,11 @@ module.exports =
         title = "Choose a autocomplete-python engine"
         @installation = new Installation variant, title
         @installation.accountCreated(() =>
-          Metrics.Tracker.trackEvent "account created"
+          @track "account created"
           atom.config.set 'autocomplete-python.useKite', true
         )
         @installation.flowSkipped(() =>
-          Metrics.Tracker.trackEvent "flow aborted"
+          @track "flow aborted"
           atom.config.set 'autocomplete-python.useKite', false
         )
         installer = new Installer(atom.project.getPaths())
@@ -190,7 +190,7 @@ module.exports =
         pane = atom.workspace.getActivePane()
         @installation.flow.onSkipInstall () =>
           atom.config.set 'autocomplete-python.useKite', false
-          Metrics.Tracker.trackEvent "skipped kite"
+          @track "skipped kite"
           pane.destroyActiveItem()
         pane.addItem @installation, index: 0
         pane.activateItemAtIndex 0
@@ -368,4 +368,11 @@ module.exports =
     (suggestion.descriptionMarkdown? and suggestion.descriptionMarkdown isnt '')
 
   track: (msg, data) ->
-    Metrics.Tracker.trackEvent msg, data
+    try
+      Metrics.Tracker.trackEvent msg, data
+    catch e
+      # TODO: this should be removed after kite-installer is fixed
+      if e instanceof TypeError
+        console.error(e)
+      else
+        throw e
