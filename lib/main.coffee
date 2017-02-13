@@ -161,8 +161,9 @@ module.exports =
 
     Metrics.Tracker.name = "atom acp"
 
-    atom.packages.onDidActivatePackage (pkg) ->
+    atom.packages.onDidActivatePackage (pkg) =>
       if pkg.name is 'kite'
+        @patchKiteCompletions(pkg)
         Metrics.Tracker.name = "atom kite+acp"
 
     checkKiteInstallation = () =>
@@ -258,19 +259,7 @@ module.exports =
 
     Promise.all(promises).then ([autocompletePlus, kite]) =>
       if kite?
-        @kitePackage = kite.mainModule
-        @kiteProvider = @kitePackage.completions()
-        getSuggestions = @kiteProvider.getSuggestions
-        @kiteProvider.getSuggestions = (args...) =>
-          getSuggestions?.apply(@kiteProvider, args)
-          ?.then (suggestions) =>
-            @lastKiteSuggestions = suggestions
-            @kiteSuggested = suggestions?
-            suggestions
-          ?.catch (err) =>
-            @lastKiteSuggestions = []
-            @kiteSuggested = false
-            throw err
+        @patchKiteCompletions(kite)
 
       autocompleteManager = autocompletePlus.mainModule.getAutocompleteManager()
 
@@ -299,6 +288,23 @@ module.exports =
         @track 'Atom shows Jedi but not Kite completions'
       else
         @track 'Atom shows neither Kite nor Jedi completions'
+
+  patchKiteCompletions: (kite) ->
+    return if @kitePackage?
+
+    @kitePackage = kite.mainModule
+    @kiteProvider = @kitePackage.completions()
+    getSuggestions = @kiteProvider.getSuggestions
+    @kiteProvider.getSuggestions = (args...) =>
+      getSuggestions?.apply(@kiteProvider, args)
+      ?.then (suggestions) =>
+        @lastKiteSuggestions = suggestions
+        @kiteSuggested = suggestions?
+        suggestions
+      ?.catch (err) =>
+        @lastKiteSuggestions = []
+        @kiteSuggested = false
+        throw err
 
   trackUsedSuggestion: (suggestion, editor) ->
     if /\.py$/.test(editor.getPath())
