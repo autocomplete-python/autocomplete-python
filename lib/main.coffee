@@ -262,12 +262,12 @@ module.exports =
         @kiteProvider = @kitePackage.completions()
         getSuggestions = @kiteProvider.getSuggestions
         @kiteProvider.getSuggestions = (args...) =>
-          getSuggestions.apply(@kiteProvider, args)
-          .then (suggestions) =>
+          getSuggestions?.apply(@kiteProvider, args)
+          ?.then (suggestions) =>
             @lastKiteSuggestions = suggestions
             @kiteSuggested = suggestions?
             suggestions
-          .catch (err) =>
+          ?.catch (err) =>
             @lastKiteSuggestions = []
             @kiteSuggested = false
             throw err
