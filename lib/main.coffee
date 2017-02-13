@@ -305,7 +305,7 @@ module.exports =
       if @kiteProvider?
         if @lastKiteSuggestions?
           if suggestion in @lastKiteSuggestions
-            altSuggestion = @hasSameSuggestion(suggestion, @provider.lastSuggestions)
+            altSuggestion = @hasSameSuggestion(suggestion, @provider.lastSuggestions or [])
             if altSuggestion?
               @track 'used completion returned by Kite but also returned by Jedi', {
                 kiteHasDocumentation: @hasDocumentation(suggestion)
