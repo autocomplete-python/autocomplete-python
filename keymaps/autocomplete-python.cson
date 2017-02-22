@@ -6,3 +6,18 @@
 
 '.platform-win32 atom-text-editor[data-grammar~=python]:not(.mini)':
   'ctrl-alt-g': 'autocomplete-python:go-to-definition'
+
+'.platform-darwin .install-flow':
+  'cmd-c': 'native!'
+  'cmd-x': 'native!'
+  'cmd-v': 'native!'
+
+'.platform-win32 .install-flow':
+  'ctrl-c': 'native!'
+  'ctrl-x': 'native!'
+  'ctrl-v': 'native!'
+
+'.platform-linux .install-flow':
+  'ctrl-c': 'native!'
+  'ctrl-x': 'native!'
+  'ctrl-v': 'native!'
