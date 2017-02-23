@@ -1,3 +1,5 @@
+os = require 'os'
+path = require 'path'
 {CompositeDisposable, Emitter} = require 'atom'
 
 [Metrics, Logger] = []
@@ -186,7 +188,13 @@ module.exports =
           @track "flow aborted"
           atom.config.set 'autocomplete-python.useKite', false
         )
-        installer = new Installer(atom.project.getPaths())
+        [projectPath] = atom.project.getPaths()
+        root = if path.relative(os.homedir(), projectPath).indexOf('..') is 0
+          path.parse(projectPath).root
+        else
+          os.homedir()
+
+        installer = new Installer([root])
         installer.init @installation.flow
         pane = atom.workspace.getActivePane()
         @installation.flow.onSkipInstall () =>
