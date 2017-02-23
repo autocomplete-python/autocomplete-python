@@ -56,7 +56,7 @@ class JediCompletion(object):
         is to find the higher python module available from filepath.
         """
         _path, _ = os.path.split(path)
-        if os.path.isfile(os.path.join(_path, '__init__.py')):
+        if _path != path and os.path.isfile(os.path.join(_path, '__init__.py')):
             return cls._get_top_level_module(_path)
         return path
 
