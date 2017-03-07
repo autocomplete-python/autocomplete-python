@@ -189,7 +189,7 @@ module.exports =
           atom.config.set 'autocomplete-python.useKite', false
         )
         [projectPath] = atom.project.getPaths()
-        root = if path.relative(os.homedir(), projectPath).indexOf('..') is 0
+        root = if projectPath? and path.relative(os.homedir(), projectPath).indexOf('..') is 0
           path.parse(projectPath).root
         else
           os.homedir()
