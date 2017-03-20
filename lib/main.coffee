@@ -233,7 +233,7 @@ module.exports =
       @disposables.add disposable
     @disposables.add disposable
     @_loadKite()
-    @trackCompletions()
+    # @trackCompletions()
 
   activate: (state) ->
     @emitter = new Emitter
