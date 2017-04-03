@@ -166,6 +166,7 @@ module.exports =
     dm = new DecisionMaker editorCfg, pluginCfg
 
     Metrics.Tracker.name = "atom acp"
+    Metrics.enabled = atom.config.get('core.telemetryConsent') is 'limited'
 
     atom.packages.onDidActivatePackage (pkg) =>
       if pkg.name is 'kite'
