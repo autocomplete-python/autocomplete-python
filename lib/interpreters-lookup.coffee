@@ -53,10 +53,20 @@ module.exports =
         interpreters.add(potentialInterpreter)
     return interpreters
 
+  _getSortedProjectPaths: ->
+    paths = []
+    currentPath = atom.workspace.getActiveTextEditor().getPath()
+    for project in atom.project.getDirectories()
+      if project.contains(currentPath)
+        paths.splice(0, 0, project.path)
+      else
+        paths.push(project.path)
+    return paths
+
   applySubstitutions: (paths) ->
     modPaths = []
     for p in paths
-      for project in atom.project.getPaths()
+      for project in @_getSortedProjectPaths()
         [..., projectName] = project.split(path.sep)
         p = p.replace(/\$PROJECT_NAME/i, projectName)
         p = p.replace(/\$PROJECT/i, project)
@@ -75,7 +85,7 @@ module.exports =
     log.debug 'No user defined interpreter found, trying automatic lookup'
     interpreters = new Set()
 
-    for project in atom.project.getPaths()
+    for project in @_getSortedProjectPaths()
       for f in @readDir(project)
         @lookupInterpreters(path.join(project, f, 'bin')).forEach (i) ->
           interpreters.add(i)
