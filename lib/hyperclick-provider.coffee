@@ -33,5 +33,5 @@ module.exports =
         @log.debug range.start, @_getScopes(editor, range.start)
         @log.debug range.end, @_getScopes(editor, range.end)
       callback = =>
-        @provider.goToDefinition(editor, bufferPosition)
+        @provider.load().goToDefinition(editor, bufferPosition)
       return {range, callback}
