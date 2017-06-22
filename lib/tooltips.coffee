@@ -1,4 +1,6 @@
 log = require './log'
+if atom.config.get('autocomplete-python.enableTouchBar')
+  touchbar = require './touchbar'
 
 module.exports =
 _showSignatureOverlay: (event) ->
@@ -56,4 +58,5 @@ _showSignatureOverlay: (event) ->
         item: view,
         position: 'head'
       })
-      log.debug('decorated marker', marker)
+      if atom.config.get('autocomplete-python.enableTouchBar')
+        touchbar.update(results[0])
