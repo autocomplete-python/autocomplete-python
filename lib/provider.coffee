@@ -99,6 +99,7 @@ module.exports =
     @InterpreterLookup = require './interpreters-lookup'
     @_ = require 'underscore'
     @filter = require('fuzzaldrin-plus').filter
+    {@_showSignatureOverlay} = require './tooltips'
 
     @requests = {}
     @responses = {}
@@ -200,63 +201,6 @@ module.exports =
       buffer.save()
 
 
-  _showSignatureOverlay: (event) ->
-    if @markers
-      for marker in @markers
-        log.debug 'destroying old marker', marker
-        marker.destroy()
-    else
-      @markers = []
-
-    cursor = event.cursor
-    editor = event.cursor.editor
-    wordBufferRange = cursor.getCurrentWordBufferRange()
-    scopeDescriptor = editor.scopeDescriptorForBufferPosition(
-      event.newBufferPosition)
-    scopeChain = scopeDescriptor.getScopeChain()
-
-    disableForSelector = "#{@disableForSelector}, .source.python .numeric, .source.python .integer, .source.python .decimal, .source.python .punctuation, .source.python .keyword, .source.python .storage, .source.python .variable.parameter, .source.python .entity.name"
-    disableForSelector = @Selector.create(disableForSelector)
-
-    if @selectorsMatchScopeChain(disableForSelector, scopeChain)
-      log.debug 'do nothing for this selector'
-      return
-
-    marker = editor.markBufferRange(
-      wordBufferRange,
-      {persistent: false, invalidate: 'never'})
-
-    @markers.push(marker)
-
-    getTooltip = (editor, bufferPosition) =>
-      payload =
-        id: @_generateRequestId('tooltip', editor, bufferPosition)
-        lookup: 'tooltip'
-        path: editor.getPath()
-        source: editor.getText()
-        line: bufferPosition.row
-        column: bufferPosition.column
-        config: @_generateRequestConfig()
-      @_sendRequest(@_serialize(payload))
-      return new Promise (resolve) =>
-        @requests[payload.id] = resolve
-
-    getTooltip(editor, event.newBufferPosition).then (results) =>
-      if results.length > 0
-        {text, fileName, line, column, type, description} = results[0]
-
-        description = description.trim()
-        if not description
-          return
-        view = document.createElement('autocomplete-python-suggestion')
-        view.appendChild(document.createTextNode(description))
-        decoration = editor.decorateMarker(marker, {
-            type: 'overlay',
-            item: view,
-            position: 'head'
-        })
-        log.debug('decorated marker', marker)
-
   _handleGrammarChangeEvent: (editor, grammar) ->
     eventName = 'keyup'
     eventId = "#{editor.id}.#{eventName}"
@@ -264,7 +208,7 @@ module.exports =
 
       if atom.config.get('autocomplete-python.showTooltips') is true
         editor.onDidChangeCursorPosition (event) =>
-          @_showSignatureOverlay(event)
+          @_showSignatureOverlay(event, @)
 
       if not atom.config.get('autocomplete-plus.enableAutoActivation')
         log.debug 'Ignoring keyup events due to autocomplete-plus settings.'
