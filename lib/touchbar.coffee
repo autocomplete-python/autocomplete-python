@@ -1,5 +1,4 @@
 {TouchBar} = require('remote')
-{TouchBarLabel, TouchBarButton, TouchBarSpacer} = TouchBar
 
 spinning = false
 
@@ -7,10 +6,11 @@ module.exports =
   update: (data) ->
     if not TouchBar
       return
+    {TouchBarLabel, TouchBarButton, TouchBarSpacer} = TouchBar
     button = new TouchBarButton({
       label: "#{data.text}: #{data.description.trim().split('\n')[0]}",
       backgroundColor: '#353232',
-      click: () =>
+      click: () ->
         promise = atom.workspace.open(data.fileName)
         promise.then (editor) ->
           editor.setCursorBufferPosition([data.line, data.column])
