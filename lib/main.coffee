@@ -9,7 +9,7 @@ module.exports =
   config:
     useKite:
       type: 'boolean'
-      default: true
+      default: false
       order: 0
       title: 'Use Kite-powered Completions (macOS only)'
       description: '''Kite is a cloud powered autocomplete engine. It provides
