@@ -7,7 +7,7 @@ path = require 'path'
 window.DEBUG = false
 module.exports =
   config:
-    """
+    ###
     useKite:
       type: 'boolean'
       default: false
@@ -15,7 +15,7 @@ module.exports =
       title: 'Use Kite-powered Completions (macOS only)'
       description: '''Kite is a cloud powered autocomplete engine. It provides
       significantly more autocomplete suggestions than the local Jedi engine.'''
-    """
+    ###
     showDescriptions:
       type: 'boolean'
       default: true
@@ -139,7 +139,7 @@ module.exports =
       @emitter.emit 'did-load-provider'
       @disposables.dispose()
 
-  """
+  ###
   _loadKite: ->
     firstInstall = localStorage.getItem('autocomplete-python.installed') == null
     localStorage.setItem('autocomplete-python.installed', true)
@@ -233,7 +233,7 @@ module.exports =
         AtomHelper.enablePackage()
       else
         AtomHelper.disablePackage()
-  """
+  ###
 
   load: ->
     @disposables = new CompositeDisposable
@@ -272,7 +272,7 @@ module.exports =
       @provider.setSnippetsManager snippetsManager
       disposable.dispose()
 
-  """
+  ###
   trackCompletions: ->
     promises = [atom.packages.activatePackage('autocomplete-plus')]
 
@@ -409,4 +409,4 @@ module.exports =
         console.error(e)
       else
         throw e
-  """
+  ###
