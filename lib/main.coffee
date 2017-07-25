@@ -233,6 +233,7 @@ module.exports =
         AtomHelper.enablePackage()
       else
         AtomHelper.disablePackage()
+  """
 
   load: ->
     @disposables = new CompositeDisposable
@@ -242,7 +243,7 @@ module.exports =
         @_handleGrammarChangeEvent(grammar)
       @disposables.add disposable
     @disposables.add disposable
-    @_loadKite()
+    # @_loadKite()
     # @trackCompletions()
 
   activate: (state) ->
@@ -271,6 +272,7 @@ module.exports =
       @provider.setSnippetsManager snippetsManager
       disposable.dispose()
 
+  """
   trackCompletions: ->
     promises = [atom.packages.activatePackage('autocomplete-plus')]
 
