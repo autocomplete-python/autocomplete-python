@@ -1,12 +1,8 @@
 # Python Autocomplete Package [![Build Status](https://travis-ci.org/autocomplete-python/autocomplete-python.svg?branch=master)](https://travis-ci.org/autocomplete-python/autocomplete-python)
 
-Python packages, variables, methods and functions with their arguments autocompletion in [Atom](http://atom.io) powered by your choice of [Jedi](https://github.com/davidhalter/jedi) or [Kite](https://kite.com).
-
-_Note that the Kite code engine is cloud-powered.  Type inference on your code is done on Kite's servers._  More info is provided during the install screens of autocomplete-python.
+Python packages, variables, methods and functions with their arguments autocompletion in [Atom](http://atom.io) powered by your choice of [Jedi](https://github.com/davidhalter/jedi)
 
 See [releases](https://github.com/sadovnychyi/autocomplete-python/releases) for release notes.
-
-Jedi-driven release notes follow.  For more about using the Kite completions engine see [kite.com](https://kite.com).
 
 ![Demo](https://cloud.githubusercontent.com/assets/193864/12288427/61fe2114-ba0f-11e5-9832-98869180d87f.gif)
 
