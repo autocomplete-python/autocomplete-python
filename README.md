@@ -1,6 +1,6 @@
 # Python Autocomplete Package [![Build Status](https://travis-ci.org/autocomplete-python/autocomplete-python.svg?branch=master)](https://travis-ci.org/autocomplete-python/autocomplete-python)
 
-Python packages, variables, methods and functions with their arguments autocompletion in [Atom](http://atom.io) powered by your choice of [Jedi](https://github.com/davidhalter/jedi)
+Python packages, variables, methods and functions with their arguments autocompletion in [Atom](http://atom.io) powered by [Jedi](https://github.com/davidhalter/jedi)
 
 See [releases](https://github.com/sadovnychyi/autocomplete-python/releases) for release notes.
 
