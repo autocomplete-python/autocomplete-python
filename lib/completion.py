@@ -114,7 +114,7 @@ class JediCompletion(object):
 
         for signature, name, value in self._get_call_signatures(script):
             if not self.fuzzy_matcher and not name.lower().startswith(
-              prefix.lower()):
+                prefix.lower()):
                 continue
             _completion = {
                 'type': 'property',
@@ -152,8 +152,8 @@ class JediCompletion(object):
             }
             if any([c['text'].split('=')[0] == _completion['text']
                     for c in _completions]):
-              # ignore function arguments we already have
-              continue
+                # ignore function arguments we already have
+                continue
             _completions.append(_completion)
         return json.dumps({'id': identifier, 'results': _completions})
 
@@ -166,8 +166,8 @@ class JediCompletion(object):
 
         for completion in completions:
             if completion.name == '__autocomplete_python':
-              instance = completion.parent().name
-              break
+                instance = completion.parent().name
+                break
         else:
             instance = 'self.__class__'
 
@@ -177,16 +177,16 @@ class JediCompletion(object):
                 params = [p.description for p in completion.params
                           if ARGUMENT_RE.match(p.description)]
             if completion.parent().type == 'class':
-              _methods.append({
-                'parent': completion.parent().name,
-                'instance': instance,
-                'name': completion.name,
-                'params': params,
-                'moduleName': completion.module_name,
-                'fileName': completion.module_path,
-                'line': completion.line,
-                'column': completion.column,
-              })
+                _methods.append({
+                    'parent': completion.parent().name,
+                    'instance': instance,
+                    'name': completion.name,
+                    'params': params,
+                    'moduleName': completion.module_name,
+                    'fileName': completion.module_path,
+                    'line': completion.line,
+                    'column': completion.column,
+                })
         return json.dumps({'id': identifier, 'results': _methods})
 
     def _serialize_arguments(self, script, identifier=None):
@@ -208,10 +208,10 @@ class JediCompletion(object):
             elif self.use_snippets == 'all':
                 arg = '%s=${%s:%s}' % (name, i, value)
             else:
-              continue
+                continue
             if name not in seen:
-              seen.add(name)
-              arguments.append(arg)
+                seen.add(name)
+                arguments.append(arg)
             i += 1
         snippet = '%s$0' % ', '.join(arguments)
         return json.dumps({'id': identifier, 'results': [],
@@ -243,7 +243,7 @@ class JediCompletion(object):
                 if definition.type == 'import':
                     definition = self._top_definition(definition)
                 if not definition.module_path:
-                  continue
+                    continue
                 _definition = {
                     'text': definition.name,
                     'type': self._get_definition_type(definition),
@@ -261,13 +261,13 @@ class JediCompletion(object):
                 if definition.type == 'import':
                     definition = self._top_definition(definition)
                 if not definition.module_path:
-                  continue
+                    continue
 
                 description = definition.docstring()
                 if description is not None:
-                  description = description.strip()
+                    description = description.strip()
                 if not description:
-                  description = self._additional_info(definition)
+                    description = self._additional_info(definition)
                 _definition = {
                     'text': definition.name,
                     'type': self._get_definition_type(definition),
@@ -281,16 +281,16 @@ class JediCompletion(object):
         return json.dumps({'id': identifier, 'results': _definitions})
 
     def _serialize_usages(self, usages, identifier=None):
-      _usages = []
-      for usage in usages:
-        _usages.append({
-          'name': usage.name,
-          'moduleName': usage.module_name,
-          'fileName': usage.module_path,
-          'line': usage.line,
-          'column': usage.column,
-        })
-      return json.dumps({'id': identifier, 'results': _usages})
+        _usages = []
+        for usage in usages:
+            _usages.append({
+                'name': usage.name,
+                'moduleName': usage.module_name,
+                'fileName': usage.module_path,
+                'line': usage.line,
+                'column': usage.column,
+             })
+        return json.dumps({'id': identifier, 'results': _usages})
 
     def _deserialize(self, request):
         """Deserialize request from Atom.
@@ -327,7 +327,7 @@ class JediCompletion(object):
         """Accept serialized request from Atom and write response.
         """
         if not request:
-          return
+            return
         request = self._deserialize(request)
 
         self._set_request_config(request.get('config', {}))
@@ -354,9 +354,9 @@ class JediCompletion(object):
             return self._write_response(self._serialize_usages(
                 script.usages(), request['id']))
         elif lookup == 'methods':
-          return self._write_response(
-              self._serialize_methods(script, request['id'],
-                                      request.get('prefix', '')))
+            return self._write_response(
+                self._serialize_methods(script, request['id'],
+                                        request.get('prefix', '')))
         else:
             return self._write_response(
                 self._serialize_completions(script, request['id'],
@@ -377,9 +377,10 @@ class JediCompletion(object):
                 sys.stderr.write(traceback.format_exc() + '\n')
                 sys.stderr.flush()
 
+
 if __name__ == '__main__':
     if sys.argv[1:]:
-      for s in sys.argv[1:]:
-        JediCompletion()._process_request(s)
+        for s in sys.argv[1:]:
+            JediCompletion()._process_request(s)
     else:
-      JediCompletion().watch()
+        JediCompletion().watch()
