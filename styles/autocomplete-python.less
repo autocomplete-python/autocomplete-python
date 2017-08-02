@@ -36,6 +36,13 @@ autocomplete-python-suggestion {
 }
 
 .install-flow {
+  &[data-show-kite-logo="yes"], &[data-show-kite-logo="no"] {
+    .logo {
+      background-image: none;
+      color: white;
+      height: auto;
+    }
+  }
   .install-flow-step.install-step .row.cta-row .logo {
     background-image: url('atom://autocomplete-python/node_modules/kite-installer/styles/logo.png');
   }
