@@ -11,7 +11,7 @@ module.exports =
       type: 'boolean'
       default: true
       order: 0
-      title: 'Use Kite-powered Completions (macOS only)'
+      title: 'Use Kite-powered Completions (macOS & Windows only)'
       description: '''Kite is a cloud powered autocomplete engine. It provides
       significantly more autocomplete suggestions than the local Jedi engine.'''
     showDescriptions:
