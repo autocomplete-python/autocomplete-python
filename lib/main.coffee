@@ -152,7 +152,7 @@ module.exports =
     {
       AccountManager,
       AtomHelper,
-      DecisionMaker,
+      compatibility,
       Installation,
       Installer,
       Metrics,
@@ -170,7 +170,6 @@ module.exports =
       name: 'atom'
     pluginCfg =
       name: 'autocomplete-python'
-    dm = new DecisionMaker editorCfg, pluginCfg
 
     Metrics.Tracker.name = "atom acp"
     Metrics.enabled = atom.config.get('core.telemetryConsent') is 'limited'
@@ -184,10 +183,10 @@ module.exports =
       if not atom.config.get 'autocomplete-python.useKite'
         return
       canInstall = StateController.canInstallKite()
-      throttle = dm.shouldOfferKite(event)
-      Promise.all([throttle, canInstall]).then((values) =>
+      compatible = compatibility.check()
+      Promise.all([compatible, canInstall]).then((values) =>
         atom.config.set 'autocomplete-python.useKite', true
-        variant = values[0]
+        variant = {}
         Metrics.Tracker.props = variant
         Metrics.Tracker.props.lastEvent = event
         title = "Choose a autocomplete-python engine"
