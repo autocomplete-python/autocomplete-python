@@ -56,12 +56,15 @@ module.exports =
   applySubstitutions: (paths) ->
     modPaths = []
     for p in paths
-      for project in atom.project.getPaths()
-        [..., projectName] = project.split(path.sep)
-        p = p.replace(/\$PROJECT_NAME/i, projectName)
-        p = p.replace(/\$PROJECT/i, project)
-        if p not in modPaths
-          modPaths.push p
+      if /\$PROJECT/.test p
+        for project in atom.project.getPaths()
+          [..., projectName] = project.split(path.sep)
+          p = p.replace(/\$PROJECT_NAME/i, projectName)
+          p = p.replace(/\$PROJECT/i, project)
+          if p not in modPaths
+            modPaths.push p
+      else
+        modPaths.push p
     return modPaths
 
   getInterpreter: ->
