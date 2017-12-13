@@ -1,8 +1,14 @@
-language: objective-c
+machine:
+  environment:
+    ATOM_LINT_WITH_BUNDLED_NODE: "true"
+    APM_TEST_PACKAGES: ""
+    ATOM_CHANNEL: "stable"
 
-notifications:
-  email:
-    on_success: never
-    on_failure: change
+dependencies:
+  override:
+    - curl -s -O https://raw.githubusercontent.com/atom/ci/master/build-package.sh
+    - chmod u+x build-package.sh
 
-script: 'curl -s https://raw.githubusercontent.com/atom/ci/master/build-package.sh | sh'
+test:
+  override:
+    - ./build-package.sh
