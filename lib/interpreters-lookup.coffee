@@ -38,6 +38,14 @@ module.exports =
 
   isBinary: (filePath) ->
     try
+      stats = fs.statSync(filePath)
+      # X_OK won't work on windows so at least ignore directories
+      if stats.isDirectory()
+        return false
+    catch
+      return false
+
+    try
       fs.accessSync filePath, fs.X_OK
       return true
     catch
