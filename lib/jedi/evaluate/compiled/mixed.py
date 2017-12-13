@@ -5,17 +5,21 @@ Used only for REPL Completion.
 import inspect
 import os
 
-from jedi import common
-from jedi.parser.fast import FastParser
+from jedi import settings
 from jedi.evaluate import compiled
 from jedi.cache import underscore_memoization
+from jedi.evaluate import imports
+from jedi.evaluate.base_context import Context, ContextSet
+from jedi.evaluate.context import ModuleContext
+from jedi.evaluate.cache import evaluator_function_cache
+from jedi.evaluate.compiled.getattr_static import getattr_static
 
 
 class MixedObject(object):
     """
     A ``MixedObject`` is used in two ways:
 
-    1. It uses the default logic of ``parser.tree`` objects,
+    1. It uses the default logic of ``parser.python.tree`` objects,
     2. except for getattr calls. The names dicts are generated in a fashion
        like ``CompiledObject``.
 
@@ -28,35 +32,27 @@ class MixedObject(object):
     fewer special cases, because we in Python you don't have the same freedoms
     to modify the runtime.
     """
-    def __init__(self, evaluator, obj, node_name):
-        self._evaluator = evaluator
-        self.obj = obj
-        self.node_name = node_name
-        self.definition = node_name.get_definition()
+    def __init__(self, evaluator, parent_context, compiled_object, tree_context):
+        self.evaluator = evaluator
+        self.parent_context = parent_context
+        self.compiled_object = compiled_object
+        self._context = tree_context
+        self.obj = compiled_object.obj
 
-    @property
-    def names_dict(self):
-        return LazyMixedNamesDict(self._evaluator, self)
+    # We have to overwrite everything that has to do with trailers, name
+    # lookups and filters to make it possible to route name lookups towards
+    # compiled objects and the rest towards tree node contexts.
+    def py__getattribute__(*args, **kwargs):
+        return Context.py__getattribute__(*args, **kwargs)
 
-    def names_dicts(self, search_global):
-        # TODO is this needed?
-        assert search_global is False
-        return [self.names_dict]
-
-    def api_type(self):
-        mappings = {
-            'expr_stmt': 'statement',
-            'classdef': 'class',
-            'funcdef': 'function',
-            'file_input': 'module',
-        }
-        return mappings[self.definition.type]
+    def get_filters(self, *args, **kwargs):
+        yield MixedObjectFilter(self.evaluator, self)
 
     def __repr__(self):
         return '<%s: %s>' % (type(self).__name__, repr(self.obj))
 
     def __getattr__(self, name):
-        return getattr(self.definition, name)
+        return getattr(self._context, name)
 
 
 class MixedName(compiled.CompiledName):
@@ -64,51 +60,91 @@ class MixedName(compiled.CompiledName):
     The ``CompiledName._compiled_object`` is our MixedObject.
     """
     @property
-    @underscore_memoization
-    def parent(self):
-        return create(self._evaluator, getattr(self._compiled_obj.obj, self.name))
+    def start_pos(self):
+        contexts = list(self.infer())
+        if not contexts:
+            # This means a start_pos that doesn't exist (compiled objects).
+            return (0, 0)
+        return contexts[0].name.start_pos
 
-    @parent.setter
-    def parent(self, value):
-        pass  # Just ignore this, Name tries to overwrite the parent attribute.
+    @start_pos.setter
+    def start_pos(self, value):
+        # Ignore the __init__'s start_pos setter call.
+        pass
+
+    @underscore_memoization
+    def infer(self):
+        obj = self.parent_context.obj
+        try:
+            # TODO use logic from compiled.CompiledObjectFilter
+            obj = getattr(obj, self.string_name)
+        except AttributeError:
+            # Happens e.g. in properties of
+            # PyQt4.QtGui.QStyleOptionComboBox.currentText
+            # -> just set it to None
+            obj = None
+        return ContextSet(
+            _create(self._evaluator, obj, parent_context=self.parent_context)
+        )
 
     @property
-    def start_pos(self):
-        if isinstance(self.parent, MixedObject):
-            return self.parent.node_name.start_pos
-
-        # This means a start_pos that doesn't exist (compiled objects).
-        return (0, 0)
+    def api_type(self):
+        return next(iter(self.infer())).api_type
 
 
-class LazyMixedNamesDict(compiled.LazyNamesDict):
+class MixedObjectFilter(compiled.CompiledObjectFilter):
     name_class = MixedName
 
+    def __init__(self, evaluator, mixed_object, is_instance=False):
+        super(MixedObjectFilter, self).__init__(
+            evaluator, mixed_object, is_instance)
+        self._mixed_object = mixed_object
 
-def parse(grammar, path):
-    with open(path) as f:
-        source = f.read()
-    source = common.source_to_unicode(source)
-    return FastParser(grammar, source, path)
+    #def _create(self, name):
+        #return MixedName(self._evaluator, self._compiled_object, name)
 
 
+@evaluator_function_cache()
 def _load_module(evaluator, path, python_object):
-    module = parse(evaluator.grammar, path).module
+    module = evaluator.grammar.parse(
+        path=path,
+        cache=True,
+        diff_cache=True,
+        cache_path=settings.cache_directory
+    ).get_root_node()
     python_module = inspect.getmodule(python_object)
 
     evaluator.modules[python_module.__name__] = module
     return module
 
 
+def _get_object_to_check(python_object):
+    """Check if inspect.getfile has a chance to find the source."""
+    if (inspect.ismodule(python_object) or
+            inspect.isclass(python_object) or
+            inspect.ismethod(python_object) or
+            inspect.isfunction(python_object) or
+            inspect.istraceback(python_object) or
+            inspect.isframe(python_object) or
+            inspect.iscode(python_object)):
+        return python_object
+
+    try:
+        return python_object.__class__
+    except AttributeError:
+        raise TypeError  # Prevents computation of `repr` within inspect.
+
+
 def find_syntax_node_name(evaluator, python_object):
     try:
+        python_object = _get_object_to_check(python_object)
         path = inspect.getsourcefile(python_object)
     except TypeError:
         # The type might not be known (e.g. class_with_dict.__weakref__)
-        return None
+        return None, None
     if path is None or not os.path.exists(path):
         # The path might not exist or be e.g. <stdin>.
-        return None
+        return None, None
 
     module = _load_module(evaluator, path, python_object)
 
@@ -116,13 +152,22 @@ def find_syntax_node_name(evaluator, python_object):
         # We don't need to check names for modules, because there's not really
         # a way to write a module in a module in Python (and also __name__ can
         # be something like ``email.utils``).
-        return module
+        return module, path
 
-    name_str = python_object.__name__
+    try:
+        name_str = python_object.__name__
+    except AttributeError:
+        # Stuff like python_function.__code__.
+        return None, None
+
     if name_str == '<lambda>':
-        return None  # It's too hard to find lambdas.
+        return None, None  # It's too hard to find lambdas.
 
-    names = module.used_names[name_str]
+    # Doesn't always work (e.g. os.stat_result)
+    try:
+        names = module.get_used_names()[name_str]
+    except KeyError:
+        return None, None
     names = [n for n in names if n.is_definition()]
 
     try:
@@ -139,20 +184,48 @@ def find_syntax_node_name(evaluator, python_object):
         # There's a chance that the object is not available anymore, because
         # the code has changed in the background.
         if line_names:
-            return line_names[-1]
+            return line_names[-1].parent, path
 
     # It's really hard to actually get the right definition, here as a last
     # resort we just return the last one. This chance might lead to odd
     # completions at some points but will lead to mostly correct type
     # inference, because people tend to define a public name in a module only
     # once.
-    return names[-1]
+    return names[-1].parent, path
 
 
 @compiled.compiled_objects_cache('mixed_cache')
-def create(evaluator, obj):
-    name = find_syntax_node_name(evaluator, obj)
-    if name is None:
-        return compiled.create(evaluator, obj)
+def _create(evaluator, obj, parent_context=None, *args):
+    tree_node, path = find_syntax_node_name(evaluator, obj)
+
+    compiled_object = compiled.create(
+        evaluator, obj, parent_context=parent_context.compiled_object)
+    if tree_node is None:
+        return compiled_object
+
+    module_node = tree_node.get_root_node()
+    if parent_context.tree_node.get_root_node() == module_node:
+        module_context = parent_context.get_root_context()
     else:
-        return MixedObject(evaluator, obj, name)
+        module_context = ModuleContext(evaluator, module_node, path=path)
+        # TODO this __name__ is probably wrong.
+        name = compiled_object.get_root_context().py__name__()
+        imports.add_module(evaluator, name, module_context)
+
+    tree_context = module_context.create_context(
+        tree_node,
+        node_is_context=True,
+        node_is_object=True
+    )
+    if tree_node.type == 'classdef':
+        if not inspect.isclass(obj):
+            # Is an instance, not a class.
+            tree_context, = tree_context.execute_evaluated()
+
+    return MixedObject(
+        evaluator,
+        parent_context,
+        compiled_object,
+        tree_context=tree_context
+    )
+

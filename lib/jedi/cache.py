@@ -3,8 +3,6 @@ This caching is very important for speed and memory optimizations. There's
 nothing really spectacular, just some decorators. The following cache types are
 available:
 
-- module caching (`load_parser` and `save_parser`), which uses pickle and is
-  really important to assure low load times of modules like ``numpy``.
 - ``time_cache`` can be used to cache something for just a limited time span,
   which can be useful if there's user interaction and the user cannot react
   faster than a certain time.
@@ -16,10 +14,41 @@ these variables are being cleaned after every API usage.
 import time
 
 from jedi import settings
-from jedi.parser.utils import parser_cache
-from jedi.parser.utils import underscore_memoization
+from parso.cache import parser_cache
 
 _time_caches = {}
+
+
+def underscore_memoization(func):
+    """
+    Decorator for methods::
+
+        class A(object):
+            def x(self):
+                if self._x:
+                    self._x = 10
+                return self._x
+
+    Becomes::
+
+        class A(object):
+            @underscore_memoization
+            def x(self):
+                return 10
+
+    A now has an attribute ``_x`` written by this decorator.
+    """
+    name = '_' + func.__name__
+
+    def wrapper(self):
+        try:
+            return getattr(self, name)
+        except AttributeError:
+            result = func(self)
+            setattr(self, name, result)
+            return result
+
+    return wrapper
 
 
 def clear_time_caches(delete_all=False):
@@ -80,7 +109,8 @@ def time_cache(time_add_setting):
 def memoize_method(method):
     """A normal memoize function."""
     def wrapper(self, *args, **kwargs):
-        dct = self.__dict__.setdefault('_memoize_method_dct', {})
+        cache_dict = self.__dict__.setdefault('_memoize_method_dct', {})
+        dct = cache_dict.setdefault(method, {})
         key = (args, frozenset(kwargs.items()))
         try:
             return dct[key]
@@ -89,39 +119,3 @@ def memoize_method(method):
             dct[key] = result
             return result
     return wrapper
-
-
-def cache_star_import(func):
-    @time_cache("star_import_cache_validity")
-    def wrapper(self):
-        yield self.base  # The cache key
-        yield func(self)
-    return wrapper
-
-
-def _invalidate_star_import_cache_module(module, only_main=False):
-    """ Important if some new modules are being reparsed """
-    try:
-        t, modules = _time_caches['star_import_cache_validity'][module]
-    except KeyError:
-        pass
-    else:
-        del _time_caches['star_import_cache_validity'][module]
-
-        # This stuff was part of load_parser. However since we're most likely
-        # not going to use star import caching anymore, just ignore it.
-        #else:
-            # In case there is already a module cached and this module
-            # has to be reparsed, we also need to invalidate the import
-            # caches.
-        #    _invalidate_star_import_cache_module(parser_cache_item.parser.module)
-
-
-def invalidate_star_import_cache(path):
-    """On success returns True."""
-    try:
-        parser_cache_item = parser_cache[path]
-    except KeyError:
-        pass
-    else:
-        _invalidate_star_import_cache_module(parser_cache_item.parser.module)

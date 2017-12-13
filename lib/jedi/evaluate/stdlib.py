@@ -12,17 +12,36 @@ compiled module that returns the types for C-builtins.
 import collections
 import re
 
-from jedi._compatibility import unicode
-from jedi.common import unite
-from jedi.evaluate import compiled
-from jedi.evaluate import representation as er
-from jedi.evaluate import iterable
-from jedi.parser import ParserWithRecovery
-from jedi.parser import tree
 from jedi import debug
-from jedi.evaluate import precedence
-from jedi.evaluate import param
+from jedi.evaluate.arguments import ValuesArguments
 from jedi.evaluate import analysis
+from jedi.evaluate import compiled
+from jedi.evaluate.context.instance import InstanceFunctionExecution, \
+    AbstractInstanceContext, CompiledInstance, BoundMethod, \
+    AnonymousInstanceFunctionExecution
+from jedi.evaluate.base_context import ContextualizedNode, \
+    NO_CONTEXTS, ContextSet
+from jedi.evaluate.context import ClassContext, ModuleContext
+from jedi.evaluate.context import iterable
+from jedi.evaluate.lazy_context import LazyTreeContext
+from jedi.evaluate.syntax_tree import is_string
+
+# Now this is all part of fake tuples in Jedi. However super doesn't work on
+# __init__ and __new__ doesn't work at all. So adding this to nametuples is
+# just the easiest way.
+_NAMEDTUPLE_INIT = """
+    def __init__(_cls, {arg_list}):
+        'A helper function for namedtuple.'
+        self.__iterable = ({arg_list})
+
+    def __iter__(self):
+        for i in self.__iterable:
+            yield i
+
+    def __getitem__(self, y):
+        return self.__iterable[y]
+
+"""
 
 
 class NotInStdLib(LookupError):
@@ -30,15 +49,18 @@ class NotInStdLib(LookupError):
 
 
 def execute(evaluator, obj, arguments):
+    if isinstance(obj, BoundMethod):
+        raise NotInStdLib()
+
     try:
-        obj_name = str(obj.name)
+        obj_name = obj.name.string_name
     except AttributeError:
         pass
     else:
-        if obj.parent == evaluator.BUILTINS:
+        if obj.parent_context == evaluator.BUILTINS:
             module_name = 'builtins'
-        elif isinstance(obj.parent, tree.Module):
-            module_name = str(obj.parent.name)
+        elif isinstance(obj.parent_context, ModuleContext):
+            module_name = obj.parent_context.name.string_name
         else:
             module_name = ''
 
@@ -54,14 +76,14 @@ def execute(evaluator, obj, arguments):
 
 def _follow_param(evaluator, arguments, index):
     try:
-        key, values = list(arguments.unpack())[index]
+        key, lazy_context = list(arguments.unpack())[index]
     except IndexError:
-        return set()
+        return NO_CONTEXTS
     else:
-        return unite(evaluator.eval_element(v) for v in values)
+        return lazy_context.infer()
 
 
-def argument_clinic(string, want_obj=False, want_scope=False, want_arguments=False):
+def argument_clinic(string, want_obj=False, want_context=False, want_arguments=False):
     """
     Works like Argument Clinic (PEP 436), to validate function params.
     """
@@ -88,11 +110,11 @@ def argument_clinic(string, want_obj=False, want_scope=False, want_arguments=Fal
             try:
                 lst = list(arguments.eval_argument_clinic(clinic_args))
             except ValueError:
-                return set()
+                return NO_CONTEXTS
             else:
                 kwargs = {}
-                if want_scope:
-                    kwargs['scope'] = arguments.scope()
+                if want_context:
+                    kwargs['context'] = arguments.context
                 if want_obj:
                     kwargs['obj'] = obj
                 if want_arguments:
@@ -105,56 +127,67 @@ def argument_clinic(string, want_obj=False, want_scope=False, want_arguments=Fal
     return f
 
 
+@argument_clinic('iterator[, default], /')
+def builtins_next(evaluator, iterators, defaults):
+    """
+    TODO this function is currently not used. It's a stab at implementing next
+    in a different way than fake objects. This would be a bit more flexible.
+    """
+    if evaluator.python_version[0] == 2:
+        name = 'next'
+    else:
+        name = '__next__'
+
+    context_set = NO_CONTEXTS
+    for iterator in iterators:
+        if isinstance(iterator, AbstractInstanceContext):
+            context_set = ContextSet.from_sets(
+                n.infer()
+                for filter in iterator.get_filters(include_self_names=True)
+                for n in filter.get(name)
+            ).execute_evaluated()
+    if context_set:
+        return context_set
+    return defaults
+
+
 @argument_clinic('object, name[, default], /')
 def builtins_getattr(evaluator, objects, names, defaults=None):
     # follow the first param
     for obj in objects:
-        if not isinstance(obj, (er.Instance, er.Class, tree.Module, compiled.CompiledObject)):
-            debug.warning('getattr called without instance')
-            continue
-
         for name in names:
-            if precedence.is_string(name):
-                return evaluator.find_types(obj, name.obj)
+            if is_string(name):
+                return obj.py__getattribute__(name.obj)
             else:
                 debug.warning('getattr called without str')
                 continue
-    return set()
+    return NO_CONTEXTS
 
 
 @argument_clinic('object[, bases, dict], /')
 def builtins_type(evaluator, objects, bases, dicts):
     if bases or dicts:
         # It's a type creation... maybe someday...
-        return set()
+        return NO_CONTEXTS
     else:
-        return set([o.py__class__() for o in objects])
+        return objects.py__class__()
 
 
-class SuperInstance(er.Instance):
+class SuperInstance(AbstractInstanceContext):
     """To be used like the object ``super`` returns."""
     def __init__(self, evaluator, cls):
         su = cls.py_mro()[1]
         super().__init__(evaluator, su and su[0] or self)
 
 
-@argument_clinic('[type[, obj]], /', want_scope=True)
-def builtins_super(evaluator, types, objects, scope):
+@argument_clinic('[type[, obj]], /', want_context=True)
+def builtins_super(evaluator, types, objects, context):
     # TODO make this able to detect multiple inheritance super
-    accept = (tree.Function, er.FunctionExecution)
-    if scope.isinstance(*accept):
-        wanted = (tree.Class, er.Instance)
-        cls = scope.get_parent_until(accept + wanted,
-                                     include_current=False)
-        if isinstance(cls, wanted):
-            if isinstance(cls, tree.Class):
-                cls = er.Class(evaluator, cls)
-            elif isinstance(cls, er.Instance):
-                cls = cls.base
-            su = cls.py__bases__()
-            if su:
-                return evaluator.execute(su[0])
-    return set()
+    if isinstance(context, (InstanceFunctionExecution,
+                            AnonymousInstanceFunctionExecution)):
+        su = context.instance.py__class__().py__bases__()
+        return su[0].infer().execute_evaluated()
+    return NO_CONTEXTS
 
 
 @argument_clinic('sequence, /', want_obj=True, want_arguments=True)
@@ -162,23 +195,26 @@ def builtins_reversed(evaluator, sequences, obj, arguments):
     # While we could do without this variable (just by using sequences), we
     # want static analysis to work well. Therefore we need to generated the
     # values again.
-    first_arg = next(arguments.as_tuple())[0]
-    ordered = list(iterable.py__iter__(evaluator, sequences, first_arg))
+    key, lazy_context = next(arguments.unpack())
+    cn = None
+    if isinstance(lazy_context, LazyTreeContext):
+        # TODO access private
+        cn = ContextualizedNode(lazy_context._context, lazy_context.data)
+    ordered = list(sequences.iterate(cn))
 
-    rev = [iterable.AlreadyEvaluated(o) for o in reversed(ordered)]
+    rev = list(reversed(ordered))
     # Repack iterator values and then run it the normal way. This is
     # necessary, because `reversed` is a function and autocompletion
     # would fail in certain cases like `reversed(x).__iter__` if we
     # just returned the result directly.
-    rev = iterable.AlreadyEvaluated(
-        [iterable.FakeSequence(evaluator, rev, 'list')]
-    )
-    return set([er.Instance(evaluator, obj, param.Arguments(evaluator, [rev]))])
+    seq = iterable.FakeSequence(evaluator, 'list', rev)
+    arguments = ValuesArguments([ContextSet(seq)])
+    return ContextSet(CompiledInstance(evaluator, evaluator.BUILTINS, obj, arguments))
 
 
 @argument_clinic('obj, type, /', want_arguments=True)
 def builtins_isinstance(evaluator, objects, types, arguments):
-    bool_results = set([])
+    bool_results = set()
     for o in objects:
         try:
             mro_func = o.py__class__().py__mro__
@@ -186,27 +222,31 @@ def builtins_isinstance(evaluator, objects, types, arguments):
             # This is temporary. Everything should have a class attribute in
             # Python?! Maybe we'll leave it here, because some numpy objects or
             # whatever might not.
-            return set([compiled.create(True), compiled.create(False)])
+            return ContextSet(compiled.create(True), compiled.create(False))
 
         mro = mro_func()
 
         for cls_or_tup in types:
             if cls_or_tup.is_class():
                 bool_results.add(cls_or_tup in mro)
-            elif str(cls_or_tup.name) == 'tuple' \
-                    and cls_or_tup.get_parent_scope() == evaluator.BUILTINS:
+            elif cls_or_tup.name.string_name == 'tuple' \
+                    and cls_or_tup.get_root_context() == evaluator.BUILTINS:
                 # Check for tuples.
-                classes = unite(cls_or_tup.py__iter__())
+                classes = ContextSet.from_sets(
+                    lazy_context.infer()
+                    for lazy_context in cls_or_tup.iterate()
+                )
                 bool_results.add(any(cls in mro for cls in classes))
             else:
-                _, nodes = list(arguments.unpack())[1]
-                for node in nodes:
+                _, lazy_context = list(arguments.unpack())[1]
+                if isinstance(lazy_context, LazyTreeContext):
+                    node = lazy_context.data
                     message = 'TypeError: isinstance() arg 2 must be a ' \
                               'class, type, or tuple of classes and types, ' \
                               'not %s.' % cls_or_tup
-                    analysis.add(evaluator, 'type-error-isinstance', node, message)
+                    analysis.add(lazy_context._context, 'type-error-isinstance', node, message)
 
-    return set(compiled.create(evaluator, x) for x in bool_results)
+    return ContextSet.from_iterable(compiled.create(evaluator, x) for x in bool_results)
 
 
 def collections_namedtuple(evaluator, obj, arguments):
@@ -221,7 +261,7 @@ def collections_namedtuple(evaluator, obj, arguments):
     """
     # Namedtuples are not supported on Python 2.6
     if not hasattr(collections, '_class_template'):
-        return set()
+        return NO_CONTEXTS
 
     # Process arguments
     # TODO here we only use one of the types, we should use all.
@@ -229,28 +269,33 @@ def collections_namedtuple(evaluator, obj, arguments):
     _fields = list(_follow_param(evaluator, arguments, 1))[0]
     if isinstance(_fields, compiled.CompiledObject):
         fields = _fields.obj.replace(',', ' ').split()
-    elif isinstance(_fields, iterable.Array):
-        try:
-            fields = [v.obj for v in unite(_fields.py__iter__())]
-        except AttributeError:
-            return set()
+    elif isinstance(_fields, iterable.AbstractIterable):
+        fields = [
+            v.obj
+            for lazy_context in _fields.py__iter__()
+            for v in lazy_context.infer() if hasattr(v, 'obj')
+        ]
     else:
-        return set()
+        return NO_CONTEXTS
 
+    base = collections._class_template
+    base += _NAMEDTUPLE_INIT
     # Build source
-    source = collections._class_template.format(
+    source = base.format(
         typename=name,
-        field_names=fields,
+        field_names=tuple(fields),
         num_fields=len(fields),
-        arg_list=', '.join(fields),
+        arg_list = repr(tuple(fields)).replace("'", "")[1:-1],
         repr_fmt=', '.join(collections._repr_template.format(name=name) for name in fields),
         field_defs='\n'.join(collections._field_template.format(index=index, name=name)
                              for index, name in enumerate(fields))
     )
 
     # Parse source
-    generated_class = ParserWithRecovery(evaluator.grammar, unicode(source)).module.subscopes[0]
-    return set([er.Class(evaluator, generated_class)])
+    module = evaluator.grammar.parse(source)
+    generated_class = next(module.iter_classdefs())
+    parent_context = ModuleContext(evaluator, module, '')
+    return ContextSet(ClassContext(evaluator, parent_context, generated_class))
 
 
 @argument_clinic('first, /')
@@ -271,8 +316,8 @@ _implemented = {
         'deepcopy': _return_first_param,
     },
     'json': {
-        'load': lambda *args: set(),
-        'loads': lambda *args: set(),
+        'load': lambda *args: NO_CONTEXTS,
+        'loads': lambda *args: NO_CONTEXTS,
     },
     'collections': {
         'namedtuple': collections_namedtuple,

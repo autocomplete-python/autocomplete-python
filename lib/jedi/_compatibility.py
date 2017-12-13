@@ -7,16 +7,20 @@ import imp
 import os
 import re
 import pkgutil
+import warnings
 try:
     import importlib
 except ImportError:
     pass
 
+# Cannot use sys.version.major and minor names, because in Python 2.6 it's not
+# a namedtuple.
 is_py3 = sys.version_info[0] >= 3
-is_py33 = is_py3 and sys.version_info.minor >= 3
-is_py34 = is_py3 and sys.version_info.minor >= 4
-is_py35 = is_py3 and sys.version_info.minor >= 5
+is_py33 = is_py3 and sys.version_info[1] >= 3
+is_py34 = is_py3 and sys.version_info[1] >= 4
+is_py35 = is_py3 and sys.version_info[1] >= 5
 is_py26 = not is_py3 and sys.version_info[1] < 7
+py_version = int(str(sys.version_info[0]) + str(sys.version_info[1]))
 
 
 class DummyFile(object):
@@ -31,12 +35,39 @@ class DummyFile(object):
         del self.loader
 
 
-def find_module_py33(string, path=None):
-    loader = importlib.machinery.PathFinder.find_module(string, path)
+def find_module_py34(string, path=None, fullname=None):
+    implicit_namespace_pkg = False
+    spec = None
+    loader = None
+
+    spec = importlib.machinery.PathFinder.find_spec(string, path)
+    if hasattr(spec, 'origin'):
+        origin = spec.origin
+        implicit_namespace_pkg = origin == 'namespace'
+
+    # We try to disambiguate implicit namespace pkgs with non implicit namespace pkgs
+    if implicit_namespace_pkg:
+        fullname = string if not path else fullname
+        implicit_ns_info = ImplicitNSInfo(fullname, spec.submodule_search_locations._path)
+        return None, implicit_ns_info, False
+
+    # we have found the tail end of the dotted path
+    if hasattr(spec, 'loader'):
+        loader = spec.loader
+    return find_module_py33(string, path, loader)
+
+def find_module_py33(string, path=None, loader=None, fullname=None):
+    loader = loader or importlib.machinery.PathFinder.find_module(string, path)
 
     if loader is None and path is None:  # Fallback to find builtins
         try:
-            loader = importlib.find_loader(string)
+            with warnings.catch_warnings(record=True):
+                # Mute "DeprecationWarning: Use importlib.util.find_spec()
+                # instead." While we should replace that in the future, it's
+                # probably good to wait until we deprecate Python 3.3, since
+                # it was added in Python 3.4 and find_loader hasn't been
+                # removed in 3.6.
+                loader = importlib.find_loader(string)
         except ValueError as e:
             # See #491. Importlib might raise a ValueError, to avoid this, we
             # just raise an ImportError to fix the issue.
@@ -78,7 +109,7 @@ def find_module_py33(string, path=None):
     return module_file, module_path, is_package
 
 
-def find_module_pre_py33(string, path=None):
+def find_module_pre_py33(string, path=None, fullname=None):
     try:
         module_file, module_path, description = imp.find_module(string, path)
         module_type = description[2]
@@ -118,6 +149,7 @@ def find_module_pre_py33(string, path=None):
 
 
 find_module = find_module_py33 if is_py33 else find_module_pre_py33
+find_module = find_module_py34 if is_py34  else find_module
 find_module.__doc__ = """
 Provides information about a module.
 
@@ -129,28 +161,18 @@ if the module is contained in a package.
 """
 
 
+class ImplicitNSInfo(object):
+    """Stores information returned from an implicit namespace spec"""
+    def __init__(self, name, paths):
+        self.name = name
+        self.paths = paths
+
 # unicode function
 try:
     unicode = unicode
 except NameError:
     unicode = str
 
-if is_py3:
-    u = lambda s: s
-else:
-    u = lambda s: s.decode('utf-8')
-
-u.__doc__ = """
-Decode a raw string into unicode object.  Do nothing in Python 3.
-"""
-
-# exec function
-if is_py3:
-    def exec_function(source, global_map):
-        exec(source, global_map)
-else:
-    eval(compile("""def exec_function(source, global_map):
-                        exec source in global_map """, 'blub', 'exec'))
 
 # re-raise function
 if is_py3:
@@ -205,7 +227,8 @@ def u(string):
     """
     if is_py3:
         return str(string)
-    elif not isinstance(string, unicode):
+
+    if not isinstance(string, unicode):
         return unicode(str(string), 'UTF-8')
     return string
 
@@ -231,6 +254,11 @@ try:
     from itertools import zip_longest
 except ImportError:
     from itertools import izip_longest as zip_longest  # Python 2
+
+try:
+    FileNotFoundError = FileNotFoundError
+except NameError:
+    FileNotFoundError = IOError
 
 
 def no_unicode_pprint(dct):
