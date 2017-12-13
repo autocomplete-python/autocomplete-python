@@ -3,7 +3,7 @@ packagesToTest =
     name: 'language-python'
     file: 'test.py'
 
-describe 'Python autocompletions', ->
+describe 'Jedi autocompletions', ->
   [editor, provider] = []
 
   getCompletions = ->
@@ -19,11 +19,12 @@ describe 'Python autocompletions', ->
     provider.getSuggestions(request)
 
   beforeEach ->
+    atom.config.set('autocomplete-python.useKite', false)
     waitsForPromise -> atom.packages.activatePackage('language-python')
     waitsForPromise -> atom.workspace.open('test.py')
     runs ->
       editor = atom.workspace.getActiveTextEditor()
-      editor.setGrammar(atom.grammars.grammarsByScopeName['source.python'])
+      editor.setGrammar(atom.grammars.grammarForScopeName['source.python'])
       atom.packages.loadPackage('autocomplete-python').activationHooks = []
     waitsForPromise -> atom.packages.activatePackage('autocomplete-python')
     runs ->
