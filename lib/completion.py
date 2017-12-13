@@ -377,6 +377,7 @@ class JediCompletion(object):
                 sys.stderr.write(traceback.format_exc() + '\n')
                 sys.stderr.flush()
 
+
 if __name__ == '__main__':
     if sys.argv[1:]:
       for s in sys.argv[1:]:
