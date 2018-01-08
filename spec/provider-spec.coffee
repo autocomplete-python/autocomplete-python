@@ -3,7 +3,7 @@ packagesToTest =
     name: 'language-python'
     file: 'test.py'
 
-describe 'Python autocompletions', ->
+describe 'Jedi autocompletions', ->
   [editor, provider] = []
 
   getCompletions = ->
@@ -16,14 +16,15 @@ describe 'Python autocompletions', ->
       bufferPosition: end
       scopeDescriptor: cursor.getScopeDescriptor()
       prefix: prefix
-    provider.getSuggestions(request)
+    return Promise.resolve(provider.getSuggestions(request))
 
   beforeEach ->
+    atom.config.set('autocomplete-python.useKite', false)
     waitsForPromise -> atom.packages.activatePackage('language-python')
     waitsForPromise -> atom.workspace.open('test.py')
     runs ->
       editor = atom.workspace.getActiveTextEditor()
-      editor.setGrammar(atom.grammars.grammarsByScopeName['source.python'])
+      editor.setGrammar(atom.grammars.grammarForScopeName('test.py'))
       atom.packages.loadPackage('autocomplete-python').activationHooks = []
     waitsForPromise -> atom.packages.activatePackage('autocomplete-python')
     runs ->
@@ -44,12 +45,13 @@ describe 'Python autocompletions', ->
   it 'autocompletes python keywords', ->
     editor.setText 'impo'
     editor.setCursorBufferPosition([1, 0])
-    completions = getCompletions()
-    for completion in completions
-      if completion.type == 'keyword'
-        expect(completion.text).toBe 'import'
-      expect(completion.text.length).toBeGreaterThan 0
-    expect(completions.length).toBe 3
+    waitsForPromise ->
+      getCompletions().then (completions) ->
+        for completion in completions
+          if completion.type == 'keyword'
+            expect(completion.text).toBe 'import'
+          expect(completion.text.length).toBeGreaterThan 0
+        expect(completions.length).toBe 3
 
   it 'autocompletes defined functions', ->
     editor.setText """
