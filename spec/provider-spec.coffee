@@ -259,3 +259,44 @@ xdescribe 'Argument completions', ->
       getArgumentcompletions().then ->
         process.stdout.write(editor.getCursorBufferPosition().toString())
         process.stdout.write(editor.getText().toString())
+
+xdescribe 'Displays views', ->
+  [editor, provider, editorElement] = []
+
+  showUsages = ->
+    jasmine.attachToDOM(editorElement)
+    atom.commands.dispatch(editorElement, 'autocomplete-python:show-usages')
+
+  beforeEach ->
+    atom.config.set('autocomplete-python.useKite', false)
+    waitsForPromise -> atom.packages.activatePackage('language-python')
+    waitsForPromise -> atom.workspace.open('test.py')
+    runs ->
+      editor = atom.workspace.getActiveTextEditor()
+      editorElement = atom.views.getView(editor)
+      editor.setGrammar(atom.grammars.grammarForScopeName('test.py'))
+      atom.packages.loadPackage('autocomplete-python').activationHooks = []
+    waitsForPromise -> atom.packages.activatePackage('autocomplete-python')
+    runs ->
+      atom.packages.getActivePackage('autocomplete-python').mainModule.load()
+    runs -> provider = atom.packages.getActivePackage(
+                'autocomplete-python').mainModule.getProvider()
+
+  it 'shows usage view', ->
+    FilePaths = [
+      path.join(__dirname, 'fixtures', 'test.py')
+      path.join(__dirname, 'fixtures', 'another.py')
+    ]
+    waitsForPromise -> atom.workspace.open({pathsToOpen: FilePaths})
+    editor.setCursorBufferPosition([4, 13])
+    showUsages()
+    
+    waitsFor "view to show", ->
+      provider.usagesView?.isVisible()
+
+    waitsFor "view to populate", ->
+      provider.usagesView.items?.length > 0
+
+    runs ->
+      expect(provider.usagesView).toHaveFocus()
+      expect(provider.usagesView.items.length).toBe 3
