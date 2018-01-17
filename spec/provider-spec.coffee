@@ -219,3 +219,43 @@ describe 'Jedi autocompletions', ->
       getCompletions().then (completions) ->
         expect(completions.length).toBe 5
         expect(completions[0].text).toBe 'FooBar'
+
+xdescribe 'Argument completions', ->
+  [editor, provider, editorElement] = []
+
+  getArgumentcompletions = ->
+    return Promise.resolve(atom.commands.dispatch(editorElement, 'autocomplete-python:complete-arguments'))
+
+  beforeEach ->
+    atom.config.set('autocomplete-python.useKite', false)
+    filePath = path.join(__dirname, 'fixtures', 'argument-test.py')
+    waitsForPromise -> atom.packages.activatePackage('language-python')
+    waitsForPromise -> atom.workspace.open(filePath)
+    runs ->
+      editor = atom.workspace.getActiveTextEditor()
+      editorElement = atom.views.getView(atom.workspace)
+      jasmine.attachToDOM(editorElement)
+      editor.setGrammar(atom.grammars.grammarForScopeName('test.py'))
+      atom.packages.loadPackage('autocomplete-python').activationHooks = []
+    waitsForPromise -> atom.packages.activatePackage('autocomplete-python')
+    runs ->
+      atom.packages.getActivePackage('autocomplete-python').mainModule.load()
+    runs -> provider = atom.packages.getActivePackage(
+      'autocomplete-python').mainModule.getProvider()
+
+
+  it 'completes all function parameters', ->
+    atom.config.set('autocomplete-python.useSnippets', 'all')
+    editor.setCursorBufferPosition([2, 4])
+    waitsForPromise ->
+      getArgumentcompletions().then ->
+        process.stdout.write(editor.getCursorBufferPosition().toString())
+        process.stdout.write(editor.getText().toString())
+
+  it 'completes all function parameters', ->
+    atom.config.set('autocomplete-python.useSnippets', 'required')
+    editor.setCursorBufferPosition([2, 4])
+    waitsForPromise ->
+      getArgumentcompletions().then ->
+        process.stdout.write(editor.getCursorBufferPosition().toString())
+        process.stdout.write(editor.getText().toString())
