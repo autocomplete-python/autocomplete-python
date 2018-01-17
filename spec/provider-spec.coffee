@@ -1,3 +1,5 @@
+path = require 'path'
+
 packagesToTest =
   Python:
     name: 'language-python'
@@ -21,6 +23,14 @@ describe 'Jedi autocompletions', ->
   goToDefinition = ->
     bufferPosition = editor.getCursorBufferPosition()
     return Promise.resolve(provider.goToDefinition(editor, bufferPosition))
+
+  getMethods = ->
+    bufferPosition = editor.getCursorBufferPosition()
+    return Promise.resolve(provider.getMethods(editor, bufferPosition))
+
+  getUsages = ->
+    bufferPosition = editor.getCursorBufferPosition()
+    return Promise.resolve(provider.getUsages(editor, bufferPosition))
 
   beforeEach ->
     atom.config.set('autocomplete-python.useKite', false)
@@ -95,3 +105,57 @@ describe 'Jedi autocompletions', ->
         expect(completions.length).toBeGreaterThan 1
         expect(completions[0].text).toBe 'x'
         expect(completions[1].text).toBe 'z: str'
+
+  it 'gets methods', ->
+    FilePath = path.join(__dirname, 'fixtures', 'test.py')
+    waitsForPromise -> atom.workspace.open(FilePath)
+    editor.setCursorBufferPosition([5, 4])
+
+    waitsForPromise ->
+      getMethods().then ({methods, indent, bufferPosition}) ->
+        expect(indent).toBe 4
+
+        expectedBuffer =
+          row: 5
+          column: 4
+        expect(bufferPosition).toEqual expectedBuffer
+
+        expect(methods.length).toBeGreaterThan 0
+
+        expectedMethod =
+          parent: 'Foo'
+          instance: 'Bar'
+          name: 'test'
+          params: []
+          moduleName: 'test'
+          fileName: FilePath
+          line: 2
+          column: 8
+        expect(methods[0]).toEqual expectedMethod
+
+  it 'gets usages', ->
+    FilePaths = [
+      path.join(__dirname, 'fixtures', 'test.py')
+      path.join(__dirname, 'fixtures', 'another.py')
+    ]
+    waitsForPromise -> atom.workspace.open({pathsToOpen: FilePaths})
+    editor.setCursorBufferPosition([4, 13])
+    waitsForPromise ->
+      getUsages().then (usages) ->
+        expect(usages.length).toBe 3
+
+        expectedUsage =
+          name: 'Foo'
+          moduleName: 'test'
+          fileName: FilePaths[0]
+          line: 1
+          column: 6
+        expect(usages).toContain expectedUsage
+
+        expectedUsage =
+          name: 'Foo'
+          moduleName: 'another'
+          fileName: FilePaths[1]
+          line: 3
+          column: 9
+        expect(usages).toContain expectedUsage
