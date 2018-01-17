@@ -188,3 +188,19 @@ describe 'Jedi autocompletions', ->
     waitsForPromise ->
       getCompletions().then (completions) ->
         expect(completions.length).toBe 0
+
+  it 'uses provided regex for triggering completions', ->
+    # Set triggerCompletionRegex without restarting
+    provider.triggerCompletionRegex = RegExp 'a'
+    
+    editor.setText """
+      a = [1, 3, 2]
+      a.
+    """
+    editor.setCursorBufferPosition([2, 0])
+
+    waitsForPromise ->
+      getCompletions().then (completions) ->
+        expect(completions.length).toBe 0
+        # Un-set triggerCompletionRegex
+        provider.triggerCompletionRegex = RegExp atom.config.get('autocomplete-python.triggerCompletionRegex')
