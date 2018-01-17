@@ -159,3 +159,32 @@ describe 'Jedi autocompletions', ->
           line: 3
           column: 9
         expect(usages).toContain expectedUsage
+
+  it 'fuzzy matches', ->
+    atom.config.set('autocomplete-python.fuzzyMatcher', true)
+
+    editor.setText """
+      def abcdef():
+        return True
+      abdf
+    """
+    editor.setCursorBufferPosition([3, 0])
+
+    waitsForPromise ->
+      getCompletions().then (completions) ->
+        expect(completions[0].text).toBe 'abcdef'
+        expect(completions.length).toBe 1
+
+  it 'does not fuzzy match if disabled', ->
+    atom.config.set('autocomplete-python.fuzzyMatcher', false)
+
+    editor.setText """
+      def abcdef():
+        return True
+      abdf
+    """
+    editor.setCursorBufferPosition([3, 0])
+
+    waitsForPromise ->
+      getCompletions().then (completions) ->
+        expect(completions.length).toBe 0
