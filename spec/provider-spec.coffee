@@ -82,3 +82,16 @@ describe 'Jedi autocompletions', ->
             row: 0
             column: 4
           expect(editor.getCursorBufferPosition()).toEqual result
+
+  it 'autocompletes function argument', ->
+    editor.setText """
+      def abc(x, z: str):
+        return True
+      x = abc()
+    """
+    editor.setCursorBufferPosition([2, 8])
+    waitsForPromise ->
+      getCompletions().then (completions) ->
+        expect(completions.length).toBeGreaterThan 1
+        expect(completions[0].text).toBe 'x'
+        expect(completions[1].text).toBe 'z: str'
