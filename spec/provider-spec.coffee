@@ -18,6 +18,10 @@ describe 'Jedi autocompletions', ->
       prefix: prefix
     return Promise.resolve(provider.getSuggestions(request))
 
+  goToDefinition = ->
+    bufferPosition = editor.getCursorBufferPosition()
+    return Promise.resolve(provider.goToDefinition(editor, bufferPosition))
+
   beforeEach ->
     atom.config.set('autocomplete-python.useKite', false)
     waitsForPromise -> atom.packages.activatePackage('language-python')
@@ -64,3 +68,17 @@ describe 'Jedi autocompletions', ->
       getCompletions().then (completions) ->
         expect(completions[0].text).toBe 'hello_world'
         expect(completions.length).toBe 1
+
+  it 'goes to definition', ->
+    editor.setText """
+      def abc():
+          return True
+      x = abc()
+    """
+    editor.setCursorBufferPosition([2, 4])
+    waitsForPromise ->
+      goToDefinition().then ->
+          result =
+            row: 0
+            column: 4
+          expect(editor.getCursorBufferPosition()).toEqual result
