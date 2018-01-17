@@ -204,3 +204,18 @@ describe 'Jedi autocompletions', ->
         expect(completions.length).toBe 0
         # Un-set triggerCompletionRegex
         provider.triggerCompletionRegex = RegExp atom.config.get('autocomplete-python.triggerCompletionRegex')
+
+  it 'uses extra paths for packages', ->
+    filePath = path.join(__dirname, 'fixtures', 'packages')
+    atom.config.set('autocomplete-python.extraPaths', filePath)
+
+    editor.setText """
+      import test_pkg
+      test_pkg.
+    """
+    editor.setCursorBufferPosition([2, 0])
+
+    waitsForPromise ->
+      getCompletions().then (completions) ->
+        expect(completions.length).toBe 5
+        expect(completions[0].text).toBe 'FooBar'
