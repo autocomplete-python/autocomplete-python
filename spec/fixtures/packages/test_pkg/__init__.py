@@ -1,0 +1,2 @@
+def FooBar():
+  return "BarFoo"
