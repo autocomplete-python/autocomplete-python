@@ -1,25 +1,22 @@
 """
-To ensure compatibility from Python ``2.6`` - ``3.3``, a module has been
+To ensure compatibility from Python ``2.7`` - ``3.x``, a module has been
 created. Clearly there is huge need to use conforming syntax.
 """
 import sys
-import imp
 import os
 import re
 import pkgutil
 import warnings
+import inspect
 try:
     import importlib
 except ImportError:
     pass
 
-# Cannot use sys.version.major and minor names, because in Python 2.6 it's not
-# a namedtuple.
 is_py3 = sys.version_info[0] >= 3
 is_py33 = is_py3 and sys.version_info[1] >= 3
 is_py34 = is_py3 and sys.version_info[1] >= 4
 is_py35 = is_py3 and sys.version_info[1] >= 5
-is_py26 = not is_py3 and sys.version_info[1] < 7
 py_version = int(str(sys.version_info[0]) + str(sys.version_info[1]))
 
 
@@ -35,7 +32,7 @@ class DummyFile(object):
         del self.loader
 
 
-def find_module_py34(string, path=None, fullname=None):
+def find_module_py34(string, path=None, full_name=None):
     implicit_namespace_pkg = False
     spec = None
     loader = None
@@ -47,8 +44,8 @@ def find_module_py34(string, path=None, fullname=None):
 
     # We try to disambiguate implicit namespace pkgs with non implicit namespace pkgs
     if implicit_namespace_pkg:
-        fullname = string if not path else fullname
-        implicit_ns_info = ImplicitNSInfo(fullname, spec.submodule_search_locations._path)
+        full_name = string if not path else full_name
+        implicit_ns_info = ImplicitNSInfo(full_name, spec.submodule_search_locations._path)
         return None, implicit_ns_info, False
 
     # we have found the tail end of the dotted path
@@ -56,7 +53,8 @@ def find_module_py34(string, path=None, fullname=None):
         loader = spec.loader
     return find_module_py33(string, path, loader)
 
-def find_module_py33(string, path=None, loader=None, fullname=None):
+
+def find_module_py33(string, path=None, loader=None, full_name=None):
     loader = loader or importlib.machinery.PathFinder.find_module(string, path)
 
     if loader is None and path is None:  # Fallback to find builtins
@@ -74,7 +72,7 @@ def find_module_py33(string, path=None, loader=None, fullname=None):
             raise ImportError("Originally  " + repr(e))
 
     if loader is None:
-        raise ImportError("Couldn't find a loader for {0}".format(string))
+        raise ImportError("Couldn't find a loader for {}".format(string))
 
     try:
         is_package = loader.is_package(string)
@@ -109,7 +107,10 @@ def find_module_py33(string, path=None, loader=None, fullname=None):
     return module_file, module_path, is_package
 
 
-def find_module_pre_py33(string, path=None, fullname=None):
+def find_module_pre_py33(string, path=None, full_name=None):
+    # This import is here, because in other places it will raise a
+    # DeprecationWarning.
+    import imp
     try:
         module_file, module_path, description = imp.find_module(string, path)
         module_type = description[2]
@@ -127,14 +128,7 @@ def find_module_pre_py33(string, path=None, fullname=None):
                 if loader:
                     is_package = loader.is_package(string)
                     is_archive = hasattr(loader, 'archive')
-                    try:
-                        module_path = loader.get_filename(string)
-                    except AttributeError:
-                        # fallback for py26
-                        try:
-                            module_path = loader._get_filename(string)
-                        except AttributeError:
-                            continue
+                    module_path = loader.get_filename(string)
                     if is_package:
                         module_path = os.path.dirname(module_path)
                     if is_archive:
@@ -142,14 +136,14 @@ def find_module_pre_py33(string, path=None, fullname=None):
                     file = None
                     if not is_package or is_archive:
                         file = DummyFile(loader, string)
-                    return (file, module_path, is_package)
+                    return file, module_path, is_package
             except ImportError:
                 pass
-    raise ImportError("No module named {0}".format(string))
+    raise ImportError("No module named {}".format(string))
 
 
 find_module = find_module_py33 if is_py33 else find_module_pre_py33
-find_module = find_module_py34 if is_py34  else find_module
+find_module = find_module_py34 if is_py34 else find_module
 find_module.__doc__ = """
 Provides information about a module.
 
@@ -161,11 +155,79 @@ if the module is contained in a package.
 """
 
 
+def _iter_modules(paths, prefix=''):
+    # Copy of pkgutil.iter_modules adapted to work with namespaces
+
+    for path in paths:
+        importer = pkgutil.get_importer(path)
+
+        if not isinstance(importer, importlib.machinery.FileFinder):
+            # We're only modifying the case for FileFinder. All the other cases
+            # still need to be checked (like zip-importing). Do this by just
+            # calling the pkgutil version.
+            for mod_info in pkgutil.iter_modules([path], prefix):
+                yield mod_info
+            continue
+
+        # START COPY OF pkutils._iter_file_finder_modules.
+        if importer.path is None or not os.path.isdir(importer.path):
+            return
+
+        yielded = {}
+
+        try:
+            filenames = os.listdir(importer.path)
+        except OSError:
+            # ignore unreadable directories like import does
+            filenames = []
+        filenames.sort()  # handle packages before same-named modules
+
+        for fn in filenames:
+            modname = inspect.getmodulename(fn)
+            if modname == '__init__' or modname in yielded:
+                continue
+
+            # jedi addition: Avoid traversing special directories
+            if fn.startswith('.') or fn == '__pycache__':
+                continue
+
+            path = os.path.join(importer.path, fn)
+            ispkg = False
+
+            if not modname and os.path.isdir(path) and '.' not in fn:
+                modname = fn
+                # A few jedi modifications: Don't check if there's an
+                # __init__.py
+                try:
+                    os.listdir(path)
+                except OSError:
+                    # ignore unreadable directories like import does
+                    continue
+                ispkg = True
+
+            if modname and '.' not in modname:
+                yielded[modname] = 1
+                yield importer, prefix + modname, ispkg
+        # END COPY
+
+iter_modules = _iter_modules if py_version >= 34 else pkgutil.iter_modules
+
+
 class ImplicitNSInfo(object):
     """Stores information returned from an implicit namespace spec"""
     def __init__(self, name, paths):
         self.name = name
         self.paths = paths
+
+
+if is_py3:
+    all_suffixes = importlib.machinery.all_suffixes
+else:
+    def all_suffixes():
+        # Is deprecated and raises a warning in Python 3.6.
+        import imp
+        return [suffix for suffix, _, _ in imp.get_suffixes()]
+
 
 # unicode function
 try:
@@ -219,18 +281,36 @@ except AttributeError:
     encoding = 'ascii'
 
 
-def u(string):
+def u(string, errors='strict'):
     """Cast to unicode DAMMIT!
     Written because Python2 repr always implicitly casts to a string, so we
     have to cast back to a unicode (and we now that we always deal with valid
     unicode, because we check that in the beginning).
     """
-    if is_py3:
-        return str(string)
-
-    if not isinstance(string, unicode):
-        return unicode(str(string), 'UTF-8')
+    if isinstance(string, bytes):
+        return unicode(string, encoding='UTF-8', errors=errors)
     return string
+
+
+def cast_path(obj):
+    """
+    Take a bytes or str path and cast it to unicode.
+
+    Apparently it is perfectly fine to pass both byte and unicode objects into
+    the sys.path. This probably means that byte paths are normal at other
+    places as well.
+
+    Since this just really complicates everything and Python 2.7 will be EOL
+    soon anyway, just go with always strings.
+    """
+    return u(obj, errors='replace')
+
+
+def force_unicode(obj):
+    # Intentionally don't mix those two up, because those two code paths might
+    # be different in the future (maybe windows?).
+    return cast_path(obj)
+
 
 try:
     import builtins  # module name in python 3
@@ -242,11 +322,6 @@ import ast
 
 
 def literal_eval(string):
-    # py3.0, py3.1 and py32 don't support unicode literals. Support those, I
-    # don't want to write two versions of the tokenizer.
-    if is_py3 and sys.version_info.minor < 3:
-        if re.match('[uU][\'"]', string):
-            string = string[1:]
     return ast.literal_eval(string)
 
 
@@ -260,6 +335,11 @@ try:
 except NameError:
     FileNotFoundError = IOError
 
+try:
+    NotADirectoryError = NotADirectoryError
+except NameError:
+    NotADirectoryError = IOError
+
 
 def no_unicode_pprint(dct):
     """
@@ -271,6 +351,13 @@ def no_unicode_pprint(dct):
     import pprint
     s = pprint.pformat(dct)
     print(re.sub("u'", "'", s))
+
+
+def print_to_stderr(string):
+    if is_py3:
+        eval("print(string, file=sys.stderr)")
+    else:
+        print >> sys.stderr, string
 
 
 def utf8_repr(func):
@@ -289,3 +376,95 @@ def utf8_repr(func):
         return func
     else:
         return wrapper
+
+
+if is_py3:
+    import queue
+else:
+    import Queue as queue
+
+
+import pickle
+if sys.version_info[:2] == (3, 3):
+    """
+    Monkeypatch the unpickler in Python 3.3. This is needed, because the
+    argument `encoding='bytes'` is not supported in 3.3, but badly needed to
+    communicate with Python 2.
+    """
+
+    class NewUnpickler(pickle._Unpickler):
+        dispatch = dict(pickle._Unpickler.dispatch)
+
+        def _decode_string(self, value):
+            # Used to allow strings from Python 2 to be decoded either as
+            # bytes or Unicode strings.  This should be used only with the
+            # STRING, BINSTRING and SHORT_BINSTRING opcodes.
+            if self.encoding == "bytes":
+                return value
+            else:
+                return value.decode(self.encoding, self.errors)
+
+        def load_string(self):
+            data = self.readline()[:-1]
+            # Strip outermost quotes
+            if len(data) >= 2 and data[0] == data[-1] and data[0] in b'"\'':
+                data = data[1:-1]
+            else:
+                raise pickle.UnpicklingError("the STRING opcode argument must be quoted")
+            self.append(self._decode_string(pickle.codecs.escape_decode(data)[0]))
+        dispatch[pickle.STRING[0]] = load_string
+
+        def load_binstring(self):
+            # Deprecated BINSTRING uses signed 32-bit length
+            len, = pickle.struct.unpack('<i', self.read(4))
+            if len < 0:
+                raise pickle.UnpicklingError("BINSTRING pickle has negative byte count")
+            data = self.read(len)
+            self.append(self._decode_string(data))
+        dispatch[pickle.BINSTRING[0]] = load_binstring
+
+        def load_short_binstring(self):
+            len = self.read(1)[0]
+            data = self.read(len)
+            self.append(self._decode_string(data))
+        dispatch[pickle.SHORT_BINSTRING[0]] = load_short_binstring
+
+    def load(file, fix_imports=True, encoding="ASCII", errors="strict"):
+        return NewUnpickler(file, fix_imports=fix_imports,
+                            encoding=encoding, errors=errors).load()
+
+    def loads(s, fix_imports=True, encoding="ASCII", errors="strict"):
+        if isinstance(s, str):
+            raise TypeError("Can't load pickle from unicode string")
+        file = pickle.io.BytesIO(s)
+        return NewUnpickler(file, fix_imports=fix_imports,
+                            encoding=encoding, errors=errors).load()
+
+    pickle.Unpickler = NewUnpickler
+    pickle.load = load
+    pickle.loads = loads
+
+
+_PICKLE_PROTOCOL = 2
+
+
+def pickle_load(file):
+    if is_py3:
+        return pickle.load(file, encoding='bytes')
+    else:
+        return pickle.load(file)
+
+
+def pickle_dump(data, file):
+    pickle.dump(data, file, protocol=_PICKLE_PROTOCOL)
+
+
+try:
+    from inspect import Parameter
+except ImportError:
+    class Parameter(object):
+        POSITIONAL_ONLY = object()
+        POSITIONAL_OR_KEYWORD = object()
+        VAR_POSITIONAL = object()
+        KEYWORD_ONLY = object()
+        VAR_KEYWORD = object()

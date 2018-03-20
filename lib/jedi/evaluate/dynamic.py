@@ -75,22 +75,24 @@ def search_params(evaluator, execution_context, funcdef):
 
         debug.dbg('Dynamic param search in %s.', funcdef.name.value, color='MAGENTA')
 
-        module_context = execution_context.get_root_context()
-        function_executions = _search_function_executions(
-            evaluator,
-            module_context,
-            funcdef
-        )
-        if function_executions:
-            zipped_params = zip(*list(
-                function_execution.get_params()
-                for function_execution in function_executions
-            ))
-            params = [MergedExecutedParams(executed_params) for executed_params in zipped_params]
-            # Evaluate the ExecutedParams to types.
-        else:
-            return create_default_params(execution_context, funcdef)
-        debug.dbg('Dynamic param result finished', color='MAGENTA')
+        try:
+            module_context = execution_context.get_root_context()
+            function_executions = _search_function_executions(
+                evaluator,
+                module_context,
+                funcdef
+            )
+            if function_executions:
+                zipped_params = zip(*list(
+                    function_execution.get_params()
+                    for function_execution in function_executions
+                ))
+                params = [MergedExecutedParams(executed_params) for executed_params in zipped_params]
+                # Evaluate the ExecutedParams to types.
+            else:
+                return create_default_params(execution_context, funcdef)
+        finally:
+            debug.dbg('Dynamic param result finished', color='MAGENTA')
         return params
     finally:
         evaluator.dynamic_params_depth -= 1
@@ -156,7 +158,7 @@ def _check_name_for_execution(evaluator, context, compare_node, name, trailer):
     def create_func_excs():
         arglist = trailer.children[1]
         if arglist == ')':
-            arglist = ()
+            arglist = None
         args = TreeArguments(evaluator, context, arglist, trailer)
         if value_node.type == 'funcdef':
             yield value.get_function_execution(args)
