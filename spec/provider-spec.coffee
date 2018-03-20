@@ -33,6 +33,9 @@ describe 'Jedi autocompletions', ->
     return Promise.resolve(provider.getUsages(editor, bufferPosition))
 
   beforeEach ->
+    # fix deprecation warning when value is undefined
+    atom.config.getUserConfigPath = () => ''
+
     atom.config.set('autocomplete-python.useKite', false)
     waitsForPromise -> atom.packages.activatePackage('language-python')
     waitsForPromise -> atom.workspace.open('test.py')
@@ -192,7 +195,7 @@ describe 'Jedi autocompletions', ->
   it 'uses provided regex for triggering completions', ->
     # Set triggerCompletionRegex without restarting
     provider.triggerCompletionRegex = RegExp 'a'
-    
+
     editor.setText """
       a = [1, 3, 2]
       a.
@@ -290,7 +293,7 @@ xdescribe 'Displays views', ->
     waitsForPromise -> atom.workspace.open({pathsToOpen: FilePaths})
     editor.setCursorBufferPosition([4, 13])
     showUsages()
-    
+
     waitsFor "view to show", ->
       provider.usagesView?.isVisible()
 
