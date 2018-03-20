@@ -33,6 +33,9 @@ describe 'Jedi autocompletions', ->
     return Promise.resolve(provider.getUsages(editor, bufferPosition))
 
   beforeEach ->
+    # fix deprecation warning when value is undefined
+    atom.config.getUserConfigPath = () => ''
+
     atom.config.set('autocomplete-python.useKite', false)
     waitsForPromise -> atom.packages.activatePackage('language-python')
     waitsForPromise -> atom.workspace.open('test.py')
