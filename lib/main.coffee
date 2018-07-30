@@ -168,13 +168,12 @@ module.exports =
     pluginCfg =
       name: 'autocomplete-python'
 
-    Metrics.Tracker.name = "atom acp"
+    Metrics.Tracker.source = 'acp'
     Metrics.enabled = atom.config.get('core.telemetryConsent') is 'limited'
 
     atom.packages.onDidActivatePackage (pkg) =>
       if pkg.name is 'kite'
         @patchKiteCompletions(pkg)
-        Metrics.Tracker.name = "atom kite+acp"
 
     checkKiteInstallation = () =>
       return unless atom.config.get 'autocomplete-python.useKite'
@@ -185,7 +184,7 @@ module.exports =
           path: atom.project.getPaths()[0] || os.homedir(),
         }, {
           failureStep: 'termination',
-          title: 'Kite Install',
+          title: 'Choose your autocomplete-python engine',
         })
 
         initialClient = AccountManager.client
