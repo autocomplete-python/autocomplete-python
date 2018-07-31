@@ -152,19 +152,16 @@ module.exports =
     {
       AccountManager,
       AtomHelper,
-      compatibility,
-      Installation,
-      Installer,
       Metrics,
       Logger,
-      StateController
+      StateController,
+      NodeClient,
+      install
     } = require 'kite-installer'
 
     if atom.config.get('kite.loggingLevel')
       Logger.LEVEL = Logger.LEVELS[atom.config.get('kite.loggingLevel').toUpperCase()]
 
-    AccountManager.initClient 'alpha.kite.com', -1, true
-    atom.views.addViewProvider Installation, (m) -> m.element
     editorCfg =
       UUID: localStorage.getItem('metrics.userId')
       name: 'atom'
@@ -180,40 +177,43 @@ module.exports =
         Metrics.Tracker.name = "atom kite+acp"
 
     checkKiteInstallation = () =>
-      if not atom.config.get 'autocomplete-python.useKite'
-        return
-      canInstall = StateController.canInstallKite()
-      compatible = compatibility.check()
-      Promise.all([compatible, canInstall]).then((values) =>
-        atom.config.set 'autocomplete-python.useKite', true
-        variant = {}
-        Metrics.Tracker.props = variant
-        Metrics.Tracker.props.lastEvent = event
-        title = "Choose a autocomplete-python engine"
-        @installation = new Installation variant, title
-        @installation.accountCreated(() =>
-          atom.config.set 'autocomplete-python.useKite', true
-        )
-        @installation.flowSkipped(() =>
-          atom.config.set 'autocomplete-python.useKite', false
-        )
-        [projectPath] = atom.project.getPaths()
-        root = if projectPath? and path.relative(os.homedir(), projectPath).indexOf('..') is 0
-          path.parse(projectPath).root
-        else
-          os.homedir()
+      return unless atom.config.get 'autocomplete-python.useKite'
 
-        installer = new Installer([root])
-        installer.init @installation.flow, ->
-          Logger.verbose('in onFinish')
-          atom.packages.activatePackage('kite')
+      StateController.canInstallKite().then(() ->
+        Install = install.Install
+        installer = new Install(install.atom().autocompletePythonFlow(), {
+          path: atom.project.getPaths()[0] || os.homedir(),
+        }, {
+          failureStep: 'termination',
+          title: 'Kite Install',
+        })
 
-        pane = atom.workspace.getActivePane()
-        @installation.flow.onSkipInstall () =>
-          atom.config.set 'autocomplete-python.useKite', false
-          pane.destroyActiveItem()
-        pane.addItem @installation, index: 0
-        pane.activateItemAtIndex 0
+        initialClient = AccountManager.client
+        AccountManager.client = new NodeClient('alpha.kite.com', -1, '', true)
+
+        atom.workspace.getActivePane().addItem(installer)
+        atom.workspace.getActivePane().activateItem(installer)
+
+        installed = false
+
+        installer.onDidDestroy(->
+          atom.config.set('autocomplete-python.useKite', installed)
+          AccountManager.client = initialClient
+        )
+
+        installer.onDidUdpdateState((state) ->
+          installed = state?.install?.done
+        )
+
+        installer.on('did-pick-install', () ->
+          installed = true
+        )
+        installer.on('did-skip-install', () ->
+          installed = false
+          atom.config.set('autocomplete-python.useKite', installed)
+        )
+
+        installer.start()
       , (err) =>
         if typeof err != 'undefined' and err.type == 'denied'
           atom.config.set 'autocomplete-python.useKite', false
