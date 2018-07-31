@@ -193,19 +193,24 @@ module.exports =
         atom.workspace.getActivePane().addItem(installer)
         atom.workspace.getActivePane().activateItem(installer)
 
-        terminated = false
+        installed = false
 
         installer.onDidDestroy(->
-          atom.config.set('autocomplete-python.useKite', false) unless terminated)
+          atom.config.set('autocomplete-python.useKite', installed)
+          AccountManager.client = initialClient
+        )
+
+        installer.onDidUdpdateState((state) ->
+          if typeof state.install != 'undefined'
+            installed = state.install.done || false
+        )
+
+        installer.on('did-skip-install', () ->
+          installed = false
+          atom.config.set('autocomplete-python.useKite', installed)
+        )
 
         installer.start()
-        .then((res) ->
-          atom.config.set 'autocomplete-python.useKite', res?.install?.done)
-        .catch((err) ->
-          atom.config.set 'autocomplete-python.useKite', false)
-        .then(->
-          terminated = true
-          AccountManager.client = initialClient)
       , (err) =>
         if typeof err != 'undefined' and err.type == 'denied'
           atom.config.set 'autocomplete-python.useKite', false
