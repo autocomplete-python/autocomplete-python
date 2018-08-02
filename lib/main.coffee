@@ -168,7 +168,7 @@ module.exports =
     pluginCfg =
       name: 'autocomplete-python'
 
-    Metrics.Tracker.source = 'acp'
+    Metrics.Tracker.source = 'autocomplete-python'
     Metrics.enabled = atom.config.get('core.telemetryConsent') is 'limited'
 
     atom.packages.onDidActivatePackage (pkg) =>
