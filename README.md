@@ -2,7 +2,7 @@
 
 Python packages, variables, methods and functions with their arguments autocompletion in [Atom](http://atom.io) powered by your choice of [Jedi](https://github.com/davidhalter/jedi) or [Kite](https://kite.com).
 
-_Please note that this package is sponsored by Kite and that the Kite code engine is cloud-powered.  Type inference on your code is done on Kite's servers._  More info is provided during the install screens of autocomplete-python.  __Please read Kite's [privacy policy](https://kite.com/privacy) and [FAQ](http://help.kite.com/category/30-security-privacy) carefully if you have chosen Kite as your completions engine.__
+_Please note that this package is sponsored by Kite and that the Kite code engine is cloud-powered.  Type inference on your code is done on Kite's servers._  More info is provided during the install screens of autocomplete-python.  __Please read Kite's [privacy policy](https://kite.com/privacy) and [FAQ](https://help.kite.com/category/41-security-privacy) carefully if you have chosen Kite as your completions engine.__
 
 See [releases](https://github.com/sadovnychyi/autocomplete-python/releases) for release notes.
 
