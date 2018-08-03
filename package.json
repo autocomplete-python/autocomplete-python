@@ -3,7 +3,7 @@
   "main": "./lib/main",
   "version": "1.10.7",
   "description": "Python completions for packages, variables, methods, functions, with their arguments. Powered by your choice of Jedi or Kite.",
-  "repository": "https://github.com/autocomplete-python/autocomplete-python",
+  "repository": "git@github.com:autocomplete-python/autocomplete-python.git",
   "license": "GPL",
   "engines": {
     "atom": ">=0.194.0 <2.0.0"
