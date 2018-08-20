@@ -210,6 +210,17 @@ module.exports =
           atom.config.set('autocomplete-python.useKite', installed)
         )
 
+        installer.on('not-admin-shown', () ->
+          # Show installation again if user restarts as admin. There is a
+          # separate user option to explicitly not show this again.
+          installed = true
+        )
+
+        installer.on('not-admin-dismissed', () ->
+          installed = false
+          atom.config.set('autocomplete-python.useKite', installed)
+        )
+
         installer.start()
       , (err) =>
         if typeof err != 'undefined' and err.type == 'denied'
