@@ -12,9 +12,10 @@ module.exports =
       default: true
       order: 0
       title: 'Use Kite-powered Completions (macOS & Windows only)'
-      description: '''Kite is a cloud powered autocomplete engine. Choosing
-      this option will allow you to get cloud powered completions and other
-      features in addition to the completions provided by Jedi.'''
+      description: '''Kite is a machine learning powered autocomplete engine.
+      Choosing this option will allow you to get more intelligently ranked
+      completions and other advanced features in addition to the completions
+      provided by Jedi.'''
     showDescriptions:
       type: 'boolean'
       default: true
