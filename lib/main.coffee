@@ -185,7 +185,7 @@ module.exports =
           path: atom.project.getPaths()[0] || os.homedir(),
         }, {
           failureStep: 'termination',
-          title: 'Choose your autocomplete-python engine',
+          title: 'Upgrade your autocomplete-python engine',
         })
 
         initialClient = AccountManager.client
