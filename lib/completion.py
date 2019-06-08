@@ -326,8 +326,6 @@ class JediCompletion(object):
     def _process_request(self, request):
         """Accept serialized request from Atom and write response.
         """
-        if not request:
-          return
         request = self._deserialize(request)
 
         self._set_request_config(request.get('config', {}))
@@ -371,7 +369,11 @@ class JediCompletion(object):
         while True:
             try:
                 sys.stdout, sys.stderr = self.devnull, self.devnull
-                self._process_request(self._input.readline())
+                request = self._input.readline()
+                if not request:
+                    return
+
+                self._process_request(request)
             except Exception:
                 sys.stderr = self.stderr
                 sys.stderr.write(traceback.format_exc() + '\n')
