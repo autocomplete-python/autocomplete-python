@@ -179,11 +179,14 @@ module.exports =
     checkKiteInstallation = () =>
       return unless atom.config.get 'autocomplete-python.useKite'
 
+      statusBar = @statusBar
+
       StateController.canInstallKite().then(() ->
         Install = install.Install
         installer = new Install(install.atom().autocompletePythonFlow(), {
           path: atom.project.getPaths()[0] || os.homedir(),
         }, {
+          statusBar: statusBar,
           failureStep: 'termination',
           title: 'Upgrade your autocomplete-python engine',
         })
@@ -272,6 +275,9 @@ module.exports =
     disposable = @emitter.on 'did-load-provider', =>
       @provider.setSnippetsManager snippetsManager
       disposable.dispose()
+
+  consumeStatusBar: (statusBar) ->
+    @statusBar = statusBar
 
   patchKiteCompletions: (kite) ->
     return if @kitePackage?

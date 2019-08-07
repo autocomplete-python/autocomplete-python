@@ -36,6 +36,11 @@
       "versions": {
         "0.1.0": "consumeSnippets"
       }
+    },
+    "status-bar": {
+      "versions": {
+        "^1.0.0": "consumeStatusBar"
+      }
     }
   },
   "contributors": [
