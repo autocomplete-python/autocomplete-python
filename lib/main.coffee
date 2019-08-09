@@ -200,7 +200,7 @@ module.exports =
         installed = false
 
         installer.onDidDestroy(->
-          atom.config.set('autocomplete-python.useKite', installed)
+          installed && atom.config.set('autocomplete-python.useKite', installed)
           AccountManager.client = initialClient
         )
 
@@ -223,6 +223,14 @@ module.exports =
         installer.on('not-admin-dismissed', () ->
           installed = false
           atom.config.set('autocomplete-python.useKite', installed)
+        )
+
+        installer.on('headless-error', ({error}) ->
+          installer.updateState({error});
+
+          errorView = new install.InstallErrorView(installer);
+          atom.workspace.getActivePane().addItem(errorView)
+          atom.workspace.getActivePane().activateItem(errorView)
         )
 
         installer.start()
