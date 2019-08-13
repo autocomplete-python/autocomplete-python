@@ -11,7 +11,7 @@ module.exports =
       type: 'boolean'
       default: true
       order: 0
-      title: 'Use Kite-powered Completions (macOS & Windows only)'
+      title: 'Use Kite-powered Completions'
       description: '''Kite is a machine learning powered autocomplete engine.
       Choosing this option will allow you to get more intelligently ranked
       completions and other advanced features in addition to the completions
