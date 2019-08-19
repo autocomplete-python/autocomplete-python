@@ -182,8 +182,9 @@ module.exports =
       statusBar = @statusBar
 
       StateController.canInstallKite().then(() ->
+        kiteAtom = install.atom()
         Install = install.Install
-        installer = new Install(install.atom().autocompletePythonFlow(), {
+        installer = new Install(kiteAtom.autocompletePythonFlow(), {
           path: atom.project.getPaths()[0] || os.homedir(),
         }, {
           statusBar: statusBar,
@@ -228,7 +229,7 @@ module.exports =
         installer.on('headless-error', ({error}) ->
           installer.updateState({error});
 
-          errorView = new install.InstallErrorView(installer);
+          errorView = new kiteAtom.InstallErrorView(installer);
           atom.workspace.getActivePane().addItem(errorView)
           atom.workspace.getActivePane().activateItem(errorView)
         )
