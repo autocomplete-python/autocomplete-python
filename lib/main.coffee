@@ -11,7 +11,7 @@ module.exports =
       type: 'boolean'
       default: true
       order: 0
-      title: 'Use Kite-powered Completions (macOS & Windows only)'
+      title: 'Use Kite-powered Completions'
       description: '''Kite is a machine learning powered autocomplete engine.
       Choosing this option will allow you to get more intelligently ranked
       completions and other advanced features in addition to the completions
@@ -179,11 +179,15 @@ module.exports =
     checkKiteInstallation = () =>
       return unless atom.config.get 'autocomplete-python.useKite'
 
+      statusBar = @statusBar
+
       StateController.canInstallKite().then(() ->
+        kiteAtom = install.atom()
         Install = install.Install
-        installer = new Install(install.atom().autocompletePythonFlow(), {
+        installer = new Install(kiteAtom.autocompletePythonFlow(), {
           path: atom.project.getPaths()[0] || os.homedir(),
         }, {
+          statusBar: statusBar,
           failureStep: 'termination',
           title: 'Upgrade your autocomplete-python engine',
         })
@@ -197,7 +201,7 @@ module.exports =
         installed = false
 
         installer.onDidDestroy(->
-          atom.config.set('autocomplete-python.useKite', installed)
+          installed && atom.config.set('autocomplete-python.useKite', installed)
           AccountManager.client = initialClient
         )
 
@@ -220,6 +224,14 @@ module.exports =
         installer.on('not-admin-dismissed', () ->
           installed = false
           atom.config.set('autocomplete-python.useKite', installed)
+        )
+
+        installer.on('headless-error', ({error}) ->
+          installer.updateState({error});
+
+          errorView = new kiteAtom.InstallErrorView(installer);
+          atom.workspace.getActivePane().addItem(errorView)
+          atom.workspace.getActivePane().activateItem(errorView)
         )
 
         installer.start()
@@ -272,6 +284,9 @@ module.exports =
     disposable = @emitter.on 'did-load-provider', =>
       @provider.setSnippetsManager snippetsManager
       disposable.dispose()
+
+  consumeStatusBar: (statusBar) ->
+    @statusBar = statusBar
 
   patchKiteCompletions: (kite) ->
     return if @kitePackage?
