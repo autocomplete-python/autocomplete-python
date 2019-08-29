@@ -321,6 +321,7 @@ module.exports =
   setSnippetsManager: (@snippetsManager) ->
 
   _completeArguments: (editor, bufferPosition, force) ->
+    return if atom.config.get 'autocomplete-python.useKite'
     useSnippets = atom.config.get('autocomplete-python.useSnippets')
     if not force and useSnippets == 'none'
       atom.commands.dispatch(document.querySelector('atom-text-editor'),
