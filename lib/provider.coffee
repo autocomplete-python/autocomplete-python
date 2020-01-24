@@ -367,6 +367,7 @@ module.exports =
     return candidates
 
   getSuggestions: ({editor, bufferPosition, scopeDescriptor, prefix}) ->
+    return if atom.packages.isPackageActive('kite')
     @load()
     if not @triggerCompletionRegex.test(prefix)
       return @lastSuggestions = []
