@@ -1,4 +1,4 @@
-# Grammar for 2to3. This grammar supports Python 2.x and 3.x.
+# Grammar for Python
 
 # NOTE WELL: You should also follow all the steps listed at
 # https://devguide.python.org/grammar/
