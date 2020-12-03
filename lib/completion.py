@@ -88,10 +88,11 @@ class JediCompletion(object):
                     continue
                 if WORD_RE.match(param.name) is None:
                     continue
+                description = re.sub('param ', '', param.description)
                 try:
-                    name, value = param.description.split('=')
+                    name, value = description.split('=')
                 except ValueError:
-                    name = param.description
+                    name = description
                     value = None
                 if name.startswith('*'):
                     continue
