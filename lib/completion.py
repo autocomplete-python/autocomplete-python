@@ -320,9 +320,10 @@ class JediCompletion(object):
         self.fuzzy_matcher = config.get('fuzzyMatcher', False)
         jedi.settings.case_insensitive_completion = config.get(
             'caseInsensitiveCompletion', True)
+        self.extra_paths = []
         for path in config.get('extraPaths', []):
             if path and path not in sys.path:
-                sys.path.insert(0, path)
+                self.extra_paths.append(path)
 
     def _process_request(self, request):
         """Accept serialized request from Atom and write response.
@@ -338,7 +339,9 @@ class JediCompletion(object):
 
         script = jedi.api.Script(
             source=request['source'], line=request['line'] + 1,
-            column=request['column'], path=request.get('path', ''))
+            column=request['column'], path=request.get('path', ''),
+            project=jedi.api.Project(path, added_sys_path=self.extra_paths),
+        )
 
         if lookup == 'definitions':
             return self._write_response(self._serialize_definitions(
