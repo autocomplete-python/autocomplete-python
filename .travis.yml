@@ -1,5 +1,7 @@
 ### Project specific config ###
-language: generic
+language: python
+python:
+  - "3.7"
 
 env:
   global:
@@ -16,6 +18,7 @@ os:
 
 ### Generic setup follows ###
 script:
+  - pip install jedi
   - curl -s -O https://raw.githubusercontent.com/atom/ci/master/build-package.sh
   - chmod u+x build-package.sh
   - ./build-package.sh
