@@ -23,7 +23,7 @@ jobs:
 
 
 before_install:
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then cd /usr/local/bin && mv python python.old && ln -s python3 python; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then cd /usr/local/bin && mv python python.old && ln -s python3 python && cd -; fi
 
 ### Generic setup follows ###
 script:
