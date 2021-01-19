@@ -1,7 +1,7 @@
 {
   "name": "autocomplete-python",
   "main": "./lib/main",
-  "version": "1.16.0",
+  "version": "1.17.0",
   "description": "Python completions for packages, variables, methods, functions, with their arguments. Powered by your choice of Jedi or Kite.",
   "repository": "git@github.com:autocomplete-python/autocomplete-python.git",
   "license": "GPL",
