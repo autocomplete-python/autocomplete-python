@@ -4,10 +4,8 @@ import re
 import sys
 import json
 import traceback
-sys.path.append(os.path.dirname(__file__))
+
 import jedi
-# remove jedi from path after we import it so it will not be completed
-sys.path.pop(0)
 
 WORD_RE = re.compile(r'\w')
 ARGUMENT_RE = re.compile(r'[a-zA-Z0-9_=\*"\']+')
@@ -88,10 +86,11 @@ class JediCompletion(object):
                     continue
                 if WORD_RE.match(param.name) is None:
                     continue
+                description = re.sub('param ', '', param.description)
                 try:
-                    name, value = param.description.split('=')
+                    name, value = description.split('=')
                 except ValueError:
-                    name = param.description
+                    name = description
                     value = None
                 if name.startswith('*'):
                     continue
@@ -319,9 +318,10 @@ class JediCompletion(object):
         self.fuzzy_matcher = config.get('fuzzyMatcher', False)
         jedi.settings.case_insensitive_completion = config.get(
             'caseInsensitiveCompletion', True)
+        self.extra_paths = []
         for path in config.get('extraPaths', []):
             if path and path not in sys.path:
-                sys.path.insert(0, path)
+                self.extra_paths.append(path)
 
     def _process_request(self, request):
         """Accept serialized request from Atom and write response.
@@ -337,7 +337,9 @@ class JediCompletion(object):
 
         script = jedi.api.Script(
             source=request['source'], line=request['line'] + 1,
-            column=request['column'], path=request.get('path', ''))
+            column=request['column'], path=request.get('path', ''),
+            project=jedi.api.Project(path, added_sys_path=self.extra_paths),
+        )
 
         if lookup == 'definitions':
             return self._write_response(self._serialize_definitions(

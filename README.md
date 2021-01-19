@@ -8,9 +8,16 @@ See [releases](https://github.com/sadovnychyi/autocomplete-python/releases) for 
 
 Jedi-driven release notes follow.  For more about using the Kite completions engine see [kite.com](https://kite.com).
 
+The package requires a recent version of [`jedi`](https://pypi.org/project/jedi/):
+
+```sh
+pip install jedi
+```
+
+## Demo
 ![Demo](https://cloud.githubusercontent.com/assets/193864/12288427/61fe2114-ba0f-11e5-9832-98869180d87f.gif)
 
-# Features
+## Features
 
 * Works with :apple: Mac OSX, :penguin: Linux and :checkered_flag: Windows.
 * Works with both :snake: Python 2 and 3.
@@ -29,7 +36,7 @@ Jedi-driven release notes follow.  For more about using the Kite completions eng
 * Rename across multiple files. It will not touch files outside of your project, but it will change VCS ignored files. I'm not responsible for any broken projects without VCS because of this.
   ![sample](https://cloud.githubusercontent.com/assets/193864/12288191/f448b55a-ba0c-11e5-81d7-31289ef5dbba.gif)
 
-# Configuration
+## Configuration
 
 * If using a [virtualenv](https://virtualenv.pypa.io/en/latest/) with third-party packages, everything should "just work", but if it's not – use the `Python Executable Paths` and/or `Extra Paths For Packages` configuration options to specify the virtualenv's site-packages. Or launch Atom from the [activated virtualenv](https://virtualenv.pypa.io/en/latest/userguide.html#activate-script) to get completion for your third-party packages
 * Be sure to check package settings and adjust them. Please read them carefully before creating any new issues
@@ -40,7 +47,7 @@ Jedi-driven release notes follow.  For more about using the Kite completions eng
   ![image](https://cloud.githubusercontent.com/assets/193864/11631369/aafb34b4-9d3c-11e5-9a06-e8712a21474e.png)
 
 
-# Common problems
+## Common problems
 
 * "Error: spawn UNKNOWN" on Windows
   * Solution: Find your python executable and uncheck the "Run this program as an administrator". See issue [#22](https://github.com/sadovnychyi/autocomplete-python/issues/22)
