@@ -7,6 +7,7 @@ import traceback
 
 import jedi
 
+
 WORD_RE = re.compile(r'\w')
 ARGUMENT_RE = re.compile(r'[a-zA-Z0-9_=\*"\']+')
 
@@ -75,7 +76,7 @@ class JediCompletion(object):
         """
         _signatures = []
         try:
-            call_signatures = script.call_signatures()
+            call_signatures = script.get_signatures(*script._pos)
         except KeyError:
             call_signatures = []
         for signature in call_signatures:
@@ -135,7 +136,7 @@ class JediCompletion(object):
             _completions.append(_completion)
 
         try:
-            completions = script.completions()
+            completions = script.complete(*script._pos, fuzzy=False)
         except KeyError:
             completions = []
         for completion in completions:
@@ -336,10 +337,14 @@ class JediCompletion(object):
         lookup = request.get('lookup', 'completions')
 
         script = jedi.api.Script(
-            source=request['source'], line=request['line'] + 1,
-            column=request['column'], path=request.get('path', ''),
+            code=request['source'],# line=request['line'] + 1,
+            # column=request['column'],
+            path=request.get('path', ''),
             project=jedi.api.Project(path, added_sys_path=self.extra_paths),
         )
+        script._pos = request['line']+1, request['column']
+
+
 
         if lookup == 'definitions':
             return self._write_response(self._serialize_definitions(
