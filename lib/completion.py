@@ -182,7 +182,7 @@ class JediCompletion(object):
                 'name': completion.name,
                 'params': params,
                 'moduleName': completion.module_name,
-                'fileName': completion.module_path,
+                'fileName': os.fspath(completion.module_path),
                 'line': completion.line,
                 'column': completion.column,
               })
@@ -246,7 +246,7 @@ class JediCompletion(object):
                 _definition = {
                     'text': definition.name,
                     'type': self._get_definition_type(definition),
-                    'fileName': definition.module_path,
+                    'fileName': os.fspath(definition.module_path),
                     'line': definition.line - 1,
                     'column': definition.column
                 }
@@ -270,7 +270,7 @@ class JediCompletion(object):
                 _definition = {
                     'text': definition.name,
                     'type': self._get_definition_type(definition),
-                    'fileName': definition.module_path,
+                    'fileName': os.fspath(definition.module_path),
                     'description': description,
                     'line': definition.line - 1,
                     'column': definition.column
@@ -285,7 +285,7 @@ class JediCompletion(object):
         _usages.append({
           'name': usage.name,
           'moduleName': usage.module_name,
-          'fileName': usage.module_path,
+          'fileName': os.fspath(usage.module_path),
           'line': usage.line,
           'column': usage.column,
         })
