@@ -344,16 +344,16 @@ class JediCompletion(object):
 
         if lookup == 'definitions':
             return self._write_response(self._serialize_definitions(
-                script.goto_assignments(), request['id']))
+                script.goto(line, column), request['id']))
         if lookup == 'tooltip':
             return self._write_response(self._serialize_tooltip(
-                script.goto_assignments(), request['id']))
+                script.goto(line, column), request['id']))
         elif lookup == 'arguments':
             return self._write_response(self._serialize_arguments(
                 script, line, column, request['id']))
         elif lookup == 'usages':
             return self._write_response(self._serialize_usages(
-                script.usages(), request['id']))
+                script.get_references(line, column), request['id']))
         elif lookup == 'methods':
             return self._write_response(
               self._serialize_methods(script, line, column,
