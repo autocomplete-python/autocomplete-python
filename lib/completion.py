@@ -67,7 +67,7 @@ class JediCompletion(object):
             completion.name,
             ', '.join(p.description for p in completion.params if p))
 
-    def _get_call_signatures(self, script):
+    def _get_call_signatures(self, script, line, column):
         """Extract call signatures from jedi.api.Script object in failsafe way.
 
         Returns:
@@ -75,7 +75,7 @@ class JediCompletion(object):
         """
         _signatures = []
         try:
-            call_signatures = script.call_signatures()
+            call_signatures = script.get_signatures(line, column)
         except KeyError:
             call_signatures = []
         for signature in call_signatures:
@@ -97,7 +97,7 @@ class JediCompletion(object):
                 _signatures.append((signature, name, value))
         return _signatures
 
-    def _serialize_completions(self, script, identifier=None, prefix=''):
+    def _serialize_completions(self, script, line, column, identifier=None, prefix=''):
         """Serialize response to be read from Atom.
 
         Args:
@@ -111,7 +111,7 @@ class JediCompletion(object):
         """
         _completions = []
 
-        for signature, name, value in self._get_call_signatures(script):
+        for signature, name, value in self._get_call_signatures(script, line, column):
             if not self.fuzzy_matcher and not name.lower().startswith(
               prefix.lower()):
                 continue
@@ -135,7 +135,7 @@ class JediCompletion(object):
             _completions.append(_completion)
 
         try:
-            completions = script.completions()
+            completions = script.complete(line, column)
         except KeyError:
             completions = []
         for completion in completions:
@@ -156,10 +156,10 @@ class JediCompletion(object):
             _completions.append(_completion)
         return json.dumps({'id': identifier, 'results': _completions})
 
-    def _serialize_methods(self, script, identifier=None, prefix=''):
+    def _serialize_methods(self, script, line, column, identifier=None, prefix=''):
         _methods = []
         try:
-            completions = script.completions()
+            completions = script.complete(line, column)
         except KeyError:
             return []
 
@@ -182,13 +182,13 @@ class JediCompletion(object):
                 'name': completion.name,
                 'params': params,
                 'moduleName': completion.module_name,
-                'fileName': completion.module_path,
+                'fileName': os.fspath(completion.module_path),
                 'line': completion.line,
                 'column': completion.column,
               })
         return json.dumps({'id': identifier, 'results': _methods})
 
-    def _serialize_arguments(self, script, identifier=None):
+    def _serialize_arguments(self, script, line, column, identifier=None):
         """Serialize response to be read from Atom.
 
         Args:
@@ -201,7 +201,7 @@ class JediCompletion(object):
         seen = set()
         arguments = []
         i = 1
-        for _, name, value in self._get_call_signatures(script):
+        for _, name, value in self._get_call_signatures(script, line, column):
             if not value:
                 arg = '${%s:%s}' % (i, name)
             elif self.use_snippets == 'all':
@@ -246,7 +246,7 @@ class JediCompletion(object):
                 _definition = {
                     'text': definition.name,
                     'type': self._get_definition_type(definition),
-                    'fileName': definition.module_path,
+                    'fileName': os.fspath(definition.module_path),
                     'line': definition.line - 1,
                     'column': definition.column
                 }
@@ -270,7 +270,7 @@ class JediCompletion(object):
                 _definition = {
                     'text': definition.name,
                     'type': self._get_definition_type(definition),
-                    'fileName': definition.module_path,
+                    'fileName': os.fspath(definition.module_path),
                     'description': description,
                     'line': definition.line - 1,
                     'column': definition.column
@@ -285,7 +285,7 @@ class JediCompletion(object):
         _usages.append({
           'name': usage.name,
           'moduleName': usage.module_name,
-          'fileName': usage.module_path,
+          'fileName': os.fspath(usage.module_path),
           'line': usage.line,
           'column': usage.column,
         })
@@ -336,30 +336,33 @@ class JediCompletion(object):
         lookup = request.get('lookup', 'completions')
 
         script = jedi.api.Script(
-            source=request['source'], line=request['line'] + 1,
-            column=request['column'], path=request.get('path', ''),
+            code=request['source'], path=request.get('path', ''),
             project=jedi.api.Project(path, added_sys_path=self.extra_paths),
         )
+        line = request['line'] + 1
+        column = request['column']
 
         if lookup == 'definitions':
             return self._write_response(self._serialize_definitions(
-                script.goto_assignments(), request['id']))
+                script.goto(line, column), request['id']))
         if lookup == 'tooltip':
             return self._write_response(self._serialize_tooltip(
-                script.goto_assignments(), request['id']))
+                script.goto(line, column), request['id']))
         elif lookup == 'arguments':
             return self._write_response(self._serialize_arguments(
-                script, request['id']))
+                script, line, column, request['id']))
         elif lookup == 'usages':
             return self._write_response(self._serialize_usages(
-                script.usages(), request['id']))
+                script.get_references(line, column), request['id']))
         elif lookup == 'methods':
-          return self._write_response(
-              self._serialize_methods(script, request['id'],
+            return self._write_response(
+              self._serialize_methods(script, line, column,
+                                      request['id'],
                                       request.get('prefix', '')))
         else:
             return self._write_response(
-                self._serialize_completions(script, request['id'],
+                self._serialize_completions(script, line, column,
+                                            request['id'],
                                             request.get('prefix', '')))
 
     def _write_response(self, response):
